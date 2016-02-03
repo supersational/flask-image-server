@@ -1,0 +1,62 @@
+﻿drop schema public cascade;
+create schema public;
+
+CREATE TABLE Studies(
+study_id SERIAL PRIMARY KEY,
+name CHAR(256)
+);
+
+CREATE TABLE Participants(
+participant_id SERIAL PRIMARY KEY,
+name CHAR(50)
+);
+
+CREATE TABLE StudyParticipants( -- study -> participant linking table
+study_id INT REFERENCES Studies(study_id),
+participant_id INT REFERENCES Participants(participant_id)
+);
+
+CREATE TABLE Users(
+user_id SERIAL PRIMARY KEY,
+username CHAR(50),
+password CHAR(50)
+);
+
+CREATE TABLE UserAccess(
+user_id INT REFERENCES Users(user_id),
+study_id INT REFERENCES Studies(study_id),
+access_level INT NOT NULL -- e.g. 0 none, 1 read, 2 write, 3 admin
+);
+
+CREATE TABLE Images(
+image_id SERIAL PRIMARY KEY,
+image_time TIMESTAMP,
+user_id INT REFERENCES Users(user_id),
+full_url CHAR(256), -- if null means not uploaded/processed
+medium_url CHAR(256), 
+thumbnail_url CHAR(256)
+);
+
+CREATE TABLE Events(
+event_id SERIAL PRIMARY KEY,
+user_id INT REFERENCES Users(user_id),
+day DATE NOT NULL,
+start_time TIMESTAMP NOT NULL,
+end_time TIMESTAMP NOT NULL,
+comment TEXT,
+number_times_viewed INT
+);
+
+INSERT INTO Users(user_id,username,password) VALUES(1,'Aiden', 'Aiden');
+INSERT INTO Users(user_id,username,password) VALUES(2,'Sven', 'Sven');
+INSERT INTO Users(user_id,username,password) VALUES(3,'Guest', '');
+INSERT INTO Studies(study_id,name) VALUES(1, 'Study');
+INSERT INTO Studies(study_id,name) VALUES(2, 'Capture24');
+INSERT INTO UserAccess(user_id,study_id,access_level) VALUES(1,1,2);
+INSERT INTO UserAccess(user_id,study_id,access_level) VALUES(2,2,2);
+INSERT INTO UserAccess(user_id,study_id,access_level) VALUES(1,2,2);
+INSERT INTO Participants(participant_id, name) VALUES(1, 'Joe Biden');
+INSERT INTO Participants(participant_id, name) VALUES(2, 'Hillary Clinton');
+INSERT INTO Participants(participant_id, name) VALUES(3, 'Bernie Sanders');
+INSERT INTO Participants(participant_id, name) VALUES(4, 'Dave');
+INSERT INTO Participants(name) VALUES('Dave2');
