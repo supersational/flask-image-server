@@ -1,7 +1,7 @@
 import os, sys
 from PIL import Image
 from time import sleep
-
+import collections 
 def create_folder(folder): 
 	if not os.path.exists(os.path.dirname(folder)):
 	    try:
@@ -16,8 +16,10 @@ sizes = {
 	'medium':{'size':(864, 645),'dir':'medium'},
 	'full':{'size':(0, 0),'dir':'full'}
 }
-verbose = True
-overwrite = False
+sizes = collections.OrderedDict(sorted(sizes.items(), key=lambda x: x)) # order alphabetically
+
+verbose = False
+overwrite = True
 output_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'images')
 participant_dir = 'C:\\Users\\shollowell\\Documents\\wearable-webapp\\test_data'
 allsubdirs = [x for x in os.listdir(participant_dir) if os.path.isdir(os.path.join(participant_dir,x))]
@@ -46,7 +48,7 @@ for folder in allsubdirs:
 				outfile = os.path.join(output_subfolder, size['dir'], os.path.splitext(os.path.basename(imgfile))[0] + ".jpg")
 				create_folder(os.path.realpath(outfile))
 				print size['dir'], outfile
-				sleep(0.1)
+				# sleep(0.01)
 				exists = os.path.isfile(outfile)
 				if overwrite or (not exists):
 					if verbose: print("    generating : " + key + " " + str(size) + " " + outfile)
