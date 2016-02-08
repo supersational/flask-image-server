@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2 import IntegrityError
+from psycopg2.extras import NamedTupleConnection
 import sys
 import os
 
@@ -11,7 +12,7 @@ def create_cursor():
 		cur.close()
 	except NameError:
 		pass
-	cur = conn.cursor()
+	cur = conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor)
 
 def get_studies(study_id=None):
 	if study_id is not None:
