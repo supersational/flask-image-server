@@ -9,6 +9,13 @@
 <body>
 	<h2> Participant: {{name}} ({{num_images}} images)</h2>
 
+	{% for day in days %}
+		<h3> {{day}} </h3>
+		{% for hour in days[day] %}
+			<p>{{day}} {{hour}}:00 - {{days[day][hour]}} images</p> 
+		{% endfor %}
+	{% endfor %}
+
 	{% for image in images %}
 		 <a href='/{{image.full_url}}'><img src='/{{image.thumbnail_url}}' ></a>
 	{% endfor %}

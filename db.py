@@ -3,7 +3,7 @@ from psycopg2 import IntegrityError
 from psycopg2.extras import NamedTupleConnection
 import sys
 import os
-
+from datetime import date
 script_folder = os.path.dirname(os.path.realpath(__file__))
 
 def create_cursor():
@@ -40,6 +40,7 @@ def add_studyparticipant(study_id, participant_id):
 	except IntegrityError:
 		print "adding study - participant (%s, %s) link failed: already exists!" % (study_id, participant_id)
 		return False
+
 def remove_studyparticipant(study_id, participant_id):
 	cur.execute("""DELETE FROM StudyParticipants WHERE (study_id=%s AND participant_id=%s)""", [study_id, participant_id])
 
@@ -53,6 +54,32 @@ def get_participants(participant_id=None, study_id=None):
 	print command
 	cur.execute(command)
 	return cur.fetchall()
+
+def get_participant_days(participant_id):
+	cur.execute("""SELECT image_time FROM Images WHERE Images.participant_id=%s""", [participant_id])
+	data =  [x[0] for x in cur.fetchall()]
+	# for x in data:
+	# 	print x
+	# data_by_day = map(lambda x: x[0].toordinal(), data)
+	unique_days = {}
+	for time in data:
+		day = str(date(time.year,time.month,time.day))
+		hour = time.hour
+		print day
+		if day in unique_days:
+			if hour in unique_days[day]:
+				unique_days[day][hour] += 1
+			else: unique_days[day][hour] = 1
+		else: 
+			unique_days[day] = {}
+			unique_days[day][hour] = 1
+
+	# for day in unique_days:
+	# 	print day
+	# 	for hour in unique_days[day]:
+	# 		print day, "- " + str(hour) + ":00 : ", unique_days[day][hour], " images"
+
+	return unique_days
 
 def get_users(user_id=None):
 	command = """SELECT user_id,username,password FROM Users"""

@@ -79,10 +79,12 @@ def study(study_id):
 def participant(participant_id):
 	template = env.get_template('participant.html')
 	images = db.get_images(participant_id=participant_id)
+	days = db.get_participant_days(participant_id)
 	return template.render(
 		name=db.get_participants(participant_id=participant_id)[0].name,
 		num_images=len(images),
-		images=images[0:100]
+		images=images[0:100],
+		days=days
 		)
 
 @app.route("/add_studyparticipant", methods=["POST"])
