@@ -6,7 +6,7 @@ import db
 from jinja2 import Environment, FileSystemLoader
 import sys
 reload(sys)
-sys.setdefaultencoding('utf-8-')
+sys.setdefaultencoding('utf-8')
 env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
 
 app = Flask(__name__, static_folder="images") # change to non static in future
@@ -15,10 +15,26 @@ import codecs
 # db.create_db(and_add_images=True)
 @app.route("/")
 def hello():
-	index_template = env.get_template('index.html')
-	return index_template.render(
-		studies=db.get_studies(),
-		participants=db.get_participants(),
+	template = env.get_template('index.html')
+	participants = []
+	for p in db.get_participants():
+		participants.append({
+			'name': p.name,
+			'participant_id':p.participant_id,
+			'num_studies': len(db.get_studyparticipants(participant_id=p.participant_id))
+			})
+
+	studies = []
+	for s in db.get_studies():
+		studies.append({
+			'name': s.name,
+			'study_id':s.study_id,
+			'num_participants': len(db.get_participants(study_id=s.study_id))
+			})
+
+	return template.render(
+		studies=studies,
+		participants=participants,
 		users=db.get_users(),
 		num_images=db.get_images(only_number=True),
 		sql_text=open('create_db.txt','r').read()
@@ -38,7 +54,7 @@ def images():
 		res += " : ".join([str.strip(str(x)) for x in image]) + "<br>\n"
 	return res
 
-@app.route("/users/<int:user_id>")
+@app.route("/user/<int:user_id>")
 def user(user_id):
 	res = "<h2> User: " + str(user_id) + "</h2>\n"
 	res += "<h4> User has access to the following studies: </h4>\n"
@@ -48,28 +64,16 @@ def user(user_id):
 
 @app.route("/study/<int:study_id>")
 def study(study_id):
-	res = "<h2> Study: " + str(study_id) + ", " + db.get_studies(study_id=study_id)[0].name + "</h2>\n" 
+	template = env.get_template('study.html')
 	study_participants = db.get_participants(study_id=study_id)
-	for participant in study_participants:
-		res += "<a href='/participant/%s'>" % (participant.participant_id,)  
-		res += " : ".join([str.strip(str(x)) for x in participant])
-		res += "</a>"
-		res += "<form action='/remove_studyparticipant' method='POST'> "
-		res += "<input type='hidden' name='study_id' value='%s'> " % (study_id, )
-		res += "<input type='hidden' name='participant_id' value='%s'> " % (participant.participant_id, )
-		res += "<input type='submit' value='Delete'> "
-		res += "</form><br>\n"
+	participants_to_add = [x for x in db.get_participants() if not x in study_participants]
 
-	res += "<form action='/add_studyparticipant' method='POST'> "
-	res += "<p>add a participant to this study: </p>\n<select name='participant_id'>\n"
-	for participant in db.get_participants():
-		if participant not in study_participants:
-			res += "<option value='%s'>%s</option>" % (participant.participant_id, participant.name)  
-	res += "</select>"
-	res += "<input name='study_id' style='display:none' value='%s'> " % (study_id, )
-	res += "<input type='submit' value='Add'> "
-	res += "</form> "
-	return res
+	return template.render(
+		study_id=study_id,
+		study_name=db.get_studies(study_id=study_id)[0].name,
+		participants=study_participants,
+		participants_to_add=participants_to_add,
+		).encode('utf-8')
 
 @app.route("/participant/<int:participant_id>")
 def participant(participant_id):
