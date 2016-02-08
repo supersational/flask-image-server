@@ -2,45 +2,27 @@
 from flask import Flask, request, redirect
 # import our custom db interfact
 import db
+# Jinja2 templating
+from jinja2 import Environment, FileSystemLoader
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8-')
+env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
 
 app = Flask(__name__, static_folder="images") # change to non static in future
+import codecs
 
 # db.create_db(and_add_images=True)
 @app.route("/")
 def hello():
-	try:
-		res = "<h2>Control Panel:</h2>\n"
-		# for sp in db.get_studyparticipants():
-		# 	res += " : ".join([str.strip(str(x)) for x in sp]) + "<br>"
- 
-		res += "<h3>Studies:</h3>\n"
-		for study in db.get_studies():
-			res += "<a href='/study/%s'>" % (study.study_id,)  
-			res += " : ".join([str.strip(str(x)) for x in study])
-			res += "</a> (" + str(len(db.get_studyparticipants(study_id=study.study_id))) + " participants) <br>\n"
-
-		res += "<h3>Participants:</h3>\n"
-		for participant in db.get_participants():
-			res += "<a href='/participant/%s'>" % (participant.participant_id, )  
-			res += " : ".join([str.strip(str(x)) for x in participant])
-			res += "</a> (in " + str(len(db.get_studyparticipants(participant_id=participant.participant_id))) + " studies)<br>\n"
-
-		res += "<h3>Users:</h3>\n"
-		for user in db.get_users():
-			res += "<a href='/users/%s'>" % (user.user_id,)  
-			res += " : ".join([str.strip(str(x)) for x in user]) 
-			res += "</a><br>\n"
-		res += "<br>\n<br>\n<a href='/reboot_db'><button>reboot DB</button></a>"
-		n = db.get_images(only_number=True)
-		print n
-		res += "<p>there are " + str(n) + " images in the db</p>"
-		with open('create_db.txt','r') as f:
-			res += "<textarea style='position:absolute; right:3px; top:3px' rows='50' cols='100'>"
-			res += f.read()
-			res += "</textarea>"
-		return res 
-	except Exception as e:
-		return str(e)
+	index_template = env.get_template('index.html')
+	return index_template.render(
+		studies=db.get_studies(),
+		participants=db.get_participants(),
+		users=db.get_users(),
+		num_images=db.get_images(only_number=True),
+		sql_text=open('create_db.txt','r').read()
+		).encode('utf-8')
 
 @app.route("/reboot_db")
 def create():

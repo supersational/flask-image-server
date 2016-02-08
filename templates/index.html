@@ -1,0 +1,26 @@
+<html> 
+<head></head>
+<body>
+	<h2>Control Panel:</h2>
+	<h3>Studies2:</h3>
+	{% for study in studies %}
+		 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ( participants) <br> 
+	{% endfor %}
+	<h3>Participants:</h3>
+	{% for participant in participants %}
+		 <a href='/participant/{{participant.participant_id}} '>{{participant.participant_id}}: {{participant.name}}</a> ( in n studies) <br> 
+	{% endfor %}
+	<h3>Users:</h3>
+	{% for user in users %}
+		 <a href='/user/{{user.user_id}} '>{{user.user_id}}: {{user.username}}</a> (password: '{{user.password}}') <br> 
+	{% endfor %}
+	<br>
+	<br>
+	<a href='/reboot_db'><button>reboot DB</button></a>
+	<p>there are {{num_images}} images in the db</p>
+	
+	<textarea style='position:absolute; right:3px; top:3px' rows='50' cols='100'>﻿
+	{{sql_text}}
+	</textarea>
+</body>
+</html>
