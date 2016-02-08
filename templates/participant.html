@@ -1,0 +1,16 @@
+<html> 
+<head>
+	<style>
+	img {
+		margin: 5px;
+	}
+	</style>
+</head>
+<body>
+	<h2> Participant: {{name}} ({{num_images}} images)</h2>
+
+	{% for image in images %}
+		 <a href='/{{image.full_url}}'><img src='/{{image.thumbnail_url}}' ></a>
+	{% endfor %}
+</body>
+</html>

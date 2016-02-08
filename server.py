@@ -77,11 +77,13 @@ def study(study_id):
 
 @app.route("/participant/<int:participant_id>")
 def participant(participant_id):
-	res = "<h2> Participant: " + str(participant_id) + "</h2>\n"
-	for image in db.get_images(participant_id):
-		res += "<a href='/%s'><img src='/%s' ></a>" % (image.full_url, image.thumbnail_url)
-		res += "<p>" + " : ".join([str.strip(str(x)) for x in image]) + "</p><br>\n"
-	return res
+	template = env.get_template('participant.html')
+	images = db.get_images(participant_id=participant_id)
+	return template.render(
+		name=db.get_participants(participant_id=participant_id)[0].name,
+		num_images=len(images),
+		images=images[0:100]
+		)
 
 @app.route("/add_studyparticipant", methods=["POST"])
 def modify_studyparticipant():
@@ -107,6 +109,5 @@ def internal_server_error(error):
 	return "Error 500: " + str(error)
 
 if __name__ == "__main__":
-	print "started"
+	print "running on port 5000"
 	app.run(debug=True)
-	print "started"

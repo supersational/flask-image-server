@@ -1,14 +1,15 @@
 ﻿drop schema public cascade;
 create schema public;
 
+
 CREATE TABLE Studies(
 	study_id SERIAL PRIMARY KEY,
-	name CHAR(256)
+	name VARCHAR(256)
 );
 
 CREATE TABLE Participants(
 	participant_id SERIAL PRIMARY KEY,
-	name CHAR(50)
+	name VARCHAR(50)
 );
 
 CREATE TABLE StudyParticipants( -- study -> participant linking table
@@ -19,8 +20,8 @@ CREATE TABLE StudyParticipants( -- study -> participant linking table
 
 CREATE TABLE Users(
 	user_id SERIAL PRIMARY KEY,
-	username CHAR(50),
-	password CHAR(50)
+	username VARCHAR(50),
+	password VARCHAR(50)
 );
 
 CREATE TABLE UserAccess(
@@ -33,9 +34,9 @@ CREATE TABLE Images(
 	image_id SERIAL PRIMARY KEY,
 	image_time TIMESTAMP,
 	participant_id INT REFERENCES Participants(participant_id),
-	full_url CHAR(256), -- if null means not uploaded/processed
-	medium_url CHAR(256), 
-	thumbnail_url CHAR(256)
+	full_url VARCHAR(256), -- if null means not uploaded/processed
+	medium_url VARCHAR(256), 
+	thumbnail_url VARCHAR(256)
 );
 
 CREATE TABLE Events(
