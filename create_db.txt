@@ -30,23 +30,23 @@ CREATE TABLE UserAccess(
 	access_level INT NOT NULL -- e.g. 0 none, 1 read, 2 write, 3 admin
 );
 
-CREATE TABLE Images(
-	image_id SERIAL PRIMARY KEY,
-	image_time TIMESTAMP,
-	participant_id INT REFERENCES Participants(participant_id),
-	full_url VARCHAR(256), -- if null means not uploaded/processed
-	medium_url VARCHAR(256), 
-	thumbnail_url VARCHAR(256)
-);
-
 CREATE TABLE Events(
 	event_id SERIAL PRIMARY KEY,
 	participant_id INT REFERENCES Participants(participant_id),
-	day DATE NOT NULL,
 	start_time TIMESTAMP NOT NULL,
 	end_time TIMESTAMP NOT NULL,
 	comment TEXT,
 	number_times_viewed INT
+);
+
+CREATE TABLE Images(
+	image_id SERIAL PRIMARY KEY,
+	image_time TIMESTAMP,
+	participant_id INT REFERENCES Participants(participant_id),
+	event_id INT REFERENCES Events(event_id),
+	full_url VARCHAR(256), -- if null means not uploaded/processed
+	medium_url VARCHAR(256), 
+	thumbnail_url VARCHAR(256)
 );
 
 INSERT INTO Users(username,password) VALUES('Aiden', 'Aiden');

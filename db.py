@@ -58,14 +58,11 @@ def get_participants(participant_id=None, study_id=None):
 def get_participant_days(participant_id):
 	cur.execute("""SELECT image_time FROM Images WHERE Images.participant_id=%s""", [participant_id])
 	data =  [x[0] for x in cur.fetchall()]
-	# for x in data:
-	# 	print x
-	# data_by_day = map(lambda x: x[0].toordinal(), data)
+
 	unique_days = {}
 	for time in data:
 		day = str(date(time.year,time.month,time.day))
 		hour = time.hour
-		print day
 		if day in unique_days:
 			if hour in unique_days[day]:
 				unique_days[day][hour] += 1
@@ -103,51 +100,42 @@ def add_participant(name):
 	except NameError:
 		return None
 
-def get_images(participant_id=None, only_number=False):
+def get_images(participant_id=None, only_number=False, date_range=None, event_id=None):
+	cmd = """SELECT * FROM Images"""
 	if only_number:
-		cur.execute("""SELECT COUNT(*) FROM Images""")
+		cmd = """SELECT COUNT(*) FROM Images"""
+	date_where = ""
+	if date_range is not None:
+		date_where = cur.mogrify("""image_time BETWEEN %s AND %s """, [date_range['min'],date_range['max']])
+		print date_where
+
+	event_where = ""
+	if event_id is not None:
+		event_where = cur.mogrify(""" event_id = %s """, [date_range['min'],date_range['max']])
+		print event_where
+
+	
+	if participant_id is not None: # check it's an integer
+		if len(date_where)>0:
+			date_where = " AND " + date_where
+		cur.execute(cmd + """ WHERE (participant_id=%s """ + date_where + ")", [str(participant_id)])
+	else:
+		if len(date_where) > 0:
+			cur.execute(cmd + """ WHERE """ + date_where)
+		else:
+			cur.execute(cmd)
+	if only_number:
 		return cur.fetchone()[0]
 	else:
-		if participant_id is not None: # check it's an integer
-			cur.execute("""SELECT * FROM Images WHERE participant_id=%s""", [str(participant_id)])
-		else:
-			cur.execute("""SELECT * FROM Images""")
 		return cur.fetchall()
 
 def add_image(image_time, participant_id, full_url, medium_url, thumbnail_url):
 	cur.execute("""INSERT INTO Images(image_time, participant_id, full_url, medium_url, thumbnail_url) VALUES(%s, %s, %s, %s, %s)""", [image_time, participant_id, full_url, medium_url, thumbnail_url])
-	# conn.commit()
 
 def add_images(image_array):
-	args_str = ','.join(cur.mogrify("(%s,%s,%s,%s,%s)", x) for x in image_array)
-	print "len:", len(args_str)
-	print
-	print args_str[:500]
-	print
-	print args_str[-500:]
-	cur.execute("""INSERT INTO Images(image_time, participant_id, full_url, medium_url, thumbnail_url) VALUES """ + args_str)
-	# conn.commit()
-
-def create_db(and_add_images=False):
-	str = ""
-	with open('create_db.txt','r') as f:
-		txt = f.read()[3:] # remove weird 3  characters at start, bug?
-	for command in txt.split(';'):
-		print command
-		try:
-			cur.execute(command)
-			# print command
-		except psycopg2.ProgrammingError:
-			print "ProgrammingError\n:Command skipped: ", sys.exc_info(), command
-		except psycopg2.InternalError:
-			print "InternalError\n:Command skipped: ", sys.exc_info(), command
-	# conn.commit()
-
-	if add_images:
-		images = load_images()
-		print images[0]
-		add_images(images)
-	return txt
+	"""quick way to bulk add images into the db (all compressed into a single query)"""
+	args_str = ','.join(cur.mogrify("(%s,%s,%s,%s,%s,%s)", x) for x in image_array)
+	cur.execute("""INSERT INTO Images(image_time, participant_id, event_id, full_url, medium_url, thumbnail_url) VALUES """ + args_str)
 
 def load_images():
 	image_array = []
@@ -165,14 +153,14 @@ def load_images():
 				# print "\n".join([full_img, med_img, thumb_img])
 				if os.path.isfile(os.path.join(script_folder, full_img)):
 					# print "good file"
-					image_array.append((img_time, participant_id, full_img, med_img, thumb_img))
-					# add_image(img_time, )
+					image_array.append((img_time, participant_id, None, full_img, med_img, thumb_img))
 				else:
 					print os.path.join(script_folder, full_img)
 			add_studyparticipant(4, participant_id)
 	return image_array
 
 def parse_img_date(n):
+	"""parse a date from the image filename e.g. B00000000_21I51Q_20140623_105210E.jpg"""
 	return "".join([
         n[17:21]+"-", # year
         n[21:23]+"-", # month
@@ -182,6 +170,26 @@ def parse_img_date(n):
         n[30:32]+".", # seconds
         n[6:9] # this is the photo's sequence number, used as a tiebreaker millisecond value for photos with the same timestamp 
        ])
+
+def create_db(and_add_images=False):
+	str = ""
+	with open('create_db.txt','r') as f:
+		txt = f.read()[3:] # remove weird 3  characters at start, bug?
+	for command in txt.split(';'):
+		print command
+		try:
+			cur.execute(command)
+			# print command
+		except psycopg2.ProgrammingError:
+			print "ProgrammingError\n:Command skipped: ", sys.exc_info(), command
+		except psycopg2.InternalError:
+			print "InternalError\n:Command skipped: ", sys.exc_info(), command
+
+	if add_images:
+		images = load_images()
+		print images[0]
+		add_images(images)
+	return txt
 	
 conn = psycopg2.connect("dbname='linker' user='postgres' host='localhost' password='testing' port='3145'")
 conn.autocommit = True

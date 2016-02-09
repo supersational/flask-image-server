@@ -1,16 +1,21 @@
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
+import datetime
 # import flask
 from flask import Flask, request, redirect
 # import our custom db interfact
 import db
 # Jinja2 templating
 from jinja2 import Environment, FileSystemLoader
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
 env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
 
 app = Flask(__name__, static_folder="images") # change to non static in future
-import codecs
+
+dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
+datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
+timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
+
 
 # db.create_db(and_add_images=True)
 @app.route("/")
@@ -77,14 +82,41 @@ def study(study_id):
 
 @app.route("/participant/<int:participant_id>")
 def participant(participant_id):
+	daterange = None
+	if "date_min" in request.args.keys() and "date_max" in request.args.keys():
+		date_min = request.args.get('date_min', default=None, type=datetimeformat)
+		date_max = request.args.get('date_max', default=None, type=datetimeformat)
+		print date_min, date_max
+		daterange={'min':date_min,'max':date_max}
+	# if date_min is not None and date_max is not None:
+	# 	date_min = dateutil.parser.parse(date_min)
+	# 	date_max = dateutil.parser.parse(date_max)
+
 	template = env.get_template('participant.html')
-	images = db.get_images(participant_id=participant_id)
+	if daterange is None:
+		images = db.get_images(participant_id=participant_id)
+	else:
+		images = db.get_images(participant_id=participant_id, date_range=daterange)
+
 	days = db.get_participant_days(participant_id)
 	return template.render(
 		name=db.get_participants(participant_id=participant_id)[0].name,
-		num_images=len(images),
+		num_images=db.get_images(participant_id=participant_id, only_number=True),
 		images=images[0:100],
-		days=days
+		days=days,
+		daterange=daterange
+		)
+
+@app.route("/participant/<int:participant_id>/<int:event_id>")
+def event(participant_id, event_id):
+	template = env.get_template('participant.html')
+
+	images = db.get_images(participant_id=participant_id, event_id=event_id)
+	return template.render(
+		name=db.get_participants(participant_id=participant_id)[0].name,
+		num_images=db.get_images(participant_id=participant_id, only_number=True, event_id=event_id),
+		images=images[0:100],
+		daterange=daterange
 		)
 
 @app.route("/add_studyparticipant", methods=["POST"])
@@ -105,6 +137,12 @@ def add_studyparticipant():
 		return redirect("/study/" + study_id)
 
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
+
+
+
+@app.route("/create_event", methods=["POST"])
+def create_event():
+	start_time = request.form['study_id'], request.form['participant_id']
 
 @app.errorhandler(500)
 def internal_server_error(error):

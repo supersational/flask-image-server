@@ -1,23 +1,32 @@
 <html> 
 <head>
 	<style>
-	img {
+	div {
 		margin: 5px;
+		float: left;
+		width: 100px;
+		height: 104px;
 	}
 	</style>
 </head>
 <body>
-	<h2> Participant: {{name}} ({{num_images}} images)</h2>
-
+	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
+	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}
 		<h3> {{day}} </h3>
 		{% for hour in days[day] %}
-			<p>{{day}} {{hour}}:00 - {{days[day][hour]}} images</p> 
+
+			<a href="?date_min={{day}}T{{hour}}:00:00&date_max={{day}}T{{hour+1}}:00:00">
+				<p>{{day}} {{hour}}:00 - {{days[day][hour]}} images</p> 
+			</a>
 		{% endfor %}
 	{% endfor %}
 
 	{% for image in images %}
-		 <a href='/{{image.full_url}}'><img src='/{{image.thumbnail_url}}' ></a>
+		 <div id="{{image.image_id}}">
+		 	<a href='/{{image.full_url}}'><img width="100" height="74" src='/{{image.thumbnail_url}}' ></a>
+		 	<a id="{{image.image_time}}" href="#">{{image.event_id}}</a>
+		 </div>
 	{% endfor %}
 </body>
 </html>
