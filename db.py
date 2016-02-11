@@ -6,6 +6,12 @@ import os
 from datetime import date
 script_folder = os.path.dirname(os.path.realpath(__file__))
 
+import automatic_sqlacodegen as tables
+from flask_sqlalchemy import SQLAlchemy
+
+
+
+
 def create_cursor():
 	global cur
 	try:
