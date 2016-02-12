@@ -52,9 +52,10 @@ def images():
 
 @app.route("/user/<int:user_id>")
 def user(user_id):
-	res = "<h2> User: " + str(user_id) + "</h2>\n"
+	user = User.query.filter(User.user_id==user_id).one()
+	res = "<h2> User: " + user.username + " (" + str(user_id) + ")</h2>\n"
 	res += "<h4> User has access to the following studies: </h4>\n"
-	for study in User.query.filter(user_id=user_id).studies:
+	for study in user.studies:
 		res += " : ".join([str.strip(str(x)) for x in study]) + "<br>\n"
 	return res
 
