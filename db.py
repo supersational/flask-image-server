@@ -115,9 +115,10 @@ class User(Base):
     def __repr__(self):
             return 'User: %s (id=%s, password=%s)' % (self.username, self.user_id, '*' * len(self.password))
 
+def drop_db():
+    Base.metadata.drop_all(engine)
+    
 def create_db(drop=False):
-    if drop:
-        Base.metadata.drop_all(engine)
     session = scoped_session(sessionmaker(autocommit=True,
                                              autoflush=True,
                                              bind=engine))

@@ -1,62 +1,6 @@
 select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
 {'name': u'users'}
 Col ('relname',)
-Row (u'users',)
-select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
-{'name': u'participants'}
-Col ('relname',)
-Row (u'participants',)
-select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
-{'name': u'studyparticipants'}
-Col ('relname',)
-Row (u'studyparticipants',)
-select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
-{'name': u'images'}
-Col ('relname',)
-Row (u'images',)
-select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
-{'name': u'useraccess'}
-Col ('relname',)
-Row (u'useraccess',)
-select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
-{'name': u'studies'}
-Col ('relname',)
-Row (u'studies',)
-select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
-{'name': u'events'}
-Col ('relname',)
-Row (u'events',)
-
-DROP TABLE images
-{}
-COMMIT
-
-DROP TABLE events
-{}
-COMMIT
-
-DROP TABLE useraccess
-{}
-COMMIT
-
-DROP TABLE studyparticipants
-{}
-COMMIT
-
-DROP TABLE studies
-{}
-COMMIT
-
-DROP TABLE participants
-{}
-COMMIT
-
-DROP TABLE users
-{}
-COMMIT
-select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
-{'name': u'users'}
-Col ('relname',)
 select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
 {'name': u'participants'}
 Col ('relname',)

@@ -34,11 +34,13 @@ def hello():
 @app.route("/reboot_db")
 def create():
 	db.read_log() # clear the log
-	db_session = db.create_db(drop=True)
+	db.drop_db()
+	drop_sql = db.read_log()
+	db_session = db.create_db()
 	sql = db.read_log()
 	with open('create_db.txt','w') as f:
 			f.write(sql)
-	return "<h2>Rebooted DB</h2><pre>" + sql + "</pre>"
+	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+sql+"</pre>"
 
 @app.route("/images")
 def images():
