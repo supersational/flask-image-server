@@ -17,14 +17,12 @@ dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
 datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 
-session = db.get_session()
+db_session = db.get_session()
 
 # db.create_db(and_add_images=True)
 @app.route("/")
 def hello():
 	template = env.get_template('index.html')
-
-
 	return template.render(
 		studies=Study.query.all(),
 		participants=Participant.query.all(),
@@ -35,16 +33,17 @@ def hello():
 
 @app.route("/reboot_db")
 def create():
-	session = db.create_db(drop=True)
-	with open('create_db.txt','r') as f:
-		txt = f.read()[3:] # remove weird 3  characters at start, bug?
-	
-	return "<h2>Rebooted DB</h2><p>"+ ";</p><p>\n".join(txt.split(";")) + "</p"
+	db.read_log() # clear the log
+	db_session = db.create_db(drop=True)
+	sql = db.read_log()
+	with open('create_db.txt','w') as f:
+			f.write(sql)
+	return "<h2>Rebooted DB</h2><pre>" + sql + "</pre>"
 
 @app.route("/images")
 def images():
 	res = "<h1>All Images</h1>\n"
-	for image in db.get_images():
+	for image in Image.query.all():
 		res += "<img src='/%s' href='/%s'>" % (image.thumnail_url, image.full_url)
 		res += " : ".join([str.strip(str(x)) for x in image]) + "<br>\n"
 	return res
@@ -53,19 +52,20 @@ def images():
 def user(user_id):
 	res = "<h2> User: " + str(user_id) + "</h2>\n"
 	res += "<h4> User has access to the following studies: </h4>\n"
-	for study in db.get_user_studies(user_id):
+	for study in User.query.filter(user_id=user_id).studies:
 		res += " : ".join([str.strip(str(x)) for x in study]) + "<br>\n"
 	return res
 
 @app.route("/study/<int:study_id>")
 def study(study_id):
 	template = env.get_template('study.html')
-	study_participants = db.get_participants(study_id=study_id)
-	participants_to_add = [x for x in db.get_participants() if not x in study_participants]
+	study = Study.query.filter(Study.study_id==study_id).one()
+	study_participants = study.participants
+	participants_to_add = [x for x in Participant.query.all() if not x in study_participants]
 
 	return template.render(
 		study_id=study_id,
-		study_name=db.get_studies(study_id=study_id)[0].name,
+		study_name=study.name,
 		participants=study_participants,
 		participants_to_add=participants_to_add,
 		).encode('utf-8')
@@ -83,17 +83,18 @@ def participant(participant_id):
 	# 	date_max = dateutil.parser.parse(date_max)
 
 	template = env.get_template('participant.html')
+	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	if daterange is None:
-		images = db.get_images(participant_id=participant_id)
+		images = participant.images[0:100]
 	else:
-		images = db.get_images(participant_id=participant_id, date_range=daterange)
-
-	days = db.get_participant_days(participant_id)
+		images = participant.images.filter(Image.time<daterange.max and Image.time>daterange.min)[0:100]
+		# images = db.get_images(participant_id=participant_id, date_range=daterange)
+	# days = db.get_participant_days(participant_id)
 	return template.render(
-		name=db.get_participants(participant_id=participant_id)[0].name,
-		num_images=db.get_images(participant_id=participant_id, only_number=True),
-		images=images[0:100],
-		days=days,
+		name=participant.name,
+		images=participant.images,
+		# images=images[0:100],
+		days=[],
 		daterange=daterange
 		)
 
@@ -101,31 +102,35 @@ def participant(participant_id):
 def event(participant_id, event_id):
 	template = env.get_template('participant.html')
 
-	images = db.get_images(participant_id=participant_id, event_id=event_id)
+	images = Image.query.filter(Image.participant_id==participant_id, Image.event_id==event_id)
 	return template.render(
-		name=db.get_participants(participant_id=participant_id)[0].name,
+		name=Participant.query.filter(Participant.participant_id==participant_id).one().name,
 		num_images=db.get_images(participant_id=participant_id, only_number=True, event_id=event_id),
 		images=images[0:100],
 		daterange=daterange
 		)
 
 @app.route("/add_studyparticipant", methods=["POST"])
-def modify_studyparticipant():
+def add_studyparticipant():
 	study_id, participant_id = request.form['study_id'], request.form['participant_id']
-	
-	if int(study_id) % 1 == 0 and int(participant_id) % 1 == 0:
-		db.add_studyparticipant(study_id, participant_id)
+	study = Study.query.filter(Study.study_id==study_id).one()
+	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+	if study and participant:
+		participant.studies.append(study)		
 		return redirect("/study/" + study_id)
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
 @app.route("/remove_studyparticipant", methods=["POST"])
-def add_studyparticipant():
+def remove_studyparticipant():
 	study_id, participant_id = request.form['study_id'], request.form['participant_id']
-
-	if int(study_id) % 1 == 0 and int(participant_id) % 1 == 0:
-		db.remove_studyparticipant(study_id, participant_id)
-		return redirect("/study/" + study_id)
-
+	study = Study.query.filter(Study.study_id==study_id).one()
+	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+	if study and participant:
+		if study in participant.studies:
+			participant.studies.remove(study)	
+			return redirect("/study/" + study_id)
+		else:
+			return "participant not in that study"
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
 

@@ -14,8 +14,13 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 Base = declarative_base()
 metadata = Base.metadata
-engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True)#, echo=True)
+engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine")
+# logging
+import loghandler
+loghandler.init("sqlalchemy.engine")
 
+def read_log():
+    return loghandler.read()
 
 class Event(Base):
     __tablename__ = 'events'
@@ -60,7 +65,7 @@ class Participant(Base):
     name = Column(String(50), nullable=False)
 
     studies = relationship(u'Study', secondary='studyparticipants')
-
+    images = relationship(u'Image')
     def __init__(self, name):
         self.name = name
 
@@ -98,11 +103,11 @@ class User(Base):
     UniqueConstraint('username')
 
     def __init__(self, username, password):
-        try:
-            existing = User.query.filter_by(username=username)
-            raise ValueError("user already exists!")
-        except NoResultFound:
-            pass
+        # try:
+        #     existing = User.query.filter_by(username=username)
+        #     raise ValueError("user already exists!")
+        # except NoResultFound:
+        #     pass
 
         self.username = username
         self.password = password
@@ -119,26 +124,40 @@ def create_db(drop=False):
     Base.metadata.create_all(engine)
     return session
 
-def get_session(run_tests=False):
+def get_session(create_data=False):
 
     # does not actually connect until work is done
     session = create_db()
     Base.query = session.query_property()
-    if run_tests:
-        # this should error if 
-        # u = User('Aiden', 'Aiden')
-        # session.add(u)
+    if create_data:
+        u = User('Aiden', 'Aiden')
+        if len(User.query.filter(User.username==u.username).all())==0:
+            session.add(u)
+        u = User('Sven', 'Sven')
+        if len(User.query.filter(User.username==u.username).all())==0:
+            session.add(u)
+        u = User('Testing', '')
+        if len(User.query.filter(User.username==u.username).all())==0:
+            session.add(u)
         print "\n".join(map(str, User.query.all()))
-        p = Participant('hi')
-        session.add(p)
-        p.studies.append(Study('histudy'))
+        studies = []
+        for i in range(1,20):
+            s = Study("S" + str(i))
+            session.add(s)
+            studies.append(s)
+            p = Participant("P" + str(i))
+            session.add(p)
+            for s in studies:
+                p.studies.append(s)
+
+        
+        p.studies.append(Study('default'))
         print "\n".join(map(str, Participant.query.all()))
         print "\n".join(map(str, Study.query.all()))
-        p1 = Participant.query.first()
-        print len(p1.studies)
         print "ran tests"
+        print loghandler.read()
     return session
 
 
 if __name__ == "__main__":
-    get_session(run_tests=True)
+    get_session(create_data=True)

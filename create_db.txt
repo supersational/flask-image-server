@@ -1,71 +1,165 @@
-﻿drop schema public cascade;
-create schema public;
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'users'}
+Col ('relname',)
+Row (u'users',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'participants'}
+Col ('relname',)
+Row (u'participants',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'studyparticipants'}
+Col ('relname',)
+Row (u'studyparticipants',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'images'}
+Col ('relname',)
+Row (u'images',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'useraccess'}
+Col ('relname',)
+Row (u'useraccess',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'studies'}
+Col ('relname',)
+Row (u'studies',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'events'}
+Col ('relname',)
+Row (u'events',)
+
+DROP TABLE images
+{}
+COMMIT
+
+DROP TABLE events
+{}
+COMMIT
+
+DROP TABLE useraccess
+{}
+COMMIT
+
+DROP TABLE studyparticipants
+{}
+COMMIT
+
+DROP TABLE studies
+{}
+COMMIT
+
+DROP TABLE participants
+{}
+COMMIT
+
+DROP TABLE users
+{}
+COMMIT
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'users'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'participants'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'studyparticipants'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'images'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'useraccess'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'studies'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'events'}
+Col ('relname',)
+
+CREATE TABLE users (
+	user_id SERIAL NOT NULL, 
+	username VARCHAR(50), 
+	password VARCHAR(50), 
+	PRIMARY KEY (user_id)
+)
 
 
-CREATE TABLE Studies(
-	study_id SERIAL PRIMARY KEY,
-	name VARCHAR(256)
-);
+{}
+COMMIT
 
-CREATE TABLE Participants(
-	participant_id SERIAL PRIMARY KEY,
-	name VARCHAR(50)
-);
+CREATE TABLE participants (
+	participant_id SERIAL NOT NULL, 
+	name VARCHAR(50) NOT NULL, 
+	PRIMARY KEY (participant_id)
+)
 
-CREATE TABLE StudyParticipants( -- study -> participant linking table
-	study_id INT REFERENCES Studies(study_id),
-	participant_id INT REFERENCES Participants(participant_id),
-	CONSTRAINT unique_links UNIQUE (study_id, participant_id)
-);
 
-CREATE TABLE Users(
-	user_id SERIAL PRIMARY KEY,
-	username VARCHAR(50),
-	password VARCHAR(50)
-);
+{}
+COMMIT
 
-CREATE TABLE UserAccess(
-	user_id INT REFERENCES Users(user_id),
-	study_id INT REFERENCES Studies(study_id),
-	access_level INT NOT NULL -- e.g. 0 none, 1 read, 2 write, 3 admin
-);
+CREATE TABLE studies (
+	study_id SERIAL NOT NULL, 
+	name VARCHAR(256), 
+	PRIMARY KEY (study_id)
+)
 
-CREATE TABLE Events(
-	event_id SERIAL PRIMARY KEY,
-	participant_id INT REFERENCES Participants(participant_id),
-	start_time TIMESTAMP NOT NULL,
-	end_time TIMESTAMP NOT NULL,
-	comment TEXT,
-	number_times_viewed INT
-);
 
-CREATE TABLE Images(
-	image_id SERIAL PRIMARY KEY,
-	image_time TIMESTAMP,
-	participant_id INT REFERENCES Participants(participant_id),
-	event_id INT REFERENCES Events(event_id),
-	full_url VARCHAR(256), -- if null means not uploaded/processed
+{}
+COMMIT
+
+CREATE TABLE studyparticipants (
+	study_id INTEGER, 
+	participant_id INTEGER, 
+	UNIQUE (study_id, participant_id), 
+	FOREIGN KEY(study_id) REFERENCES studies (study_id), 
+	FOREIGN KEY(participant_id) REFERENCES participants (participant_id)
+)
+
+
+{}
+COMMIT
+
+CREATE TABLE useraccess (
+	user_id INTEGER, 
+	study_id INTEGER, 
+	access_level INTEGER NOT NULL, 
+	FOREIGN KEY(user_id) REFERENCES users (user_id), 
+	FOREIGN KEY(study_id) REFERENCES studies (study_id)
+)
+
+
+{}
+COMMIT
+
+CREATE TABLE events (
+	event_id SERIAL NOT NULL, 
+	participant_id INTEGER, 
+	day DATE NOT NULL, 
+	start_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	end_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	comment TEXT, 
+	number_times_viewed INTEGER, 
+	PRIMARY KEY (event_id), 
+	FOREIGN KEY(participant_id) REFERENCES participants (participant_id)
+)
+
+
+{}
+COMMIT
+
+CREATE TABLE images (
+	image_id SERIAL NOT NULL, 
+	image_time TIMESTAMP WITHOUT TIME ZONE, 
+	participant_id INTEGER, 
+	event_id INTEGER, 
+	full_url VARCHAR(256), 
 	medium_url VARCHAR(256), 
-	thumbnail_url VARCHAR(256)
-);
+	thumbnail_url VARCHAR(256), 
+	PRIMARY KEY (image_id), 
+	FOREIGN KEY(participant_id) REFERENCES participants (participant_id), 
+	FOREIGN KEY(event_id) REFERENCES events (event_id)
+)
 
-INSERT INTO Users(username,password) VALUES('Aiden', 'Aiden');
-INSERT INTO Users(username,password) VALUES('Sven', 'Sven');
-INSERT INTO Users(username,password) VALUES('Guest', '');
-INSERT INTO Studies(name) VALUES('US election');
-INSERT INTO Studies(name) VALUES('Study of Dave');
-INSERT INTO Studies(name) VALUES('Capture24');
-INSERT INTO Studies(name) VALUES('Automatically Added');
-INSERT INTO UserAccess(user_id,study_id,access_level) VALUES(1,1,2);
-INSERT INTO UserAccess(user_id,study_id,access_level) VALUES(2,2,2);
-INSERT INTO UserAccess(user_id,study_id,access_level) VALUES(1,2,2);
-INSERT INTO Participants(name) VALUES('Joe Biden');
-INSERT INTO Participants(name) VALUES('Hillary Clinton');
-INSERT INTO Participants(name) VALUES('Bernie Sanders');
-INSERT INTO Participants(name) VALUES('Dave');
-INSERT INTO Participants(name) VALUES('Dave2');
-INSERT INTO StudyParticipants(study_id, participant_id) VALUES(1,1);
-INSERT INTO StudyParticipants(study_id, participant_id) VALUES(1,2);
-INSERT INTO StudyParticipants(study_id, participant_id) VALUES(1,3);
-INSERT INTO StudyParticipants(study_id, participant_id) VALUES(2,4);
-INSERT INTO StudyParticipants(study_id, participant_id) VALUES(2,5);
+
+{}
+COMMIT
