@@ -81,9 +81,6 @@ def participant(participant_id):
 		date_max = request.args.get('date_max', default=None, type=datetimeformat)
 		print date_min, date_max
 		daterange={'min':date_min,'max':date_max}
-	# if date_min is not None and date_max is not None:
-	# 	date_min = dateutil.parser.parse(date_min)
-	# 	date_max = dateutil.parser.parse(date_max)
 
 	template = env.get_template('participant.html')
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
@@ -91,12 +88,10 @@ def participant(participant_id):
 		images = participant.images[0:100]
 	else:
 		images = participant.images.filter(Image.time<daterange.max and Image.time>daterange.min)[0:100]
-		# images = db.get_images(participant_id=participant_id, date_range=daterange)
-	# days = db.get_participant_days(participant_id)
+
 	return template.render(
 		name=participant.name,
 		images=participant.images,
-		# images=images[0:100],
 		days=[],
 		daterange=daterange
 		)
@@ -104,8 +99,9 @@ def participant(participant_id):
 @app.route("/participant/<int:participant_id>/<int:event_id>")
 def event(participant_id, event_id):
 	template = env.get_template('participant.html')
-
-	images = Image.query.filter(Image.participant_id==participant_id, Image.event_id==event_id)
+	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
+	images = event.num_images
+	#Image.query.filter(Image.participant_id==participant_id, Image.event_id==event_id, )
 	return template.render(
 		name=Participant.query.filter(Participant.participant_id==participant_id).one().name,
 		num_images=db.get_images(participant_id=participant_id, only_number=True, event_id=event_id),

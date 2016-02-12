@@ -1,7 +1,7 @@
 # coding: utf-8
 # from:
 # C:\Users\shollowell\Documents\wearable-webapp\python-flask>sqlacodegen postgres://postgres:testing@localhost:3145/linker
-
+import datetime
 # define database
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.orm import relationship
@@ -28,22 +28,38 @@ class Event(Base):
     __tablename__ = 'events'
 
     event_id = Column(Integer, primary_key=True)
-    participant_id = Column(ForeignKey(u'participants.participant_id'))
-    day = Column(Date, nullable=False)
+    participant_id = Column(ForeignKey(u'participants.participant_id'), nullable=False)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     comment = Column(Text)
     number_times_viewed = Column(Integer)
 
     participant = relationship(u'Participant')
+    images = relationship(u'Image')
 
+    def __init__(self, participant_id, start_time, end_time, comment=''):
+        self.participant_id = participant_id
+        self.start_time = start_time
+        self.end_time = end_time
+        self.comment = comment
+        self.number_times_viewed = 0
 
+    def get_images(self):
+        return Image.query.filter(Image.participant_id==self.participant_id and Image.image_time < self.end_time and Image.image_time > self.start_time).all()
+
+    def tag_images(self):
+        if self.event_id:
+            for image in self.get_images():
+                image.event_id = self.event_id
+
+    def __repr__(self):
+        return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time) for i in self.images]))
 class Image(Base):
     __tablename__ = 'images'
 
     image_id = Column(Integer, primary_key=True)
-    image_time = Column(DateTime)
-    participant_id = Column(ForeignKey(u'participants.participant_id'))
+    image_time = Column(DateTime, nullable=False)
+    participant_id = Column(ForeignKey(u'participants.participant_id'), nullable=False)
     event_id = Column(ForeignKey(u'events.event_id'))
     full_url = Column(String(256))
     medium_url = Column(String(256))
@@ -52,6 +68,14 @@ class Image(Base):
     event = relationship(u'Event')
     participant = relationship(u'Participant')
 
+    def __init__(self, participant_id, time, full_url, medium_url, thumbnail_url, event_id=None):
+        self.participant_id = participant_id
+        self.image_time = time
+        self.full_url = full_url
+        self.medium_url = medium_url
+        self.thumbnail_url = thumbnail_url
+        if event_id:
+            self.event_id = event_id
 
 t_studyparticipants = Table(
     'studyparticipants', metadata,
@@ -72,10 +96,11 @@ class Participant(Base):
         self.name = name
 
     def __repr__(self):
+        txt = 'Participant: %s (id=%s, %s images, ' % (self.name, self.participant_id, len(self.images))
         if len(self.studies)>5:
-            return 'Participant: %s (id=%s, in %s studies)' % (self.name, self.participant_id, len(self.studies))
+            return txt + ' in %s studies)' % len(self.studies)
         else:
-            return 'Participant: %s (id=%s, studies=%s)' % (self.name, self.participant_id, [x.name for x in self.studies])
+            return txt + ' studies=%s)' % [x.name for x in self.studies]
     
 t_useraccess = Table(
     'useraccess', metadata,
@@ -175,10 +200,25 @@ def get_session(create_data=False, run_tests=True):
             studies.append(s)
             p = Participant("P" + str(i))
             session.add(p)
+            session.flush() # need to get id
             for s in studies:
                 p.studies.append(s)
+            full_url = 'http://lorempixel.com/1000/870/animals/'
+            med_url = 'http://lorempixel.com/500/435/animals/'
+            thum_url = 'http://lorempixel.com/100/87/animals/'
+            for j in range(1,20):
+                idx = str(j % 10)
+                img = Image(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*j), full_url+idx, med_url+idx, thum_url+idx)
+                session.add(img)
+            session.flush()
+            for k in range(1,5):
+                evt = Event(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*(k)*4),  datetime.datetime.today() + datetime.timedelta(seconds=30*(k+100)*4), )
+                session.add(evt)
+                print evt
+                session.flush()
+                evt.tag_images()
+                print evt
 
-        
         p.studies.append(Study('default'))
         print "\n".join(map(str, User.query.all()))
         print "\n".join(map(str, Participant.query.all()))
