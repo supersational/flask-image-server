@@ -4,12 +4,12 @@
 	<h2>Control Panel:</h2>
 	<h3>Studies:</h3>
 	{% for study in studies %}
-		 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ({{study.num_participants}} participants) <br> 
+		 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ({{study.participants | length}} participants) <br> 
 	{% endfor %}
 	<h3>Participants:</h3>
 	{% for participant in participants %}
 		 <a href='/participant/{{participant.participant_id}} '>{{participant.participant_id}}: {{participant.name}}</a> (in 
-		 {{participant.num_studies}} studies) <br> 
+		 {{participant.studies | length}} studies) <br> 
 	{% endfor %}
 	<h3>Users:</h3>
 	{% for user in users %}

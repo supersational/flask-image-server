@@ -6,6 +6,7 @@ import datetime
 from flask import Flask, request, redirect
 # import our custom db interfact
 import db
+from db import Event, Image, Participant, User, Study
 # Jinja2 templating
 from jinja2 import Environment, FileSystemLoader
 env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
@@ -16,40 +17,29 @@ dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
 datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 
+session = db.get_session()
 
 # db.create_db(and_add_images=True)
 @app.route("/")
 def hello():
 	template = env.get_template('index.html')
-	participants = []
-	for p in db.get_participants():
-		participants.append({
-			'name': p.name,
-			'participant_id':p.participant_id,
-			'num_studies': len(db.get_studyparticipants(participant_id=p.participant_id))
-			})
 
-	studies = []
-	for s in db.get_studies():
-		studies.append({
-			'name': s.name,
-			'study_id':s.study_id,
-			'num_participants': len(db.get_participants(study_id=s.study_id))
-			})
 
 	return template.render(
-		studies=studies,
-		participants=participants,
-		users=db.get_users(),
-		num_images=db.get_images(only_number=True),
+		studies=Study.query.all(),
+		participants=Participant.query.all(),
+		users=User.query.all(),
+		num_images=len(Image.query.all()),
 		sql_text=open('create_db.txt','r').read()
 		).encode('utf-8')
 
 @app.route("/reboot_db")
 def create():
-	res = db.create_db(and_add_images=True)
-	res = "<h2>Rebooted DB</h2><p>"+ ";</p><p>\n".join(res.split(";")) + "</p"
-	return res
+	session = db.create_db(drop=True)
+	with open('create_db.txt','r') as f:
+		txt = f.read()[3:] # remove weird 3  characters at start, bug?
+	
+	return "<h2>Rebooted DB</h2><p>"+ ";</p><p>\n".join(txt.split(";")) + "</p"
 
 @app.route("/images")
 def images():
