@@ -4,6 +4,7 @@
 import datetime
 # define database
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
+from sqlalchemy.sql.expression import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 # sqlalchemy errors
@@ -51,6 +52,18 @@ class Event(Base):
         if self.event_id:
             for image in self.get_images():
                 image.event_id = self.event_id
+
+    def prev_event(self):
+        prev_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.end_time < self.end_time)).all()
+        if len(prev_events)==0:
+            return None
+        return max(prev_events, key=lambda x: x.end_time)
+
+    def next_event(self):
+        next_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.start_time > self.start_time)).all()
+        if len(next_events)==0:
+            return None
+        return min(next_events, key=lambda x: x.end_time)
 
     def __repr__(self):
         return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time) for i in self.images]))
@@ -106,6 +119,29 @@ class Participant(Base):
         else:
             return txt + ' studies=%s)' % [x.name for x in self.studies]
     
+    def get_days(self):
+        # cur.execute("""SELECT image_time FROM Images WHERE Images.participant_id=%s""", [participant_id])
+        data =  [x.image_time for x in self.images]
+        # for x in data:
+        #   print x
+        # data_by_day = map(lambda x: x[0].toordinal(), data)
+        unique_days = {}
+        for time in data:
+            day = str(datetime.date(time.year,time.month,time.day))
+            hour = time.hour
+            print day
+            if day in unique_days:
+                if hour in unique_days[day]:
+                    unique_days[day][hour] += 1
+                else: unique_days[day][hour] = 1
+            else: 
+                unique_days[day] = {}
+                unique_days[day][hour] = 1
+        # for day in unique_days:
+        #   print day
+        #   for hour in unique_days[day]:
+        #       print day, "- " + str(hour) + ":00 : ", unique_days[day][hour], " images"
+        return unique_days
 t_useraccess = Table(
     'useraccess', metadata,
     Column('user_id', Integer, ForeignKey(u'users.user_id')),
@@ -218,10 +254,10 @@ def get_session(create_data=False, run_tests=True):
             for k in range(1,5):
                 evt = Event(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*(k)*4),  datetime.datetime.today() + datetime.timedelta(seconds=30*(k+1)*4), )
                 session.add(evt)
-                print evt
                 session.flush()
                 evt.tag_images()
                 print evt
+                print "prev: " + str(evt.prev_event())
 
         p.studies.append(Study('default'))
         print "\n".join(map(str, User.query.all()))

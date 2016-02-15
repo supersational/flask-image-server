@@ -1,7 +1,7 @@
 <html> 
 <head>
 	<style>
-	div {
+	.img {
 		margin: 5px;
 		float: left;
 		width: 100px;
@@ -16,17 +16,26 @@
 		<h3> {{day}} </h3>
 		{% for hour in days[day] %}
 
-			<a href="?date_min={{day}}T{{hour}}:00:00&date_max={{day}}T{{hour+1}}:00:00">
+			<a href="/participant/{{id}}?date_min={{day}}T{{hour}}:00:00&date_max={{day}}T{{hour+1}}:00:00">
 				<p>{{day}} {{hour}}:00 - {{days[day][hour]}} images</p> 
 			</a>
 		{% endfor %}
 	{% endfor %}
 
+	{% if prev_event or next_event %}
+<!-- <div style="width:100%;clear:both; padding:30px;"> -->
+	<div style="height:30px; padding-left:30px; padding-right:30px;">
+		{% if prev_event is not none %} <div style="text-align:left;float:left;margin:5px;"><a href="/participant/{{id}}/{{prev_event.event_id}}">prev event</a></div> {% endif %}
+		{% if next_event is not none %}  <div style="text-align:right;float:right;margin:5px;"><a href="/participant/{{id}}/{{next_event.event_id}}">next event</a></div> {% endif %}
+	</div>
+	{% endif %}
+	<div style="width:100%;padding:30px;">
 	{% for image in images %}
-		 <div id="{{image.image_id}}">
+		 <div class="img" id="{{image.image_id}}">
 		 	<a href='{{image.full_url}}'><img width="100" height="74" src='{{image.thumbnail_url}}' ></a>
 		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}}</a>  
 		 </div>
 	{% endfor %}
+	</div>
 </body>
 </html>

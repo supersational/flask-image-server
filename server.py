@@ -87,13 +87,13 @@ def participant(participant_id):
 	if daterange is None:
 		images = participant.images[0:100]
 	else:
-		images = participant.images.filter(Image.time<daterange.max and Image.time>daterange.min)[0:100]
-		
+		images = [img for img in participant.images if img.image_time<daterange['max'] and img.image_time > daterange['min']][0:100]
+
 	return template.render(
 		name=participant.name,
 		id=participant.participant_id,
 		images=participant.images,
-		days=days,
+		days=participant.get_days(),
 		daterange=daterange
 		)
 
@@ -109,7 +109,10 @@ def event(participant_id, event_id):
 		name=participant.name,
 		id=participant.participant_id,
 		images=images[0:100],
-		daterange=daterange
+		days=participant.get_days(),
+		daterange=daterange,
+		prev_event=event.prev_event(),
+		next_event=event.next_event()
 		)
 
 @app.route("/add_studyparticipant", methods=["POST"])
