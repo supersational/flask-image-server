@@ -45,7 +45,7 @@ class Event(Base):
         self.number_times_viewed = 0
 
     def get_images(self):
-        return Image.query.filter(Image.participant_id==self.participant_id and Image.image_time < self.end_time and Image.image_time > self.start_time).all()
+        return Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time <= self.end_time) & (Image.image_time >= self.start_time)).all()
 
     def tag_images(self):
         if self.event_id:
@@ -54,6 +54,7 @@ class Event(Base):
 
     def __repr__(self):
         return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time) for i in self.images]))
+
 class Image(Base):
     __tablename__ = 'images'
 
@@ -77,6 +78,9 @@ class Image(Base):
         if event_id:
             self.event_id = event_id
 
+    def __repr__(self):
+        return str(self.image_time) + " - " + self.full_url + "(" + str(self.participant_id) + ")"
+ 
 t_studyparticipants = Table(
     'studyparticipants', metadata,
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),
@@ -212,7 +216,7 @@ def get_session(create_data=False, run_tests=True):
                 session.add(img)
             session.flush()
             for k in range(1,5):
-                evt = Event(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*(k)*4),  datetime.datetime.today() + datetime.timedelta(seconds=30*(k+100)*4), )
+                evt = Event(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*(k)*4),  datetime.datetime.today() + datetime.timedelta(seconds=30*(k+1)*4), )
                 session.add(evt)
                 print evt
                 session.flush()
@@ -223,6 +227,11 @@ def get_session(create_data=False, run_tests=True):
         print "\n".join(map(str, User.query.all()))
         print "\n".join(map(str, Participant.query.all()))
         print "\n".join(map(str, Study.query.all()))
+        t = datetime.datetime.today() + datetime.timedelta(minutes=3)
+        print "\n".join(map(str, Image.query.filter(Image.image_time < t).all()))
+        print "> " + str(t)
+        print "\n".join(map(str, Image.query.filter(Image.image_time > t).all()))
+
         print "done creating fake data."
         # print loghandler.read()
     return session
