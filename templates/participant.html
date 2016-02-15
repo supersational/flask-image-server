@@ -25,7 +25,7 @@
 	{% for image in images %}
 		 <div id="{{image.image_id}}">
 		 	<a href='{{image.full_url}}'><img width="100" height="74" src='{{image.thumbnail_url}}' ></a>
-		 	<a id="{{image.image_time}}" href="#">{{image.event_id}}</a>
+		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}}</a>  
 		 </div>
 	{% endfor %}
 </body>

@@ -88,23 +88,26 @@ def participant(participant_id):
 		images = participant.images[0:100]
 	else:
 		images = participant.images.filter(Image.time<daterange.max and Image.time>daterange.min)[0:100]
-
+		
 	return template.render(
 		name=participant.name,
+		id=participant.participant_id,
 		images=participant.images,
-		days=[],
+		days=days,
 		daterange=daterange
 		)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
 def event(participant_id, event_id):
 	template = env.get_template('participant.html')
+	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
-	images = event.num_images
+	images = event.images
+	daterange={'min':event.start_time,'max':event.end_time}
 	#Image.query.filter(Image.participant_id==participant_id, Image.event_id==event_id, )
 	return template.render(
-		name=Participant.query.filter(Participant.participant_id==participant_id).one().name,
-		num_images=db.get_images(participant_id=participant_id, only_number=True, event_id=event_id),
+		name=participant.name,
+		id=participant.participant_id,
 		images=images[0:100],
 		daterange=daterange
 		)

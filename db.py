@@ -227,10 +227,10 @@ def get_session(create_data=False, run_tests=True):
         print "\n".join(map(str, User.query.all()))
         print "\n".join(map(str, Participant.query.all()))
         print "\n".join(map(str, Study.query.all()))
-        t = datetime.datetime.today() + datetime.timedelta(minutes=3)
-        print "\n".join(map(str, Image.query.filter(Image.image_time < t).all()))
-        print "> " + str(t)
-        print "\n".join(map(str, Image.query.filter(Image.image_time > t).all()))
+        # t = datetime.datetime.today() + datetime.timedelta(minutes=3)
+        # print "\n".join(map(str, Image.query.filter(Image.image_time < t).all()))
+        # print "> " + str(t)
+        # print "\n".join(map(str, Image.query.filter(Image.image_time > t).all()))
 
         print "done creating fake data."
         # print loghandler.read()
