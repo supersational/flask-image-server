@@ -65,6 +65,36 @@ class Event(Base):
             return None
         return min(next_events, key=lambda x: x.end_time)
 
+    def delete(self):
+        for img in Image.query.filter(Image.event_id==self.event_id).all():
+            img.event_id = None 
+        Event.query.filter(Event.event_id==self.event_id).delete()
+        print "deleted"
+
+    def check_valid(self):
+        if self.start_time > self.end_time:
+            print "event start_time > end_time. deleting.."
+            self.delete()
+            return
+        self.tag_images()
+        if len(self.images)==0:
+            print "no images in event. deleting.."
+            self.delete()
+
+    def add_image(self, image=None, image_id=None):
+        if image_id is not None:
+            image = Image.query.filter(Image.image_id==image_id).one()
+        if image is None:
+            print "error, image not valid :" + str(image) + "," + str(image_id)
+            return
+        if image.image_time > self.end_time:
+            self.end_time = image.image_time
+            next_event = self.next_event()
+            if next_event is not None and next_event.start_time <= self.end_time:
+                next_event.start_time = self.end_time + datetime.timedelta.resolution # add the smallest allowed time
+                next_event.check_valid()
+
+
     def __repr__(self):
         return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time) for i in self.images]))
 
@@ -202,11 +232,14 @@ def create_db(drop=False):
 def get_session(create_data=False, run_tests=True):
 
     # does not actually connect until work is done
+    if run_tests:
+        drop_db()
     session = create_db()
     Base.query = session.query_property()
 
     if run_tests:
-        tests = {'duplicateUser':False}
+
+        tests = {'duplicateUser':False, 'event_with_images':False, 'negative_time_event':False, 'add_images_to_event':False, 'no_img_event': False}
         try:
             test_session = create_session(autocommit=False, autoflush=False)
             u = User('Aiden', 'Aiden')
@@ -219,11 +252,76 @@ def get_session(create_data=False, run_tests=True):
             test_session.rollback()
             tests['duplicateUser'] = True
 
+        # delete event with no images
+        p = Participant("test")
+        session.add(p)
+        session.flush() # get p.id
+        evt = Event(p.participant_id, datetime.datetime.today(), datetime.datetime.today() + datetime.timedelta(minutes=1))
+        session.add(evt)
+        print "evts : " + str(session.query(Event).all())
+        evt.check_valid()
+        evts = session.query(Event).all()
+        # print "evts : " + str(evts)
+        if len(evts)==0:
+            print "db deleted event with no images, good!"
+            tests['no_img_event'] = True
+        else:
+            print "db didn't delete event with no images!!"
+
+        now = datetime.datetime.today()
+        # create 2 images just inside the event boundary, and 2 just outside 
+        img_start = Image(p.participant_id, now, "","","")
+        session.add(img_start) # should be added to event
+        img_end = Image(p.participant_id, now+datetime.timedelta(minutes=1), "","","")
+        session.add(img_end) # should be added to event
+        img_before = Image(p.participant_id, now-datetime.timedelta.resolution, "","","")
+        session.add(img_before) # should not be added to event
+        img_after = Image(p.participant_id, now+datetime.timedelta(minutes=1)+datetime.timedelta.resolution, "","","")
+        session.add(img_after) # should not be added to event
+        evt = Event(p.participant_id, now, now + datetime.timedelta(minutes=1))
+        session.add(evt)
+        session.flush()
+        evt.tag_images()
+        if len(filter(lambda x: x.image_id == img_start.image_id or x.image_id == img_end.image_id, evt.images))==2 and len(evt.images)==2:
+            print "db added the correct 2 images out of 4 to the event, good!"
+            tests['add_images_to_event'] = True
+        else:
+            print "db didn't assign correct images to event!!"#
+            print 'evt.images' + str(evt.images)
+            print 'should contain: ' + str([img_start, img_end])
+        evt.check_valid()
+        # make sure we don't delete this valid event
+        evts = session.query(Event).all()
+        if len(evts)==1:
+            print "db didn't delete a valid event, good!"
+            tests['event_with_images'] = True
+        else:
+            print "db deleted a valid event!!"
+            print "evts %s: " % len(evts) + str(evts)
+
+        # evts = session.query(Event).all()
+        # print "evts %s: " % len(evts) + str(evts)
+        # test deleting of event due to start_time < end_time
+        print "min time resolution : " + str(datetime.timedelta.resolution) 
+        evt.end_time = evt.start_time - datetime.timedelta.resolution*2
+        evt.check_valid()
+        evts = session.query(Event).all()
+        if len(evts)==0:
+            print "db deleted an event that had 'negative' duration, good!"
+            tests['negative_time_event'] = True
+        else:
+            print "db didn't delete an event with invalid start/end times!!"
+            print "evts %s: " % len(evts) + str(evts)
+
+        # summarize tests
         for key, value in tests.iteritems():
             assert value, key + " test failed!" 
         if all(value == True for value in tests.values()):
             print "all %s tests passed" % len(tests)
-
+            return
+        drop_db()
+        session = create_db()
+        
     if create_data:
         u = User('Aiden', 'Aiden')
         if len(User.query.filter(User.username==u.username).all())==0:
@@ -252,7 +350,7 @@ def get_session(create_data=False, run_tests=True):
                 session.add(img)
             session.flush()
             for k in range(1,5):
-                evt = Event(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*(k)*4),  datetime.datetime.today() + datetime.timedelta(seconds=30*(k+1)*4), )
+                evt = Event(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*(k)*4),  datetime.datetime.today() + datetime.timedelta(seconds=30*(k+1)*4))
                 session.add(evt)
                 session.flush()
                 evt.tag_images()
