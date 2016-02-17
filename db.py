@@ -68,7 +68,7 @@ class Event(Base):
     def prev_image(self):
         imgs = Image.query.filter(
             (Image.participant_id==self.participant_id) &
-            (Image.image_time < self.start_time) &
+            (Image.image_time < self.end_time) &
             (Image.event_id!=self.event_id)
             ).all()
         if len(imgs)>0:
@@ -78,7 +78,7 @@ class Event(Base):
     def next_image(self):
         imgs = Image.query.filter(
             (Image.participant_id==self.participant_id) &
-            (Image.image_time > self.end_time) &
+            (Image.image_time > self.start_time) &
             (Image.event_id != self.event_id)
             ).all()
         if len(imgs)>0:
@@ -131,7 +131,7 @@ class Image(Base):
     thumbnail_url = Column(String(256))
 
     event = relationship(u'Event')
-    participant = relationship(u'Participant')
+    participant = relationship(u'Participant', back_populates='images')
 
     def __init__(self, participant_id, time, full_url, medium_url, thumbnail_url, event_id=None):
         self.participant_id = participant_id
@@ -150,8 +150,7 @@ t_studyparticipants = Table(
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),
     Column('participant_id', Integer, ForeignKey(u'participants.participant_id')),
     UniqueConstraint('study_id', 'participant_id')
-)
-Participant.studies 
+) 
 
 class Participant(Base):
     __tablename__ = 'participants'
@@ -160,7 +159,7 @@ class Participant(Base):
     name = Column(String(50), nullable=False)
 
     studies = relationship(u'Study', secondary='studyparticipants')
-    images = relationship(u'Image')
+    images = relationship(u'Image', back_populates='participant')
     def __init__(self, name):
         self.name = name
 
@@ -289,7 +288,7 @@ def get_session(create_data=False, run_tests=False):
             med_url = 'http://lorempixel.com/500/435/animals/'
             thum_url = 'http://lorempixel.com/100/87/animals/'
             for j in range(1,20):
-                idx = str(j % 10)
+                idx = str((j % 9)+1)
                 img = Image(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*j), full_url+idx, med_url+idx, thum_url+idx)
                 session.add(img)
             session.flush()

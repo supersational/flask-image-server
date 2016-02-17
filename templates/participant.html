@@ -29,13 +29,13 @@
 	{% endfor %}
 
 	{# {% if prev_event or next_event %} #}
-	<div style="height:30px; padding-left:30px; padding-right:30px;">
+	<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
 		<div style="text-align:left;float:left;margin:5px;">
 			{% if prev_event %} 
 				<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event.event_id}}">prev event</a>
 			{% endif %}
 			{% if prev_image %} 
-			<a style="float:left;clear:left;" href="{{prev_image.full_url}}">prev image</a>
+			<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
 			<form action='/participant/{{id}}/{{event_id}}/add_prev_image' method='POST'> 
 				<input type='submit' value='Add prev image'>
 			</form> 
@@ -46,7 +46,7 @@
 				<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event.event_id}}">next event</a>
 			{% endif %}
 			{% if next_image %} 
-			<a style="float:left;clear:left;" href="{{next_image.full_url}}">next image</a>
+			<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
 			<form action='/participant/{{id}}/{{event_id}}/add_next_image' method='POST'> 
 				<input type='submit' value='Add next image'>
 			</form> 
@@ -58,7 +58,7 @@
 	{% for image in images %}
 		 <div class="img" id="{{image.image_id}}">
 		 	<a href='{{image.full_url}}'><img width="100" height="74" src='{{image.thumbnail_url}}' ></a>
-		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}}</a> <p>{{image.image_time.hour}}:{{image.image_time.minute}}:{{image.image_time.second}}</p>
+		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{image.image_time.hour}}:{{image.image_time.minute}}:{{image.image_time.second}}</p>
 		 </div>
 	{% endfor %}
 	</div>

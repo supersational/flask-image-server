@@ -92,17 +92,17 @@ def participant(participant_id):
 	template = env.get_template('participant.html')
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	if daterange is None:
-		images = participant.images[0:100]
+		images = participant.images
 	else:
-		images = [img for img in participant.images if img.image_time<daterange['max'] and img.image_time > daterange['min']][0:100]
-	images = sorted(images, key=lambda x: x.image_time)
+		images = [img for img in participant.images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
+	images = sorted(images, key=lambda x: x.image_time)[0:100]
 	print "sorted list:"
 	for img in images:
-		print img
+		print img, img.image_time > daterange['max'], img.image_time < daterange['min']
 	return template.render(
 		name=participant.name,
 		id=participant.participant_id,
-		images=participant.images,
+		images=images,
 		days=participant.get_days(),
 		daterange=daterange,
 		num_images=len(participant.images),
