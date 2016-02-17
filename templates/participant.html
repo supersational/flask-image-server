@@ -17,6 +17,9 @@
 {% endblock %}
 {% block content %}
 	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
+	{% if event_id %}
+		<h3> Event ID: {{event_id}} <h3>
+	{% endif%}
 	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}
 		<h3> {{day}} </h3>

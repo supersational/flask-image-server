@@ -35,8 +35,8 @@ class Event(Base):
     comment = Column(Text)
     number_times_viewed = Column(Integer)
 
-    participant = relationship(u'Participant')
-    images = relationship(u'Image')
+    participant = relationship(u'Participant', back_populates='events')
+    images = relationship(u'Image', back_populates='event')
 
     def __init__(self, participant_id, start_time, end_time, comment=''):
         self.participant_id = participant_id
@@ -130,7 +130,7 @@ class Image(Base):
     medium_url = Column(String(256))
     thumbnail_url = Column(String(256))
 
-    event = relationship(u'Event')
+    event = relationship(u'Event', back_populates='images')
     participant = relationship(u'Participant', back_populates='images')
 
     def __init__(self, participant_id, time, full_url, medium_url, thumbnail_url, event_id=None):
@@ -158,8 +158,9 @@ class Participant(Base):
     participant_id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
 
-    studies = relationship(u'Study', secondary='studyparticipants')
+    studies = relationship(u'Study', secondary='studyparticipants', back_populates='participants')
     images = relationship(u'Image', back_populates='participant')
+    events = relationship(u'Event', back_populates='participant')
     def __init__(self, name):
         self.name = name
 
@@ -170,7 +171,7 @@ class Participant(Base):
         else:
             return txt + ' studies=%s)' % [x.name for x in self.studies]
     
-    def get_days(self):
+    def get_images_by_hour(self):
         # cur.execute("""SELECT image_time FROM Images WHERE Images.participant_id=%s""", [participant_id])
         data =  [x.image_time for x in self.images]
         # for x in data:
@@ -193,11 +194,12 @@ class Participant(Base):
         #   for hour in unique_days[day]:
         #       print day, "- " + str(hour) + ":00 : ", unique_days[day][hour], " images"
         return unique_days
+
 t_useraccess = Table(
     'useraccess', metadata,
     Column('user_id', Integer, ForeignKey(u'users.user_id')),
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),
-    Column('access_level', Integer, nullable=False)
+    Column('access_level', Integer, nullable=False, default=2)
 )
 
 class Study(Base):
@@ -205,8 +207,8 @@ class Study(Base):
 
     study_id = Column(Integer, primary_key=True)
     name = Column(String(256))
-    participants = relationship(u'Participant', secondary='studyparticipants')
-    users = relationship(u'User', secondary='useraccess')
+    participants = relationship(u'Participant', secondary='studyparticipants', back_populates='studies')
+    users = relationship(u'User', secondary='useraccess', back_populates='studies')
 
     def __init__(self, name):
         self.name = name
@@ -223,20 +225,14 @@ class User(Base):
     username = Column(String(50), unique=True)
     password = Column(String(50))
     # UniqueConstraint('username')
-    studies = relationship(u'Study', secondary='useraccess')
+    studies = relationship(u'Study', secondary='useraccess', back_populates='users')
 
     def __init__(self, username, password):
-        # try:
-        #     existing = User.query.filter_by(username=username)
-        #     raise ValueError("user already exists!")
-        # except NoResultFound:
-        #     pass
-
         self.username = username
         self.password = password
 
     def __repr__(self):
-            return 'User: %s (id=%s, password=%s)' % (self.username, self.user_id, '*' * len(self.password))
+            return 'User: %s (id=%s, password=%s, %s studies)' % (self.username, self.user_id, '*' * len(self.password), len(self.studies))
 
 def drop_db():
     Base.metadata.drop_all(engine)
@@ -265,15 +261,15 @@ def get_session(create_data=False, run_tests=False):
     Base.query = session.query_property()
         
     if create_data:
-        u = User('Aiden', 'Aiden')
-        if len(User.query.filter(User.username==u.username).all())==0:
-            session.add(u)
-        u = User('Sven', 'Sven')
-        if len(User.query.filter(User.username==u.username).all())==0:
-            session.add(u)
-        u = User('Testing', '')
-        if len(User.query.filter(User.username==u.username).all())==0:
-            session.add(u)
+        u1 = User('Aiden', 'Aiden')
+        if len(User.query.filter(User.username==u1.username).all())==0:
+            session.add(u1)
+        u2 = User('Sven', 'Sven')
+        if len(User.query.filter(User.username==u2.username).all())==0:
+            session.add(u2)
+        u3 = User('Testing', '')
+        if len(User.query.filter(User.username==u3.username).all())==0:
+            session.add(u3)
         studies = []
         for i in range(1,20):
             s = Study("S" + str(i))
@@ -297,10 +293,18 @@ def get_session(create_data=False, run_tests=False):
                 session.add(evt)
                 session.flush()
                 evt.tag_images()
-                print evt
-                print "prev: " + str(evt.prev_event())
+                # print evt
+                # print "prev: " + str(evt.prev_event())
 
+        # this will automatically create the 'default' study
         p.studies.append(Study('default'))
+        p.studies = []
+        # assign studies to different users
+        for s in studies:
+            if (s.study_id % 2 == 0):
+                u1.studies.append(s)
+            else:
+                u2.studies.append(s)
         print "\n".join(map(str, User.query.all()))
         print "\n".join(map(str, Participant.query.all()))
         print "\n".join(map(str, Study.query.all()))

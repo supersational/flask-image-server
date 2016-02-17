@@ -96,14 +96,14 @@ def participant(participant_id):
 	else:
 		images = [img for img in participant.images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
 	images = sorted(images, key=lambda x: x.image_time)[0:100]
-	print "sorted list:"
-	for img in images:
-		print img, img.image_time > daterange['max'], img.image_time < daterange['min']
+	# print "sorted list:"
+	# for img in images:
+	# 	print img, '' if not daterange else str(img.image_time > daterange['max']) + str(img.image_time < daterange['min'])
 	return template.render(
 		name=participant.name,
 		id=participant.participant_id,
 		images=images,
-		days=participant.get_days(),
+		days=participant.get_images_by_hour(),
 		daterange=daterange,
 		num_images=len(participant.images),
 		sql_text=db.read_log()
@@ -115,16 +115,17 @@ def event(participant_id, event_id):
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
 	images = sorted(event.images, key=lambda x: x.image_time)
-	print "sorted list:"
-	for img in images:
-		print img
+	# print "sorted list:"
+	# for img in images:
+	# 	print img
 	daterange={'min':event.start_time,'max':event.end_time}
 	return template.render(
 		name=participant.name,
 		id=participant.participant_id,
 		images=images[0:100],
-		days=participant.get_days(),
+		days=participant.get_images_by_hour(),
 		daterange=daterange,
+		num_images=len(event.images),
 		prev_event=event.prev_event(),
 		next_event=event.next_event(),
 		prev_image=event.prev_image(),
