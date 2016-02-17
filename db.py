@@ -85,6 +85,37 @@ class Event(Base):
             return min(imgs, key=lambda x: x.image_time)
         return None
 
+    def add_image(self, image):
+        if type(image) is int:
+            print "assume " + str(image) + " is an image ID"
+            image = images.query.filter(Image.image_id==image).one()
+        if image.event_id == self.event_id:
+            print "image to be added is already in the event"
+            raise ValueError("image to be added is already in the event")
+        affected_events = [image.event]
+        image.event_id = self.event_id
+        if image.image_time > self.end_time:
+            # image after end of event
+            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time > self.end_time) & (Image.image_time < image.image_time))
+            self.end_time = imagE.image_time
+        elif image.image_time < self.start_time:
+            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time < self.start_time) & (Image.image_time > image.image_time))
+            self.start_time = image.image_time
+        else:
+            print "image must already be within event boundary! (wierd)"
+            raise ValueError("image must already be within event boundary! (wierd)")
+        print "my images:", len(self.images)
+        print "images between: ", len(images_between)
+        for img in images_between:
+            print img
+            affected_events.append(img.event)
+            img.event_id = self.event_id
+        print "my images:", len(self.images)
+        for evt in set(affected_events):
+            print evt.event_id, " - ", len(evt.images)
+            if evt.check_valid():
+                print "still valid"
+        return True
 
     def delete(self):
         for img in Image.query.filter(Image.event_id==self.event_id).all():
@@ -96,25 +127,13 @@ class Event(Base):
         if self.start_time > self.end_time:
             print "event start_time > end_time. deleting.."
             self.delete()
-            return
+            return False
         self.tag_images()
         if len(self.images)==0:
             print "no images in event. deleting.."
             self.delete()
-
-    def add_image(self, image=None, image_id=None):
-        if image_id is not None:
-            image = Image.query.filter(Image.image_id==image_id).one()
-        if image is None:
-            print "error, image not valid :" + str(image) + "," + str(image_id)
-            return
-        if image.image_time > self.end_time:
-            self.end_time = image.image_time
-            next_event = self.next_event()
-            if next_event is not None and next_event.start_time <= self.end_time:
-                next_event.start_time = self.end_time + datetime.timedelta.resolution # add the smallest allowed time
-                next_event.check_valid()
-
+            return False
+        return True
 
     def __repr__(self):
         return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time) for i in self.images]))

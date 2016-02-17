@@ -133,6 +133,7 @@ def event(participant_id, event_id):
 		event_id=event.event_id,
 		sql_text=db.read_log()
 		)
+
 @app.route("/participant/<int:participant_id>/<int:event_id>/add_next_image", methods=["POST"])
 def event_add_next_image(participant_id, event_id):
 	evt = Event.query.filter(
@@ -142,9 +143,14 @@ def event_add_next_image(participant_id, event_id):
 	if evt:
 		img = evt.next_image()
 		if img:
-			img.event_id = evt.event_id
-			evt.end_time = img.image_time
-			return redirect("/participant/%s/%s" % (participant_id, event_id))
+			if evt.add_image(img):
+				return redirect("/participant/%s/%s" % (participant_id, event_id))
+			else:
+				return "add image failed"
+		else:
+			return "no prev images"
+	else:
+		return "no event"
 	return "add_next_image failed"
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/add_prev_image", methods=["POST"])
@@ -156,10 +162,15 @@ def event_add_prev_image(participant_id, event_id):
 	if evt:
 		img = evt.prev_image()
 		if img:
-			img.event_id = evt.event_id
-			evt.start_time = img.image_time
-			return redirect("/participant/%s/%s" % (participant_id, event_id))
-	return "add_next_image failed"
+			if evt.add_image(img):
+				return redirect("/participant/%s/%s" % (participant_id, event_id))
+			else:
+				return "add image failed"
+		else:
+			return "no prev images"
+	else:
+		return "no event"
+	return "add_prev_image failed"
 
 @app.route("/add_studyparticipant", methods=["POST"])
 def add_studyparticipant():
