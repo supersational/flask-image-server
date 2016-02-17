@@ -1,6 +1,9 @@
-<html> 
-<head></head>
-<body>
+{% extends "layout.html" %}
+{% block title %}
+Index
+{% endblock %}
+{% block content %}
+
 	<h2>Control Panel:</h2>
 	<h3>Studies:</h3>
 	{% for study in studies %}
@@ -19,9 +22,7 @@
 	<br>
 	<a href='/reboot_db'><button>reboot DB</button></a>
 	<p>there are {{num_images}} images in the db</p>
-
 	<textarea style='position:absolute; right:3px; top:3px' rows='50' cols='100'>﻿
-	{{sql_text}}
+	{{sql_create}}
 	</textarea>
-</body>
-</html>
+{% endblock %}

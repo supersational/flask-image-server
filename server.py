@@ -3,7 +3,7 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 import datetime
 # import flask
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, send_from_directory
 # import our custom db interfact
 import db
 from db import Event, Image, Participant, User, Study
@@ -11,7 +11,7 @@ from db import Event, Image, Participant, User, Study
 from jinja2 import Environment, FileSystemLoader
 env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
 
-app = Flask(__name__, static_folder="images") # change to non static in future
+app = Flask(__name__, static_folder="static")
 
 dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
 datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
@@ -21,15 +21,21 @@ db_session = db.get_session()
 
 # db.create_db(and_add_images=True)
 @app.route("/")
-def hello():
+def index():
 	template = env.get_template('index.html')
 	return template.render(
 		studies=Study.query.all(),
 		participants=Participant.query.all(),
 		users=User.query.all(),
 		num_images=len(Image.query.all()),
-		sql_text=open('create_db.txt','r').read()
+		sql_create=open('create_db.txt','r').read(),
+		sql_text=db.read_log()
 		).encode('utf-8')
+
+# Custom static data
+@app.route('/images/<path:filename>')
+def serve_images(filename):
+    return send_from_directory('images', filename)
 
 @app.route("/reboot_db")
 def create():
@@ -71,6 +77,7 @@ def study(study_id):
 		study_name=study.name,
 		participants=study_participants,
 		participants_to_add=participants_to_add,
+		sql_text=db.read_log()
 		).encode('utf-8')
 
 @app.route("/participant/<int:participant_id>")
@@ -94,7 +101,8 @@ def participant(participant_id):
 		id=participant.participant_id,
 		images=participant.images,
 		days=participant.get_days(),
-		daterange=daterange
+		daterange=daterange,
+		sql_text=db.read_log()
 		)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
@@ -112,7 +120,8 @@ def event(participant_id, event_id):
 		days=participant.get_days(),
 		daterange=daterange,
 		prev_event=event.prev_event(),
-		next_event=event.next_event()
+		next_event=event.next_event(),
+		sql_text=db.read_log()
 		)
 
 @app.route("/add_studyparticipant", methods=["POST"])

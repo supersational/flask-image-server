@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    {% block head %}
+    <title>{% block title %}{% endblock %} - ImageViewer</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <script src="/static/lang-sql.js"></script>
+    <script src="/static/db.js"></script>
+    {% endblock %}
+    <style>
+	    .textwrapper
+	    {
+	      border:1px solid #999999;
+	      margin:5px 0;
+	      padding:3px;
+	    }
+
+	    /* wrapping code */
+	    #footer {
+	    	white-space: pre-wrap;      /* CSS3 */   
+	    	white-space: -moz-pre-wrap; /* Firefox */    
+	    	white-space: -pre-wrap;     /* Opera <7 */   
+	    	white-space: -o-pre-wrap;   /* Opera 7 */    
+	    	word-wrap: break-word;      /* IE */
+	    }
+    	{% block style %}
+    	{% endblock %}
+	</style>
+  </head>
+  <body>
+  	<div id="wrap">
+    {% block content %}{% endblock %}
+    </div>
+
+    {% if sql_text %}
+    <div id="footer">
+		<pre class="prettyprint lang-sql">
+{{sql_text}}
+		</pre>
+    </div>
+	{% endif %}
+  </body>
+</html>

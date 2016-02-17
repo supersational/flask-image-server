@@ -1,15 +1,16 @@
-<html> 
-<head>
-	<style>
+{% extends "layout.html" %}
+{% block title %}
+	Participant
+{% endblock %}
+{% block style %}
 	.img {
 		margin: 5px;
 		float: left;
 		width: 100px;
 		height: 104px;
 	}
-	</style>
-</head>
-<body>
+{% endblock %}
+{% block content %}
 	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
 	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}
@@ -37,5 +38,4 @@
 		 </div>
 	{% endfor %}
 	</div>
-</body>
-</html>
+{% endblock %}

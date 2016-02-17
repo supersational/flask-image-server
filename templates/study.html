@@ -1,8 +1,8 @@
-<html> 
-<head>
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-</head>
-<body>
+{% extends "layout.html" %}
+{% block title %}
+Study
+{% endblock %}
+{% block content %}
 	<h2> Study: {{study_id}}, {{study_name}} </h2>
 	<p> {{participants|length}} participant{% if participants | length > 1 %}s{% endif %} in this study: </p>
 	{% for participant in participants %}
@@ -27,5 +27,4 @@
 	<p>all participants are already in this study</p>
 	{% endif %}
 	</form> 
-</body>
-</html>
+{% endblock %}
