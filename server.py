@@ -95,13 +95,17 @@ def participant(participant_id):
 		images = participant.images[0:100]
 	else:
 		images = [img for img in participant.images if img.image_time<daterange['max'] and img.image_time > daterange['min']][0:100]
-
+	images = sorted(images, key=lambda x: x.image_time)
+	print "sorted list:"
+	for img in images:
+		print img
 	return template.render(
 		name=participant.name,
 		id=participant.participant_id,
 		images=participant.images,
 		days=participant.get_days(),
 		daterange=daterange,
+		num_images=len(participant.images),
 		sql_text=db.read_log()
 		)
 
@@ -110,9 +114,11 @@ def event(participant_id, event_id):
 	template = env.get_template('participant.html')
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
-	images = event.images
+	images = sorted(event.images, key=lambda x: x.image_time)
+	print "sorted list:"
+	for img in images:
+		print img
 	daterange={'min':event.start_time,'max':event.end_time}
-	#Image.query.filter(Image.participant_id==participant_id, Image.event_id==event_id, )
 	return template.render(
 		name=participant.name,
 		id=participant.participant_id,
@@ -121,8 +127,38 @@ def event(participant_id, event_id):
 		daterange=daterange,
 		prev_event=event.prev_event(),
 		next_event=event.next_event(),
+		prev_image=event.prev_image(),
+		next_image=event.next_image(),
+		event_id=event.event_id,
 		sql_text=db.read_log()
 		)
+@app.route("/participant/<int:participant_id>/<int:event_id>/add_next_image", methods=["POST"])
+def event_add_next_image(participant_id, event_id):
+	evt = Event.query.filter(
+		(Event.participant_id==participant_id) &
+		(Event.event_id==event_id) 
+		).one()
+	if evt:
+		img = evt.next_image()
+		if img:
+			img.event_id = evt.event_id
+			evt.end_time = img.image_time
+			return redirect("/participant/%s/%s" % (participant_id, event_id))
+	return "add_next_image failed"
+
+@app.route("/participant/<int:participant_id>/<int:event_id>/add_prev_image", methods=["POST"])
+def event_add_prev_image(participant_id, event_id):
+	evt = Event.query.filter(
+		(Event.participant_id==participant_id) &
+		(Event.event_id==event_id) 
+		).one()
+	if evt:
+		img = evt.prev_image()
+		if img:
+			img.event_id = evt.event_id
+			evt.start_time = img.image_time
+			return redirect("/participant/%s/%s" % (participant_id, event_id))
+	return "add_next_image failed"
 
 @app.route("/add_studyparticipant", methods=["POST"])
 def add_studyparticipant():

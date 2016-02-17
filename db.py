@@ -4,7 +4,7 @@
 import datetime
 # define database
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
-from sqlalchemy.sql.expression import func
+from sqlalchemy.sql.expression import func, funcfilter
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 # sqlalchemy errors
@@ -64,6 +64,27 @@ class Event(Base):
         if len(next_events)==0:
             return None
         return min(next_events, key=lambda x: x.end_time)
+    
+    def prev_image(self):
+        imgs = Image.query.filter(
+            (Image.participant_id==self.participant_id) &
+            (Image.image_time < self.start_time) &
+            (Image.event_id!=self.event_id)
+            ).all()
+        if len(imgs)>0:
+            return max(imgs, key=lambda x: x.image_time)
+        return None
+
+    def next_image(self):
+        imgs = Image.query.filter(
+            (Image.participant_id==self.participant_id) &
+            (Image.image_time > self.end_time) &
+            (Image.event_id != self.event_id)
+            ).all()
+        if len(imgs)>0:
+            return min(imgs, key=lambda x: x.image_time)
+        return None
+
 
     def delete(self):
         for img in Image.query.filter(Image.event_id==self.event_id).all():
@@ -130,6 +151,7 @@ t_studyparticipants = Table(
     Column('participant_id', Integer, ForeignKey(u'participants.participant_id')),
     UniqueConstraint('study_id', 'participant_id')
 )
+Participant.studies 
 
 class Participant(Base):
     __tablename__ = 'participants'
@@ -225,6 +247,7 @@ def create_session(autoflush=True, autocommit=True):
                                              autoflush=autoflush,
                                              bind=engine))  
 def create_db(drop=False):
+    global session
     session = create_session()
     Base.metadata.create_all(engine)
     return session
