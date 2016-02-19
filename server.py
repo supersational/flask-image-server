@@ -7,9 +7,9 @@ from flask import Flask, request, redirect, send_from_directory
 # import our custom db interfact
 import db
 from db import Event, Image, Participant, User, Study
+# @app.template_filter('time')
 # Jinja2 templating
 from jinja2 import Environment, FileSystemLoader
-env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
 
 app = Flask(__name__, static_folder="static")
 
@@ -18,6 +18,18 @@ datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 
 db_session = db.get_session()
+
+# Jinja2 setup
+env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
+def get_time(s):
+	if type(s) == str:
+	    return s[11:20]
+	elif s is None:
+		return ""
+	else:
+		return s.strftime("%H:%M:%S")
+env.filters['time'] = get_time
+
 
 # db.create_db(and_add_images=True)
 @app.route("/")
@@ -31,7 +43,6 @@ def index():
 		sql_create=open('create_db.txt','r').read(),
 		sql_text=db.read_log()
 		).encode('utf-8')
-
 # Custom static data
 @app.route('/images/<path:filename>')
 def serve_images(filename):
@@ -97,7 +108,7 @@ def participant(participant_id):
 		images = [img for img in participant.images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
 	images = sorted(images, key=lambda x: x.image_time)[0:100]
 	# print "sorted list:"
-	# for img in images:
+	# for img in images
 	# 	print img, '' if not daterange else str(img.image_time > daterange['max']) + str(img.image_time < daterange['min'])
 	return template.render(
 		name=participant.name,
@@ -134,6 +145,20 @@ def event(participant_id, event_id):
 		sql_text=db.read_log()
 		)
 
+@app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
+def event_check_valid(participant_id, event_id):
+	evt = Event.query.filter(
+		(Event.participant_id==participant_id) &
+		(Event.event_id==event_id) 
+		).one()
+	if evt:
+		if evt.check_valid():
+			return redirect("/participant/%s/%s" % (participant_id, event_id))
+		else:
+			return redirect("/participant/%s" % (participant_id))
+	return "error, no event : %s" % event_id
+		
+		
 @app.route("/participant/<int:participant_id>/<int:event_id>/add_next_image", methods=["POST"])
 def event_add_next_image(participant_id, event_id):
 	evt = Event.query.filter(

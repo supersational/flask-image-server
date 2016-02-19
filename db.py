@@ -49,9 +49,8 @@ class Event(Base):
         return Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time <= self.end_time) & (Image.image_time >= self.start_time)).all()
 
     def tag_images(self):
-        if self.event_id:
-            for image in self.get_images():
-                image.event_id = self.event_id
+        for image in self.get_images():
+            image.event_id = self.event_id
 
     def prev_event(self):
         prev_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.end_time < self.end_time)).all()
@@ -86,20 +85,22 @@ class Event(Base):
         return None
 
     def add_image(self, image):
+        print self.images
         if type(image) is int:
             print "assume " + str(image) + " is an image ID"
-            image = images.query.filter(Image.image_id==image).one()
+            return add_image(images.query.filter(Image.image_id==image).one())
         if image.event_id == self.event_id:
             print "image to be added is already in the event"
             raise ValueError("image to be added is already in the event")
-        affected_events = [image.event]
+        affected_events = [image.event] # events that might need deleting
         image.event_id = self.event_id
+        # there's a bug here! the event the image is taken from doesn't change start/end times! #TODO #important #toolateforthis
         if image.image_time > self.end_time:
             # image after end of event
-            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time > self.end_time) & (Image.image_time < image.image_time))
-            self.end_time = imagE.image_time
+            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time > self.end_time) & (Image.image_time < image.image_time)).all()
+            self.end_time = image.image_time
         elif image.image_time < self.start_time:
-            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time < self.start_time) & (Image.image_time > image.image_time))
+            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time < self.start_time) & (Image.image_time > image.image_time)).all()
             self.start_time = image.image_time
         else:
             print "image must already be within event boundary! (wierd)"
@@ -115,6 +116,7 @@ class Event(Base):
             print evt.event_id, " - ", len(evt.images)
             if evt.check_valid():
                 print "still valid"
+        print self.images
         return True
 
     def delete(self):
@@ -122,6 +124,18 @@ class Event(Base):
             img.event_id = None 
         Event.query.filter(Event.event_id==self.event_id).delete()
         print "deleted"
+    def check_times(self):
+
+        with self.next_event() as next:
+            if next.start_time < self.end_time:
+                mid = self.end_time + (next.start_time - self.end_time)/2
+                next.start_time = mid
+                self.end_time = mid - datetime.timedelta.resolution
+        with self.prev_event() as prev:
+            if prev.end_time > self.start_time:
+                mid = self.start_time + (prev.end_time - self.start_time)/2
+                prev.end_time = mid
+                self.start = mid + datetime.timedelta.resolution
 
     def check_valid(self):
         if self.start_time > self.end_time:
