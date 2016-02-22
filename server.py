@@ -194,7 +194,7 @@ def event_add_image(participant_id, event_id, image_id):
 	if not img: return "no matching image"
 	if not evt: return "no matching event"
 	if evt.add_image(img):
-		return redirect("/participant/%s/%s" % (participant_id, event_id))
+		return "success"
 	return "add image failed"
 
 @app.route("/add_studyparticipant", methods=["POST"])

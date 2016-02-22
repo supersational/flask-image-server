@@ -34,13 +34,12 @@
 		{% if event_seconds %}
 			<h3> Length: {{event_seconds | verbose_seconds}}</h3>
 		{% endif%}
-		<button onclick="Event.check_valid({{event_id}}, {{id}}, function() {$('#valid_result').html('valid')})">Check valid</button><p id="valid_result"></p>
+		<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
 	{% endif%}
 	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}
 		<h3> {{day}} </h3>
 		{% for hour in days[day] %}
-
 			<a href="/participant/{{id}}?date_min={{day}}T{{hour}}:00:00&date_max={{day}}T{{hour+1}}:00:00">
 				<p>{{day}} {{hour}}:00 - {{days[day][hour]}} images</p> 
 			</a>
@@ -53,10 +52,8 @@
 				<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
 			{% endif %}
 			{% if prev_image %} 
-			<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
-			<form action='/participant/{{id}}/{{event_id}}/add_prev_image' method='POST'> 
-				<input type='submit' value='Add prev image'>
-			</form> 
+				<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
+				<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);location.reload();})">Add prev image</button><p id="prev_result"></p>
 			{% endif %}
 		</div> 
 		<div style="text-align:right;float:right;margin:5px;">
@@ -64,10 +61,8 @@
 				<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event_id}}">next event</a>
 			{% endif %}
 			{% if next_image %} 
-			<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
-			<form action='/participant/{{id}}/{{event_id}}/add_next_image' method='POST'> 
-				<input type='submit' value='Add next image'>
-			</form> 
+				<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
+				<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);location.reload();})">Add next image</button><p id="next_result"></p>
 			{% endif %}
 		</div> 
 	</div>
