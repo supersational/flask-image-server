@@ -92,14 +92,14 @@ class Event(Base):
         if image.event_id == self.event_id:
             print "image to be added is already in the event"
             raise ValueError("image to be added is already in the event")
-        affected_events = [image.event] # events that might need deleting
+        affected_events = [self, image.event] # events that will need times modified and might need deleting
         image.event_id = self.event_id
-        # there's a bug here! the event the image is taken from doesn't change start/end times! #TODO #important #toolateforthis
         if image.image_time > self.end_time:
             # image after end of event
             images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time > self.end_time) & (Image.image_time < image.image_time)).all()
             self.end_time = image.image_time
         elif image.image_time < self.start_time:
+            # image before start of event
             images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time < self.start_time) & (Image.image_time > image.image_time)).all()
             self.start_time = image.image_time
         else:
@@ -111,10 +111,11 @@ class Event(Base):
             print img
             affected_events.append(img.event)
             img.event_id = self.event_id
-        print "my images:", len(self.images)
+
+        print "I now have %d images, and %d affected_events (%d total)" % (len(self.images), len(set(affected_events)), len(affected_events))
         for evt in set(affected_events):
             print evt.event_id, " - ", len(evt.images)
-            if evt.check_valid():
+            if evt.adjust_time(): 
                 print "still valid"
         print self.images
         return True
@@ -124,8 +125,24 @@ class Event(Base):
             img.event_id = None 
         Event.query.filter(Event.event_id==self.event_id).delete()
         print "deleted"
-    def check_times(self):
 
+    def adjust_time(self):
+        start_time = datetime.datetime.max
+        end_time = datetime.datetime.min
+        for image in self.images:
+            start_time = min(start_time, image.image_time)
+            end_time = max(end_time, image.image_time)
+
+        if start_time < end_time:
+            print "adjusting time %s - %s " % (start_time, end_time)
+            self.start_time = start_time
+            self.end_time = end_time
+            self.tag_images()
+            return True
+        else:
+            return self.check_valid()
+
+    def check_times(self):
         with self.next_event() as next:
             if next.start_time < self.end_time:
                 mid = self.end_time + (next.start_time - self.end_time)/2
@@ -142,7 +159,6 @@ class Event(Base):
             print "event start_time > end_time. deleting.."
             self.delete()
             return False
-        self.tag_images()
         if len(self.images)==0:
             print "no images in event. deleting.."
             self.delete()
@@ -294,6 +310,8 @@ def get_session(create_data=False, run_tests=False):
     Base.query = session.query_property()
         
     if create_data:
+        now = datetime.datetime.today()
+        now = now.replace(minute=0, second=0, microsecond=0)
         u1 = User('Aiden', 'Aiden')
         if len(User.query.filter(User.username==u1.username).all())==0:
             session.add(u1)
@@ -318,14 +336,15 @@ def get_session(create_data=False, run_tests=False):
             thum_url = 'http://lorempixel.com/100/87/animals/'
             for j in range(1,20):
                 idx = str((j % 9)+1)
-                img = Image(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*j), full_url+idx, med_url+idx, thum_url+idx)
+                img = Image(p.participant_id, now + datetime.timedelta(seconds=30*j), full_url+idx, med_url+idx, thum_url+idx)
                 session.add(img)
             session.flush()
             for k in range(1,5):
-                evt = Event(p.participant_id, datetime.datetime.today() + datetime.timedelta(seconds=30*(k)*4),  datetime.datetime.today() + datetime.timedelta(seconds=30*(k+1)*4))
+                evt = Event(p.participant_id, now + datetime.timedelta(seconds=30*(k)*4),  now + datetime.timedelta(seconds=30*(k+1)*4))
                 session.add(evt)
                 session.flush()
                 evt.tag_images()
+                # evt.adjust_time()
                 # print evt
                 # print "prev: " + str(evt.prev_event())
 
@@ -341,7 +360,7 @@ def get_session(create_data=False, run_tests=False):
         print "\n".join(map(str, User.query.all()))
         print "\n".join(map(str, Participant.query.all()))
         print "\n".join(map(str, Study.query.all()))
-        # t = datetime.datetime.today() + datetime.timedelta(minutes=3)
+        # t = now + datetime.timedelta(minutes=3)
         # print "\n".join(map(str, Image.query.filter(Image.image_time < t).all()))
         # print "> " + str(t)
         # print "\n".join(map(str, Image.query.filter(Image.image_time > t).all()))

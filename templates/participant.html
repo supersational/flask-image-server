@@ -74,7 +74,7 @@
 			 	{% set curr_event = image.event %} 
 		 	{% endif %}
 		 	<a href='{{image.full_url}}'><img width="100" height="74" src='{{image.thumbnail_url}}' ></a>
-		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{image.image_time.hour}}:{{image.image_time.minute}}:{{image.image_time.second}}</p> 
+		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 		 </div>
 	{% endfor %}
 	</div>
