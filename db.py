@@ -67,8 +67,8 @@ class Event(Base):
     def prev_image(self):
         imgs = Image.query.filter(
             (Image.participant_id==self.participant_id) &
-            (Image.image_time < self.end_time) &
-            (Image.event_id!=self.event_id)
+            (Image.image_time<self.end_time) &
+            ((Image.event_id!=self.event_id) | (Image.event_id==None))
             ).all()
         if len(imgs)>0:
             return max(imgs, key=lambda x: x.image_time)
@@ -77,8 +77,8 @@ class Event(Base):
     def next_image(self):
         imgs = Image.query.filter(
             (Image.participant_id==self.participant_id) &
-            (Image.image_time > self.start_time) &
-            (Image.event_id != self.event_id)
+            (Image.image_time>self.start_time) &
+            ((Image.event_id!=self.event_id) | (Image.event_id==None))
             ).all()
         if len(imgs)>0:
             return min(imgs, key=lambda x: x.image_time)
@@ -92,7 +92,8 @@ class Event(Base):
         if image.event_id == self.event_id:
             print "image to be added is already in the event"
             raise ValueError("image to be added is already in the event")
-        affected_events = [self, image.event] # events that will need times modified and might need deleting
+        affected_events = [self] # events that will need times modified and might need deleting
+        if image.event: affected_events.append(image.event)
         image.event_id = self.event_id
         if image.image_time > self.end_time:
             # image after end of event

@@ -126,9 +126,7 @@ def event(participant_id, event_id):
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
 	images = sorted(event.images, key=lambda x: x.image_time)
-	# print "sorted list:"
-	# for img in images:
-	# 	print img
+
 	daterange={'min':event.start_time,'max':event.end_time}
 	return template.render(
 		name=participant.name,
