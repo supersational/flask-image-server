@@ -19,9 +19,10 @@
 	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
 	{% if event_id %}
 		<h3> Event ID: {{event_id}} <h3>
-		<form action='/participant/{{id}}/{{event_id}}/check_valid' method='POST'> 
+		<button onclick="Event.check_valid({{event_id}}, {{id}})">Check valid</button>
+<!-- 		<form action='/participant/{{id}}/{{event_id}}/check_valid' method='POST'> 
 			<input type='submit' value='check valid'>
-		</form> 
+		</form>  -->
 	{% endif%}
 	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}
@@ -76,6 +77,8 @@
 		 	<a href='{{image.full_url}}'><img width="100" height="74" src='{{image.thumbnail_url}}' ></a>
 		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 		 </div>
+	{% else %}
+		<p>No images</p>
 	{% endfor %}
 	</div>
 {% endblock %}
