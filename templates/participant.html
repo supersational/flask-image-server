@@ -22,7 +22,7 @@
 		{% if event_seconds %}
 			<h3> Length: {{event_seconds | verbose_seconds}}</h3>
 		{% endif%}
-		<button onclick="Event.check_valid({{event_id}}, {{id}})">Check valid</button>
+		<button onclick="Event.check_valid({{event_id}}, {{id}}, function() {$('#valid_result').html('valid')})">Check valid</button><p id="valid_result"></p>
 	{% endif%}
 	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}
@@ -60,20 +60,16 @@
 		</div> 
 	</div>
 	<div style="width:100%;padding:30px;" class="shadow-wrapper">
-	{% set curr_event = None %}
 	{% for image in images %}
 		 <div class="img" id="{{image.image_id}}">
-		 	{% if curr_event.event_id != image.event.event_id %}
-			 	{% if curr_event is not none %} 
-				 	{% if curr_event.end_time is defined %} 
-					 	<p> {{curr_event.end_time | time}} !-</p> 
-				 	{% endif %} 
+	 		<p>
+			 	{% if image.is_last and image.event.end_time is defined %}
+				 	- {{image.event.end_time | time}} 
 			 	{% endif %} 
-			 	{% if image.event.start_time is defined %}
-				 	<p>-! {{image.event.start_time | time }} </p>
+			 	{% if image.is_first and image.event.start_time is defined %}
+					{{image.event.start_time | time }} -
 				{% endif %}
-			 	{% set curr_event = image.event %} 
-		 	{% endif %}
+			.</p>
 		 	<a href='{{image.full_url}}'><img width="100" height="74" src='{{image.thumbnail_url}}' ></a>
 		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 		 </div>

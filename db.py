@@ -171,6 +171,19 @@ class Event(Base):
     def length(self):
         return self.end_time - self.start_time
 
+    @hybrid_property 
+    def first_image(self):
+        if len(self.images) > 0:
+            return self.images[0]
+        return None
+
+    @hybrid_property 
+    def last_image(self):
+        if len(self.images) > 0:
+            return self.images[-1]
+        return None
+
+
     @hybrid_method
     def contains(self, image):
         return (self.start_time <= image.image_time) & (image.image_time <= self.end_time)
@@ -203,7 +216,15 @@ class Image(Base):
 
     def __repr__(self):
         return str(self.image_time) + " - " + self.full_url + "(" + str(self.participant_id) + ")"
- 
+
+    @hybrid_property 
+    def is_first(self):
+        return self.image_id == self.event.first_image.image_id
+
+    @hybrid_property 
+    def is_last(self):
+        return self.image_id == self.event.last_image.image_id
+
 t_studyparticipants = Table(
     'studyparticipants', metadata,
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),
