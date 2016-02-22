@@ -7,6 +7,7 @@ from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Tabl
 from sqlalchemy.sql.expression import func, funcfilter
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 # sqlalchemy errors
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
@@ -36,7 +37,7 @@ class Event(Base):
     number_times_viewed = Column(Integer)
 
     participant = relationship(u'Participant', back_populates='events')
-    images = relationship(u'Image', back_populates='event')
+    images = relationship(u'Image', back_populates='event', order_by='Image.image_time')
 
     def __init__(self, participant_id, start_time, end_time, comment=''):
         self.participant_id = participant_id
@@ -46,11 +47,22 @@ class Event(Base):
         self.number_times_viewed = 0
 
     def get_images(self):
-        return Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time <= self.end_time) & (Image.image_time >= self.start_time)).all()
+        return Image.query.filter((Image.participant_id==self.participant_id) & (self.contains(Image))).order_by(Image.image_time.desc()).all()
 
     def tag_images(self):
         for image in self.get_images():
             image.event_id = self.event_id
+
+    def check_valid(self):
+        if self.length < datetime.timedelta(0):
+            print "event start_time > end_time. deleting.."
+            self.delete()
+            return False
+        if len(self.images)==0:
+            print "no images in event. deleting.."
+            self.delete()
+            return False
+        return True
 
     def prev_event(self):
         prev_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.end_time < self.end_time)).all()
@@ -143,7 +155,7 @@ class Event(Base):
         else:
             return self.check_valid()
 
-    def check_times(self):
+    def resolve_time_conflicts(self):
         with self.next_event() as next:
             if next.start_time < self.end_time:
                 mid = self.end_time + (next.start_time - self.end_time)/2
@@ -154,20 +166,17 @@ class Event(Base):
                 mid = self.start_time + (prev.end_time - self.start_time)/2
                 prev.end_time = mid
                 self.start = mid + datetime.timedelta.resolution
+                
+    @hybrid_property 
+    def length(self):
+        return self.end_time - self.start_time
 
-    def check_valid(self):
-        if self.start_time > self.end_time:
-            print "event start_time > end_time. deleting.."
-            self.delete()
-            return False
-        if len(self.images)==0:
-            print "no images in event. deleting.."
-            self.delete()
-            return False
-        return True
+    @hybrid_method
+    def contains(self, image):
+        return (self.start_time <= image.image_time) & (image.image_time <= self.end_time)
 
     def __repr__(self):
-        return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time) for i in self.images]))
+        return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time)+i.full_url for i in self.images]))
 
 class Image(Base):
     __tablename__ = 'images'
@@ -182,7 +191,7 @@ class Image(Base):
 
     event = relationship(u'Event', back_populates='images')
     participant = relationship(u'Participant', back_populates='images')
-    
+
     def __init__(self, participant_id, time, full_url, medium_url, thumbnail_url, event_id=None):
         self.participant_id = participant_id
         self.image_time = time
@@ -340,14 +349,13 @@ def get_session(create_data=False, run_tests=False):
                 img = Image(p.participant_id, now + datetime.timedelta(seconds=30*j), full_url+idx, med_url+idx, thum_url+idx)
                 session.add(img)
             session.flush()
+            read_log()
             for k in range(1,5):
                 evt = Event(p.participant_id, now + datetime.timedelta(seconds=30*(k)*4),  now + datetime.timedelta(seconds=30*(k+1)*4))
                 session.add(evt)
                 session.flush()
                 evt.tag_images()
-                # evt.adjust_time()
                 # print evt
-                # print "prev: " + str(evt.prev_event())
 
         # this will automatically create the 'default' study
         p.studies.append(Study('default'))
