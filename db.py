@@ -64,18 +64,21 @@ class Event(Base):
             return False
         return True
 
+    @hybrid_property 
     def prev_event(self):
         prev_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.end_time < self.end_time)).all()
         if len(prev_events)==0:
             return None
         return max(prev_events, key=lambda x: x.end_time)
 
+    @hybrid_property 
     def next_event(self):
         next_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.start_time > self.start_time)).all()
         if len(next_events)==0:
             return None
         return min(next_events, key=lambda x: x.end_time)
-    
+
+    @hybrid_property 
     def prev_image(self):
         imgs = Image.query.filter(
             (Image.participant_id==self.participant_id) &
@@ -86,6 +89,7 @@ class Event(Base):
             return max(imgs, key=lambda x: x.image_time)
         return None
 
+    @hybrid_property 
     def next_image(self):
         imgs = Image.query.filter(
             (Image.participant_id==self.participant_id) &
@@ -156,12 +160,12 @@ class Event(Base):
             return self.check_valid()
 
     def resolve_time_conflicts(self):
-        with self.next_event() as next:
+        with self.next_event as next:
             if next.start_time < self.end_time:
                 mid = self.end_time + (next.start_time - self.end_time)/2
                 next.start_time = mid
                 self.end_time = mid - datetime.timedelta.resolution
-        with self.prev_event() as prev:
+        with self.prev_event as prev:
             if prev.end_time > self.start_time:
                 mid = self.start_time + (prev.end_time - self.start_time)/2
                 prev.end_time = mid
