@@ -37,8 +37,8 @@
 
 	<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
 		<div style="text-align:left;float:left;margin:5px;">
-			{% if prev_event %} 
-				<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event.event_id}}">prev event</a>
+			{% if prev_event_id %} 
+				<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
 			{% endif %}
 			{% if prev_image %} 
 			<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
@@ -48,8 +48,8 @@
 			{% endif %}
 		</div> 
 		<div style="text-align:right;float:right;margin:5px;">
-			{% if next_event %}  
-				<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event.event_id}}">next event</a>
+			{% if next_event_id %}  
+				<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event_id}}">next event</a>
 			{% endif %}
 			{% if next_image %} 
 			<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>

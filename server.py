@@ -135,8 +135,8 @@ def event(participant_id, event_id):
 		days=participant.get_images_by_hour(),
 		daterange=daterange,
 		num_images=len(event.images),
-		prev_event=event.prev_event(),
-		next_event=event.next_event(),
+		prev_event_id=getattr(event.prev_event(), 'event_id', None), # None as default if no prev_event exists
+		next_event_id=getattr(event.next_event(), 'event_id', None),
 		prev_image=event.prev_image(),
 		next_image=event.next_image(),
 		event_id=event.event_id,
