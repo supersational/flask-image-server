@@ -137,6 +137,28 @@ class Event(Base):
         print self.images
         return True
 
+    def split_left(self, image):
+        index = self.images.index(image)
+        if not index is None and index>0:
+            new_event = Event(self.participant_id, self.start_time, self.end_time, self.comment)
+            for img in self.images[:index]:
+                img.event = new_event
+            new_event.adjust_time()
+            self.adjust_time()
+            return True
+        return False
+
+    def split_right(self, image):
+        index = self.images.index(image)+1
+        if not index is None and index<len(self.images):
+            new_event = Event(self.participant_id, self.start_time, self.end_time, self.comment)
+            for img in self.images[index:]:
+                img.event = new_event
+            new_event.adjust_time()
+            self.adjust_time()
+            return True
+        return False
+
     def delete(self):
         for img in Image.query.filter(Image.event_id==self.event_id).all():
             img.event_id = None 
@@ -186,7 +208,6 @@ class Event(Base):
         if len(self.images) > 0:
             return self.images[-1]
         return None
-
 
     @hybrid_method
     def contains(self, image):

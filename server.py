@@ -167,25 +167,8 @@ def event_check_valid(participant_id, event_id):
 			return redirect("/participant/%s" % (participant_id))
 	return "error, no event : %s" % event_id
 		
-		
-@app.route("/participant/<int:participant_id>/<int:event_id>/add_next_image", methods=["POST"])
-def event_add_next_image(participant_id, event_id):
-	evt = Event.query.filter(Event.event_id==event_id).one()
-	if evt:
-		next = evt.next_image
-		if next:
-			return event_add_image(participant_id, event_id, evt.next_image.image_id)
-	return "add_next_image failed"
-
-@app.route("/participant/<int:participant_id>/<int:event_id>/add_prev_image", methods=["POST"])
-def event_add_prev_image(participant_id, event_id):
-	evt = Event.query.filter(Event.event_id==event_id).one()
-	if evt and evt.prev_image:
-		return event_add_image(participant_id, event_id, evt.prev_image.image_id)
-	return "add_prev_image failed"
-
-@app.route("/participant/<int:participant_id>/<int:event_id>/add_image/<int:image_id>", methods=["POST"])
-def event_add_image(participant_id, event_id, image_id):
+@app.route("/participant/<int:participant_id>/<int:event_id>/<int:image_id>/<code>", methods=["POST"])
+def event_modify(participant_id, event_id, image_id, code):
 	evt = Event.query.filter((Event.participant_id==participant_id) &
 							 (Event.event_id==event_id)).one()
 
@@ -193,9 +176,18 @@ def event_add_image(participant_id, event_id, image_id):
 							 (Image.participant_id==participant_id)).one()
 	if not img: return "no matching image"
 	if not evt: return "no matching event"
-	if evt.add_image(img):
-		return "success"
-	return "add image failed"
+	if code=="add_image":
+		if evt.add_image(img):
+			return "success"
+		return "add_image failed"
+	if code=="split_left":
+		if evt.split_left(img):
+			return "success"
+		return "split_left failed"
+	if code=="split_right":
+		if evt.split_right(img):
+			return "success"
+		return "split_right failed"
 
 @app.route("/add_studyparticipant", methods=["POST"])
 def add_studyparticipant():
