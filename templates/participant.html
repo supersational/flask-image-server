@@ -19,10 +19,10 @@
 	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
 	{% if event_id %}
 		<h3> Event ID: {{event_id}} <h3>
+		{% if event_seconds %}
+			<h3> Length: {{event_seconds | verbose_seconds}}</h3>
+		{% endif%}
 		<button onclick="Event.check_valid({{event_id}}, {{id}})">Check valid</button>
-<!-- 		<form action='/participant/{{id}}/{{event_id}}/check_valid' method='POST'> 
-			<input type='submit' value='check valid'>
-		</form>  -->
 	{% endif%}
 	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}

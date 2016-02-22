@@ -28,7 +28,17 @@ def get_time(s):
 		return ""
 	else:
 		return s.strftime("%H:%M:%S")
+def verbose_seconds(seconds):
+	days, rem = divmod(seconds, 86400)
+	hours, rem = divmod(rem, 3600)
+	minutes, seconds = divmod(rem, 60)
+	if minutes + hours + days <= 0 and seconds < 1:seconds = 1
+	locals_ = locals()
+	magnitudes_str = ("{n} {magnitude}".format(n=int(locals_[magnitude]), magnitude=magnitude)
+			            for magnitude in ("days", "hours", "minutes", "seconds") if locals_[magnitude])
+	return ", ".join(magnitudes_str)
 env.filters['time'] = get_time
+env.filters['verbose_seconds'] = verbose_seconds
 
 
 # db.create_db(and_add_images=True)
@@ -140,6 +150,7 @@ def event(participant_id, event_id):
 		prev_image=event.prev_image(),
 		next_image=event.next_image(),
 		event_id=event.event_id,
+		event_seconds=event.length.total_seconds(),
 		sql_text=db.read_log()
 		)
 

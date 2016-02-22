@@ -351,7 +351,7 @@ def get_session(create_data=False, run_tests=False):
             session.flush()
             read_log()
             for k in range(1,5):
-                evt = Event(p.participant_id, now + datetime.timedelta(seconds=30*(k)*4),  now + datetime.timedelta(seconds=30*(k+1)*4))
+                evt = Event(p.participant_id, now + datetime.timedelta(seconds=30*(k)*4),  now + datetime.timedelta(seconds=30*((k+1)*4-1))) # should leave gap between events
                 session.add(evt)
                 session.flush()
                 evt.tag_images()
