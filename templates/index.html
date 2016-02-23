@@ -5,8 +5,7 @@ Index
 {% block content %}
 
 	<h2>Control Panel:</h2>
-	<a href="/login">Login</a>
-	<a href="/images">Images</a>
+	<a href="/images">All images</a>
 	<h3>Studies:</h3>
 	{% for study in studies %}
 		 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ({{study.participants | length}} participants) <br> 
@@ -24,7 +23,7 @@ Index
 	<br>
 	<a href='/reboot_db'><button>reboot DB</button></a>
 	<p>there are {{num_images}} images in the db</p>
-	<textarea style='position:absolute; right:3px; top:3px' rows='50' cols='100'>﻿
+	<textarea style='position:absolute; right:3px; top:30px' rows='50' cols='100'>﻿
 	{{sql_create}}
 	</textarea>
 {% endblock %}

@@ -1,15 +1,16 @@
+{% set hide_login = True %}
 {% extends "layout.html" %}
 {% block title %}
 Login
 {% endblock %}
 {% block content %}
 	<h1>Login</h1>
-	{% if error %}
-	  <p class=error><strong>Error:</strong> {{ error }}
+	{% if message %}
+	  <p class="message"><strong>message:</strong> {{ message }}
 	{% endif %}
 	<form action='/login' method='POST'> 
-		<input type="text" name="username"><br>
-		<input type="text" name="password"><br>
+		<input type="text" name="username" value="Aiden"><br>
+		<input type="text" name="password" value="Aiden"><br>
 		<input type='submit' value='Submit'>
 	</form>
 {% endblock %}

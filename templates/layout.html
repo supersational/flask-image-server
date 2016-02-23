@@ -12,7 +12,7 @@
 	    .textwrapper
 	    {
 	      border:1px solid #999999;
-	      margin:5px 0;
+	      margin:5px 0px;
 	      padding:3px;
 	    }
 
@@ -29,8 +29,19 @@
 	</style>
   </head>
   <body>
-  	<div id="wrap">
-    {% block content %}{% endblock %}
+
+    {% if not hide_login %}
+      <div style="position:absolute; top:5px; right:10px">
+        {% if current_user.is_authenticated %}
+          <a href="/logout">Logout</a>
+        {% else %}
+          <a href="/login">Login</a>
+        {% endif %}
+      </div>
+    {% endif %}
+  
+    <div id="wrap">
+      {% block content %}{% endblock %}
     </div>
 
     {% if sql_text %}
