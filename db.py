@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 # create session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-
+import ingest_data
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -336,6 +336,22 @@ class User(Base):
         self.username = username
         self.password = password
 
+    # authentication methods    
+    def is_authenticated(self):
+        print "is_authenticated"
+        return True
+ 
+    def is_active(self):
+        print "is_active"
+        return True
+ 
+    def is_anonymous(self):
+        return False
+ 
+    def get_id(self):
+        print "get_id"
+        return unicode(self.user_id)
+ 
     def __repr__(self):
             return 'User: %s (id=%s, password=%s, %s studies)' % (self.username, self.user_id, '*' * len(self.password), len(self.studies))
 
