@@ -8,7 +8,7 @@ from flask import Flask, request, redirect, send_from_directory, url_for
 from flask import render_template
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 # flask setup
-app = Flask(__name__, static_folder="static")
+app = Flask(__name__, static_folder='static', template_folder='templates')
 login_manager = LoginManager()
 login_manager.init_app(app)
 # import our custom db interfact
