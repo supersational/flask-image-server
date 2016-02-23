@@ -5,6 +5,8 @@ Index
 {% block content %}
 
 	<h2>Control Panel:</h2>
+	<a href="/login">Login</a>
+	<a href="/images">Images</a>
 	<h3>Studies:</h3>
 	{% for study in studies %}
 		 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ({{study.participants | length}} participants) <br> 
