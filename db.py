@@ -14,7 +14,6 @@ from sqlalchemy.exc import IntegrityError
 # create session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-import ingest_data
 
 Base = declarative_base()
 metadata = Base.metadata
