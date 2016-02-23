@@ -7,12 +7,14 @@ dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
 datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 # import flask
-from flask import Flask, request, redirect, send_from_directory
-from flask.ext.login import LoginManager, login_required
+from flask import Flask, request, redirect, send_from_directory, url_for
+from flask import g
+from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 # flask setup
 app = Flask(__name__, static_folder="static")
 login_manager = LoginManager()
 login_manager.init_app(app)
+login_manager.login_view = 'login'
 # import our custom db interfact
 import db
 from db import Event, Image, Participant, User, Study
@@ -21,9 +23,9 @@ db_session = db.get_session()
 from jinja2 import Environment, FileSystemLoader
 # Jinja2 setup
 env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
+env.globals['current_user'] = current_user
 
-
-
+# Add Jinja2 filters
 def get_time(s):
 	if type(s) == str:
 	    return s[11:20]
@@ -31,6 +33,8 @@ def get_time(s):
 		return ""
 	else:
 		return s.strftime("%H:%M:%S")
+env.filters['time'] = get_time
+
 def verbose_seconds(seconds):
 	days, rem = divmod(seconds, 86400)
 	hours, rem = divmod(rem, 3600)
@@ -40,14 +44,53 @@ def verbose_seconds(seconds):
 	magnitudes_str = ("{n} {magnitude}".format(n=int(locals_[magnitude]), magnitude=magnitude)
 			            for magnitude in ("days", "hours", "minutes", "seconds") if locals_[magnitude])
 	return ", ".join(magnitudes_str)
-env.filters['time'] = get_time
 env.filters['verbose_seconds'] = verbose_seconds
 
+# Login handling
+@login_manager.user_loader
+def load_user(id):
+	user = User.query.get(int(id))
+	print "load_user", id, user
+	return user
 
-# db.create_db(and_add_images=True)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+	template = env.get_template('login.html')
+	if request.method == 'GET':
+		return template.render()
+	username = request.form['username']
+	password = request.form['password']
+	print username, password
+	registered_user = User.query.filter_by(username=username).first()
+	print 'registered_user', registered_user
+	if registered_user is None:
+		return template.render(message="error: incorrect username")
+	if registered_user.password != password:
+		return template.render(message="error: incorrect password")
+	if login_user(registered_user, remember=True):
+		return redirect('/')
+	else:
+		return template.render(message="error: in login_user")
+
+@app.route('/logout')
+@login_required
+def logout():
+	template = env.get_template('login.html')
+	logout_user()
+	return redirect('/')
+
+@login_manager.unauthorized_handler
+def unauthorized():
+	template = env.get_template('login.html')
+	return template.render(message="This page requires login!")
+
 @app.route("/")
 def index():
+	print "hi"
 	template = env.get_template('index.html')
+	print "ho"
+	print current_user
 	return template.render(
 		studies=Study.query.all(),
 		participants=Participant.query.all(),
@@ -56,6 +99,7 @@ def index():
 		sql_create=open('create_db.txt','r').read(),
 		sql_text=db.read_log()
 		).encode('utf-8')
+
 # Custom static data
 @app.route('/images/<path:filename>')
 def serve_images(filename):
@@ -73,11 +117,12 @@ def create():
 	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+sql+"</pre>"
 
 @app.route("/images")
+@login_required
 def images():
 	res = "<h1>All Images</h1>\n"
 	for image in Image.query.all():
-		res += "<img src='/%s' href='/%s'>" % (image.thumnail_url, image.full_url)
-		res += " : ".join([str.strip(str(x)) for x in image]) + "<br>\n"
+		res += "<img src='%s' href='%s'>" % (image.thumbnail_url, image.full_url)
+		# res += " : ".join([str.strip(str(x)) for x in image]) + "<br>\n"
 	return res
 
 @app.route("/user/<int:user_id>")
@@ -86,7 +131,7 @@ def user(user_id):
 	res = "<h2> User: " + user.username + " (" + str(user_id) + ")</h2>\n"
 	res += "<h4> User has access to the following studies: </h4>\n"
 	for study in user.studies:
-		res += " : ".join([str.strip(str(x)) for x in study]) + "<br>\n"
+		res += "Study: %s, id: %s, has %s participants %s <br>\n" % (study.name, study.study_id, len(study.participants), dir(study))
 	return res
 
 @app.route("/study/<int:study_id>")
@@ -227,4 +272,5 @@ def internal_server_error(error):
 
 if __name__ == "__main__":
 	print "running on port 5000"
-	app.run(debug=True)
+	app.config["SECRET_KEY"] = "secret? what's that?"
+	app.run(port=5000, debug=True)
