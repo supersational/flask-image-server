@@ -5,6 +5,7 @@ datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 # import flask
 from flask import Flask, request, redirect, send_from_directory, url_for
+from flask import render_template
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 # flask setup
 app = Flask(__name__, static_folder="static")
@@ -14,13 +15,9 @@ login_manager.init_app(app)
 import db
 from db import Event, Image, Participant, User, Study
 db_session = db.get_session()
-# Jinja2 templating
-from jinja2 import Environment, FileSystemLoader
-# Jinja2 setup
-env = Environment(loader=FileSystemLoader('templates'))
-env.globals['current_user'] = current_user
 
 # Add Jinja2 filters
+@app.template_filter('time')
 def get_time(s):
 	if type(s) == str:
 	    return s[11:20]
@@ -28,8 +25,8 @@ def get_time(s):
 		return ""
 	else:
 		return s.strftime("%H:%M:%S")
-env.filters['time'] = get_time
 
+@app.template_filter('verbose_seconds')
 def verbose_seconds(seconds):
 	days, rem = divmod(seconds, 86400)
 	hours, rem = divmod(rem, 3600)
@@ -39,7 +36,6 @@ def verbose_seconds(seconds):
 	magnitudes_str = ("{n} {magnitude}".format(n=int(locals_[magnitude]), magnitude=magnitude)
 			            for magnitude in ("days", "hours", "minutes", "seconds") if locals_[magnitude])
 	return ", ".join(magnitudes_str)
-env.filters['verbose_seconds'] = verbose_seconds
 
 # Login handling
 @login_manager.user_loader
@@ -50,9 +46,8 @@ def load_user(id):
 login_manager.login_view = 'login'
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-	template = env.get_template('login.html')
 	if request.method == 'GET':
-		return template.render()
+		return render_template('login.html')
 
 	username = request.form['username']
 	password = request.form['password']
@@ -60,13 +55,13 @@ def login():
 	registered_user = User.query.filter_by(username=username).first()
 
 	if registered_user is None:
-		return template.render(message="error: incorrect username")
+		return render_template('login.html', message="error: incorrect username")
 	elif registered_user.password != password:
-		return template.render(message="error: incorrect password")
+		return render_template('login.html', message="error: incorrect password")
 	elif login_user(registered_user, remember=True):
 		return redirect('/')
 	else:
-		return template.render(message="error: in login_user")
+		return render_template('login.html', message="error: in login_user")
 
 @app.route('/logout')
 @login_required
@@ -76,13 +71,11 @@ def logout():
 
 @login_manager.unauthorized_handler
 def unauthorized():
-	template = env.get_template('login.html')
-	return template.render(message="This page requires login!")
+	return render_template('login.html', message="This page requires login!")
 
 @app.route("/")
 def index():
-	template = env.get_template('index.html')
-	return template.render(
+	return render_template('index.html',
 		studies=Study.query.all(),
 		participants=Participant.query.all(),
 		users=User.query.all(),
@@ -127,12 +120,11 @@ def user(user_id):
 
 @app.route("/study/<int:study_id>")
 def study(study_id):
-	template = env.get_template('study.html')
 	study = Study.query.filter(Study.study_id==study_id).one()
 	study_participants = study.participants
 	participants_to_add = [x for x in Participant.query.all() if not x in study_participants]
 
-	return template.render(
+	return render_template('study.html', 
 		study_id=study_id,
 		study_name=study.name,
 		participants=study_participants,
@@ -149,7 +141,6 @@ def participant(participant_id):
 		print date_min, date_max
 		daterange={'min':date_min,'max':date_max}
 
-	template = env.get_template('participant.html')
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	if daterange is None:
 		images = participant.images
@@ -159,7 +150,7 @@ def participant(participant_id):
 	# print "sorted list:"
 	# for img in images
 	# 	print img, '' if not daterange else str(img.image_time > daterange['max']) + str(img.image_time < daterange['min'])
-	return template.render(
+	return render_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
 		images=images,
@@ -171,13 +162,12 @@ def participant(participant_id):
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
 def event(participant_id, event_id):
-	template = env.get_template('participant.html')
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
 	images = sorted(event.images, key=lambda x: x.image_time)
 
 	daterange={'min':event.start_time,'max':event.end_time}
-	return template.render(
+	return render_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
 		images=images[0:100],
