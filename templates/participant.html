@@ -104,14 +104,24 @@
 		$('.split_left').click(function() {
 			me = $(this)
 			console.log('Event.split_left(',{{id}}, me.attr("event-id"), me.attr("image-id"));
-			Event.split_left({{id}}, me.attr("event-id"), me.attr("image-id"));
-			location.reload()
+			Event.split_left({{id}}, me.attr("event-id"), me.attr("image-id"), function(status) {
+				if (status=="success") location.reload();
+				else {
+					console.log(status);
+					me.attr("fill", "red")
+				}
+			});
 		});
 		$('.split_right').click(function() {
 			me = $(this)
 			console.log('Event.split_right(',{{id}}, me.attr("event-id"), me.attr("image-id"));
-			Event.split_right({{id}}, me.attr("event-id"), me.attr("image-id"));
-			location.reload()
+			Event.split_right({{id}}, me.attr("event-id"), me.attr("image-id"), function(status) {
+				if (status=="success") location.reload();
+				else {
+					console.log(status);
+					me.attr("fill", "red")
+				}
+			});
 		});
 	</script>
 {% endblock %}
