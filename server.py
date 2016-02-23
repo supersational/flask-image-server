@@ -1,26 +1,29 @@
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
+# date handling
 import datetime
-# import flask
-from flask import Flask, request, redirect, send_from_directory
-# import our custom db interfact
-import db
-from db import Event, Image, Participant, User, Study
-# @app.template_filter('time')
-# Jinja2 templating
-from jinja2 import Environment, FileSystemLoader
-
-app = Flask(__name__, static_folder="static")
-
 dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
 datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
-
+# import flask
+from flask import Flask, request, redirect, send_from_directory
+from flask.ext.login import LoginManager, login_required
+# flask setup
+app = Flask(__name__, static_folder="static")
+login_manager = LoginManager()
+login_manager.init_app(app)
+# import our custom db interfact
+import db
+from db import Event, Image, Participant, User, Study
 db_session = db.get_session()
-
+# Jinja2 templating
+from jinja2 import Environment, FileSystemLoader
 # Jinja2 setup
 env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
+
+
+
 def get_time(s):
 	if type(s) == str:
 	    return s[11:20]
