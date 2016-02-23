@@ -1,6 +1,3 @@
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
 # date handling
 import datetime
 dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
@@ -8,13 +5,11 @@ datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 # import flask
 from flask import Flask, request, redirect, send_from_directory, url_for
-from flask import g
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 # flask setup
 app = Flask(__name__, static_folder="static")
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
 # import our custom db interfact
 import db
 from db import Event, Image, Participant, User, Study
@@ -22,7 +17,7 @@ db_session = db.get_session()
 # Jinja2 templating
 from jinja2 import Environment, FileSystemLoader
 # Jinja2 setup
-env = Environment(loader=FileSystemLoader('templates', encoding='utf-8-sig'))
+env = Environment(loader=FileSystemLoader('templates'))
 env.globals['current_user'] = current_user
 
 # Add Jinja2 filters
@@ -49,26 +44,26 @@ env.filters['verbose_seconds'] = verbose_seconds
 # Login handling
 @login_manager.user_loader
 def load_user(id):
-	user = User.query.get(int(id))
-	print "load_user", id, user
-	return user
+	return User.query.get(int(id))
 
 
+login_manager.login_view = 'login'
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 	template = env.get_template('login.html')
 	if request.method == 'GET':
 		return template.render()
+
 	username = request.form['username']
 	password = request.form['password']
 	print username, password
 	registered_user = User.query.filter_by(username=username).first()
-	print 'registered_user', registered_user
+
 	if registered_user is None:
 		return template.render(message="error: incorrect username")
-	if registered_user.password != password:
+	elif registered_user.password != password:
 		return template.render(message="error: incorrect password")
-	if login_user(registered_user, remember=True):
+	elif login_user(registered_user, remember=True):
 		return redirect('/')
 	else:
 		return template.render(message="error: in login_user")
@@ -76,7 +71,6 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
-	template = env.get_template('login.html')
 	logout_user()
 	return redirect('/')
 
@@ -87,10 +81,7 @@ def unauthorized():
 
 @app.route("/")
 def index():
-	print "hi"
 	template = env.get_template('index.html')
-	print "ho"
-	print current_user
 	return template.render(
 		studies=Study.query.all(),
 		participants=Participant.query.all(),
@@ -98,7 +89,7 @@ def index():
 		num_images=len(Image.query.all()),
 		sql_create=open('create_db.txt','r').read(),
 		sql_text=db.read_log()
-		).encode('utf-8')
+		)
 
 # Custom static data
 @app.route('/images/<path:filename>')
@@ -147,7 +138,7 @@ def study(study_id):
 		participants=study_participants,
 		participants_to_add=participants_to_add,
 		sql_text=db.read_log()
-		).encode('utf-8')
+		)
 
 @app.route("/participant/<int:participant_id>")
 def participant(participant_id):
