@@ -354,6 +354,28 @@ class User(Base):
     def __repr__(self):
             return 'User: %s (id=%s, password=%s, %s studies)' % (self.username, self.user_id, '*' * len(self.password), len(self.studies))
 
+
+class Schema(Base):
+    __tablename__ = 'schemas'
+
+    schema_id = Column(Integer, primary_key=True)
+    name = Column(String(50))
+    labels = relationship(u'Label', back_populates='schema')
+    
+    def __repr__(self):
+        return "Schema: %s, (id=%s)" % (self.name, self.label_id)
+
+class Label(Base):
+    __tablename__ = 'labels'
+
+    label_id = Column(Integer, primary_key=True)
+    schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=False)
+    name = Column(String(50))
+    schema = relationship(u'Schema', back_populates='labels')
+
+    def __repr__(self):
+        return "Label: %s, (id=%s)" % (self.name, self.label_id)
+
 def drop_db():
     Base.metadata.drop_all(engine)
 
