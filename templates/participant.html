@@ -5,6 +5,9 @@
 {% set im_both=im_width+im_padding %}
 {% set im_half=im_both/2 %}
 
+{% block head %}
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+{% endblock %}
 {% block title %}
 	Participant
 {% endblock %}
@@ -26,6 +29,17 @@
 	    content:" ";
 	    display:block;
 	}
+	.circle {
+		stroke: lightblue;
+		stroke-width:5;
+		fill:white;
+		cursor: grab;
+		cursor: -webkit-grab;
+	}
+	.circle:hover {
+		stroke-width:3;
+	}
+
 {% endblock %}
 {% block content %}
 	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
@@ -89,11 +103,11 @@
 					 	{% endif %} 
 				 	{% endif %} 
 				 	{% if image.is_last or image.is_first %}
-				 		<circle cx="{{im_half}}" cy="15" r="10" stroke="{{fillcol}}" stroke-width="5" fill="white" style="cursor: grab; cursor:-webkit-grab;" id="{{image.image_id}}" class="draggable" />
+				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
 					{% endif %}
 				{% endif %}
 			</svg>
-		 	<a href='{{image.full_url}}'><img width="{{im_width}}" height="74" src='{{image.thumbnail_url}}' ></a>
+		 	<a href='{{image.full_url}}'><img width="" height="74" src='{{image.thumbnail_url}}' ></a>
 		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 		 </div>
 	{% else %}
@@ -101,6 +115,32 @@
 	{% endfor %}
 	</div>
 	<script>
+	function Image(index, image_id, event_id, thumb_url, width, full_url, time, is_first)  {
+		this.index = index;
+		this.image_id = image_id;
+		this.event_id = event_id;
+		this.time = time;
+		this.width = width;
+		this.thumb_url = thumb_url;
+		this.full_url = full_url;
+		this.div = null;
+	}
+	Image.prototype.generateHTML = function() {
+		
+		self.div = $('<div class="img"><a href="'+self.full_url+'"><img width="'+self.width+'" height="74" src='+self.thumb_url+' ></a></div>').appendTo(".shadow-wrapper") 
+		if (self.event_id!=null) $('<a id="'+self.time+'" href="/participant/{{id}}/'+self.event_id+'">event '+self.event_id+'</a>').appendTo(self.div)
+
+	}
+	Image.prototype.genSVG = function() {
+		$('<svg width="{{im_both}}" height="30">').appendTo(self.div))
+	}
+	var dragging = null;
+	var images = [{image_id: }
+	function() {
+		if (dragging!=null) {
+
+		}
+	}
 		$('.split').click(function() {
 			me = $(this)
 			var image_id = me.closest(".img").attr("image-id");
@@ -114,6 +154,30 @@
 					me.attr("fill", "red")
 				}
 			});
+		}).hover(function(e) {
+			me = $(this)
+			console.log(e, me.attr("x"))
+			console.log(me.closest("svg").first().append('<circle cx="'+e.offsetX+'" cy="'+e.offsetY+'" r="10" class="circle"></circle>'))
 		});
+		$('circle').hover(function() {
+			$(this).attr("r", 12)
+		}, function() {
+			$(this).attr("r", 10)
+		});
+		$('circle').draggable()
+		  .bind('mousedown', function(event, ui){
+		  	console.log($(this).attr("cx"))
+		  	$(this).attr("originalX", $(this).attr("cx")-event.target.parentNode.offsetLeft)
+		    // bring target to front
+		    $(event.target).appendTo( "#wrap" );
+		  }).mouseup(function(event, ui){
+		  	$(this).removeAttr("originalX")
+		  }).bind('drag', function(event, ui){
+			var it = $(event.target);
+		    // update coordinates manually, since top/left style props don't work on SVG
+		    it.attr('cx', event.clientX);
+		    // it.attr('cy', ui.position.top-ui.originalPosition.top);
+		    console.log(it.attr("cx"), it.attr("cy"), event)
+		  });
 	</script>
 {% endblock %}
