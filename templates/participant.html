@@ -70,14 +70,14 @@
 
 	{% set fillcol="lightblue" %}
 	{% for image in images %}
-		 <div class="img" id="{{image.image_id}}">
+		 <div class="img" id="{{image.image_id}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" >
 	 		<svg width="{{im_both}}" height="30">
 	 			{% if image.event is not none %}			 	
 				 	{% if not image.is_last %}
-				 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" id="{{image.image_id}}" style="cursor:col-resize;" class="split_right" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" /> 
+				 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" style="cursor:col-resize;" class="split" split-dir="right" /> 
 				 	{% endif %} 
 				 	{% if not image.is_first %}
-				 		<rect width="{{im_half}}" height="15" x="0" y="15" fill="yellow" id="{{image.image_id}}" style="cursor:col-resize;" class="split_left" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" /> 
+				 		<rect width="{{im_half}}" height="15" x="0" y="15" fill="yellow" style="cursor:col-resize;" class="split" split-dir="left" /> 
 				 	{% endif %} 
 				 	{% if not (image.is_last and image.is_first) %}
 					 	{% if image.is_last %}
@@ -101,21 +101,13 @@
 	{% endfor %}
 	</div>
 	<script>
-		$('.split_left').click(function() {
+		$('.split').click(function() {
 			me = $(this)
-			console.log('Event.split_left(',{{id}}, me.attr("event-id"), me.attr("image-id"));
-			Event.split_left({{id}}, me.attr("event-id"), me.attr("image-id"), function(status) {
-				if (status=="success") location.reload();
-				else {
-					console.log(status);
-					me.attr("fill", "red")
-				}
-			});
-		});
-		$('.split_right').click(function() {
-			me = $(this)
-			console.log('Event.split_right(',{{id}}, me.attr("event-id"), me.attr("image-id"));
-			Event.split_right({{id}}, me.attr("event-id"), me.attr("image-id"), function(status) {
+			var image_id = me.closest(".img").attr("image-id");
+			var event_id = me.closest(".img").attr("event-id");
+			var dir = me.attr("split-dir");
+			console.log(image_id, event_id, dir)
+			Event.split(dir, {{id}},event_id, image_id, function(status) {
 				if (status=="success") location.reload();
 				else {
 					console.log(status);

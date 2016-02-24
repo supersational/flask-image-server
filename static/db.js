@@ -22,26 +22,16 @@ var Event = {
 			} 
 		});
 	},
-	split_left: function(participant_id, event_id, image_id, complete) {
-		$.ajax({
-			type: "POST",
-			url: "/participant/"+participant_id+"/"+event_id+"/"+image_id+"/split_left",
-			complete : function(jqXHR, textStatus) {
-				console.log("Event.split_left("+participant_id+","+event_id+") " + textStatus);
-				console.log(jqXHR)
-				if (complete) complete(textStatus)
-			} 
-		});
-	},
-	split_right: function(participant_id, event_id, image_id, complete) {
-		$.ajax({
-			type: "POST",
-			url: "/participant/"+participant_id+"/"+event_id+"/"+image_id+"/split_right",
-			complete : function(jqXHR, textStatus) {
-				console.log("Event.split_right("+participant_id+","+event_id+") " + textStatus);
-				console.log(jqXHR)
-				if (complete) complete(textStatus)
-			} 
-		});
+	split: function(dir, participant_id, event_id, image_id, complete) {
+		if (dir=="left" || dir=="right") 
+			$.ajax({
+				type: "POST",
+				url: "/participant/"+participant_id+"/"+event_id+"/"+image_id+"/split_"+dir,
+				complete : function(jqXHR, textStatus) {
+					console.log("Event.split_left("+participant_id+","+event_id+") " + textStatus);
+					console.log(jqXHR)
+					if (complete) complete(textStatus)
+				} 
+			});
 	}
 }
