@@ -360,10 +360,15 @@ class Schema(Base):
 
     schema_id = Column(Integer, primary_key=True)
     name = Column(String(50))
+
     labels = relationship(u'Label', back_populates='schema')
     
+    def __init__(self, name):
+        self.name = name
+
     def __repr__(self):
-        return "Schema: %s, (id=%s)" % (self.name, self.label_id)
+        return "Schema: %s, (id=%s, %s labels)" % (self.name, self.schema_id, len(self.labels))
+
 
 class Label(Base):
     __tablename__ = 'labels'
@@ -371,10 +376,23 @@ class Label(Base):
     label_id = Column(Integer, primary_key=True)
     schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=False)
     name = Column(String(50))
+    UniqueConstraint('name', 'schema_id') # schemas contain uniquely named labels
+    color = Column(String(50))
+
     schema = relationship(u'Schema', back_populates='labels')
+
+    def __init__(self, name, schema=None):
+        self.name = name
+        if schema is not None:
+            if type(schema) is int:
+                self.schema_id = schema_id
+            elif type(schema) is Schema:
+                self.schema_id = schema.schema_id
+                self.schema = schema
 
     def __repr__(self):
         return "Label: %s, (id=%s)" % (self.name, self.label_id)
+
 
 def drop_db():
     Base.metadata.drop_all(engine)
@@ -439,7 +457,13 @@ def get_session(create_data=False, run_tests=False):
                 session.flush()
                 evt.tag_images()
                 # print evt
-
+        s = Schema('default')
+        session.add(s)
+        session.flush()
+        s.labels.extend((Label("walking"), Label("running"), Label("sleeping"), Label("sitting"), Label("standing")))
+        print "\n".join(map(str, Schema.query.all()))
+        print "\n".join(map(str, Label.query.all()))
+        
         # this will automatically create the 'default' study
         p.studies.append(Study('default'))
         p.studies = []

@@ -13,7 +13,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 # import our custom db interfact
 import db
-from db import Event, Image, Participant, User, Study
+from db import Event, Image, Participant, User, Study, Schema, Label
 db_session = db.get_session()
 
 # Add Jinja2 filters
@@ -31,7 +31,7 @@ def verbose_seconds(seconds):
 	days, rem = divmod(seconds, 86400)
 	hours, rem = divmod(rem, 3600)
 	minutes, seconds = divmod(rem, 60)
-	if minutes + hours + days <= 0 and seconds < 1:seconds = 1
+	if minutes + hours + days <= 0 and seconds < 1: seconds = 1
 	locals_ = locals()
 	magnitudes_str = ("{n} {magnitude}".format(n=int(locals_[magnitude]), magnitude=magnitude)
 			            for magnitude in ("days", "hours", "minutes", "seconds") if locals_[magnitude])
@@ -180,7 +180,8 @@ def event(participant_id, event_id):
 		next_image=event.next_image,
 		event_id=event.event_id,
 		event_seconds=event.length.total_seconds(),
-		sql_text=db.read_log()
+		sql_text=db.read_log(),
+		schema=
 		)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
