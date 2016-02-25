@@ -93,27 +93,31 @@
 	<div style="width:100%;padding:30px;" class="shadow-wrapper">
 	{% set fillcol="lightblue" %}
 	{% for image in images %}
-		 <div class="img" id="{{image.image_id}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" >
+		 <div class="img" id="{{image.image_id}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
 	 		<svg width="{{im_both}}" height="30">
 	 			{% if image.event is not none %}			 	
 				 	{% if not image.is_last %}
-				 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" style="cursor:col-resize;" class="split" split-dir="right" /> 
+				 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" style="cursor:col-resize;" class="split right" split-dir="right" /> 
 				 	{% endif %} 
 				 	{% if not image.is_first %}
-				 		<rect width="{{im_half}}" height="15" x="0" y="15" fill="yellow" style="cursor:col-resize;" class="split" split-dir="left" /> 
+				 		<rect width="{{im_half}}" height="15" x="0" y="15" fill="yellow" style="cursor:col-resize;" class="split left" split-dir="left" /> 
 				 	{% endif %} 
 				 	{% if not (image.is_last and image.is_first) %}
 					 	{% if image.is_last %}
-					 		<rect width="{{im_half}}" height="5" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+					 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
 					 	{% elif image.is_first %}
-					 		<rect width="{{im_half}}" height="5" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+					 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
 					 	{% else %}
-					 		<rect width="{{im_both}}" height="5" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
+					 		<rect class="line" nw="{{im_both}}" width="{{im_both}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
 					 	{% endif %} 
+					{% else %}
+				 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
 				 	{% endif %} 
 				 	{% if image.is_last or image.is_first %}
 				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
 					{% endif %}
+				{% else %}
+			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
 				{% endif %}
 			</svg>
 		 	<a href='{{image.full_url}}'><img width="" height="74" src='{{image.thumbnail_url}}' ></a>
@@ -155,7 +159,6 @@
 	Image.prototype.genSVG = function() {
 		$('<svg width="{{im_both}}" height="30">').appendTo(self.div)
 	}
-	var dragging = null;
 	var images = [{image_id: }
 	function() {
 		if (dragging!=null) {
@@ -163,12 +166,112 @@
 		}
 	}
 		  */
+		 var dragging = null;
+		 var drag_id = null;
+		 var drag_event_id = null;
+		 $(document).mouseup(function() {
+		 	dragging = null;
+		 	drag_id = null;
+		 	reset_img($(".img"))
+		 })
+		 $('circle').mousedown(function(e) {
+		 	e.preventDefault();
+		 	dragging = $(this).closest(".img");
+		 	drag_id = $(dragging).attr('id')
+		 	drag_event_id = $(dragging).attr('event-id')
+		 });
+		$('.img').mousemove(function(e) {
+			if (dragging) {
+				e.preventDefault()
+				var this_id = $(this).attr('id');
+				var this_event_id = $(this).attr('event-id');
+				var same_event = (this_event_id == drag_event_id)
+				console.log(this_id, drag_id, same_event)
+				var move = e.pageX - $(this).offset().left
+				if (this_id != drag_id) {
+					var between = $("#"+Math.min(this_id, drag_id)).nextUntil("#"+Math.max(this_id, drag_id))
+					// console.log($(".line").not(between))
+					line_full(between)
+					hide_circle(between)
+					hide_circle(this)
+					reset_img($(".img").not(between))
+					
+					$(".img").not(between).find(".circle").attr("visibility","visible")
+					// pull the original img
+					if (this_id>drag_id) pull_away(dragging, {{im_both}})
+					else				 pull_away(dragging, 0)
+					if (same_event && (is_first(this) || is_last(this))) { // shrinking own event
+						from_mid(this, move);
+					}
+					// pull this into new frame
+					// if within same event coming from opposite direction
+					else if (!same_event ? (this_id>drag_id) : (this_id<drag_id)) { 
+						from_left(this, move)
+					} else {
+						from_right(this,move)
+					}
+				} else {
+					// on same img as started
+					reset_img($(".img").not(this));
+					pull_away(this, move)
+				}
+			}
+		});
+		function is_first(el) {return $(el).attr("is-first")=="True";}
+		function is_last(el) {return $(el).attr("is-last")=="True";}
+		function pull_away(el, move) {
+			var first = is_first(el);
+			var last = is_last(el);
+			if (first && !last) {
+				from_right(el,move);
+			}
+			else if (last && !first) {
+				from_left(el,move);
+			} else {
+				from_mid(el, move);
+			}
+		}
+		function from_mid(el, move) {
+			if (move>{{im_half}}) {
+				$(el).find(".line").attr({"width":move-{{im_half}}, "x":{{im_half}}});
+			} else {
+				$(el).find(".line").attr({"width":{{im_half}}-move, "x":move});
+			}
+		}
+		function from_left(el, move) {
+			$(el).find(".line").attr({"width":move, "x":0});
+			move_circle_continuous(el, move);
+		}
+		function from_right(el, move) {
+			$(el).find(".line").attr({"width":{{im_both}}-move, "x":move});
+			move_circle_continuous(el, move);
+		}
+		function move_circle(el, move) {
+			$(el).find(".circle").attr("cx",  move)
+		}
+		function move_circle_continuous(el, move) {
+			move_circle(el, move);
+			if (move>{{im_both}}-10) move_circle($(el).next(".img"), move-{{im_both}});
+			if (move<10) move_circle($(el).prev(".img"), {{im_both}}+move);
+		}
+		function hide_circle(el) {
+			$(el).find(".circle").attr("visibility","hidden");
+		}
+		function line_full(el) {
+			$(el).find(".line").attr({"width":150, "x":0});
+		}
+		function reset_img(el) {
+			$(el).find(".circle").attr("visibility","visible");
+			$(el).find(".line").each(function(){
+				$(this).attr({"width":$(this).attr("nw"), "x":$(this).attr("nx")});
+			});
+		}
+
 		$('.split').click(function() {
 			me = $(this)
 			var image_id = me.closest(".img").attr("image-id");
 			var event_id = me.closest(".img").attr("event-id");
 			var dir = me.attr("split-dir");
-			console.log(image_id, event_id, dir)
 			Event.split(dir, {{id}},event_id, image_id, function(status) {
 				if (status=="success") location.reload();
 				else {
@@ -176,30 +279,26 @@
 					me.attr("fill", "red")
 				}
 			});
-		}).hover(function(e) {
-			me = $(this)
-			console.log(e, me.attr("x"))
-			console.log(me.closest("svg").first().append('<circle cx="'+e.offsetX+'" cy="'+e.offsetY+'" r="10" class="circle"></circle>'))
 		});
 		$('circle').hover(function() {
-			$(this).attr("r", 12)
+			$(this).attr("r", 10) // was 10
 		}, function() {
 			$(this).attr("r", 10)
 		});
-		$('circle').draggable()
-		  .bind('mousedown', function(event, ui){
-		  	console.log($(this).attr("cx"))
-		  	$(this).attr("originalX", $(this).attr("cx")-event.target.parentNode.offsetLeft)
-		    // bring target to front
-		    $(event.target).appendTo( "#wrap" );
-		  }).mouseup(function(event, ui){
-		  	$(this).removeAttr("originalX")
-		  }).bind('drag', function(event, ui){
-			var it = $(event.target);
-		    // update coordinates manually, since top/left style props don't work on SVG
-		    it.attr('cx', event.clientX);
-		    // it.attr('cy', ui.position.top-ui.originalPosition.top);
-		    console.log(it.attr("cx"), it.attr("cy"), event)
-		  })
+		// $('circle').draggable()
+		//   .bind('mousedown', function(event, ui){
+		//   	console.log($(this).attr("cx"))
+		//   	$(this).attr("originalX", $(this).attr("cx")-event.target.parentNode.offsetLeft)
+		//     // bring target to front
+		//     $(event.target).appendTo( "#wrap" );
+		//   }).mouseup(function(event, ui){
+		//   	$(this).removeAttr("originalX")
+		//   }).bind('drag', function(event, ui){
+		// 	var it = $(event.target);
+		//     // update coordinates manually, since top/left style props don't work on SVG
+		//     it.attr('cx', event.clientX);
+		//     // it.attr('cy', ui.position.top-ui.originalPosition.top);
+		//     console.log(it.attr("cx"), it.attr("cy"), event)
+		//   })
 	</script>
 {% endblock %}
