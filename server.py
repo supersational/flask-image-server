@@ -157,7 +157,8 @@ def participant(participant_id):
 		days=participant.get_images_by_hour(),
 		daterange=daterange,
 		num_images=len(participant.images),
-		sql_text=db.read_log()
+		sql_text=db.read_log(),
+		schema=Schema.query.first()
 		)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
@@ -181,7 +182,7 @@ def event(participant_id, event_id):
 		event_id=event.event_id,
 		event_seconds=event.length.total_seconds(),
 		sql_text=db.read_log(),
-		schema=
+		schema=Schema.query.first()
 		)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])

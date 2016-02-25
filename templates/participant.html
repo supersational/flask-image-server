@@ -7,6 +7,8 @@
 
 {% block head %}
     <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
 {% endblock %}
 {% block title %}
 	Participant
@@ -50,6 +52,14 @@
 		{% endif%}
 		<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
 	{% endif%}
+	<div id="jstree">
+		<ul>
+			{% for label in schema.labels %} 
+				<li>{{ label.name }}</li>
+			{% endfor %}
+		</ul>
+	</div>
+
 	<p> date range : {{daterange.min}} - {{daterange.max}}
 	{% for day in days %}
 		<h3> {{day}} </h3>
@@ -81,7 +91,6 @@
 		</div> 
 	</div>
 	<div style="width:100%;padding:30px;" class="shadow-wrapper">
-
 	{% set fillcol="lightblue" %}
 	{% for image in images %}
 		 <div class="img" id="{{image.image_id}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" >
@@ -115,6 +124,18 @@
 	{% endfor %}
 	</div>
 	<script>
+	$(function () {
+		$('#jstree').jstree({
+			"core" : {
+				"multiple" : false,
+				"animation" : 0,
+				"check_callback" : true
+			},
+			"plugins" : [ "search",  "contextmenu"  ]
+		}); 
+
+	});
+	/*
 	function Image(index, image_id, event_id, thumb_url, width, full_url, time, is_first)  {
 		this.index = index;
 		this.image_id = image_id;
@@ -132,7 +153,7 @@
 
 	}
 	Image.prototype.genSVG = function() {
-		$('<svg width="{{im_both}}" height="30">').appendTo(self.div))
+		$('<svg width="{{im_both}}" height="30">').appendTo(self.div)
 	}
 	var dragging = null;
 	var images = [{image_id: }
@@ -141,6 +162,7 @@
 
 		}
 	}
+		  */
 		$('.split').click(function() {
 			me = $(this)
 			var image_id = me.closest(".img").attr("image-id");
@@ -178,6 +200,6 @@
 		    it.attr('cx', event.clientX);
 		    // it.attr('cy', ui.position.top-ui.originalPosition.top);
 		    console.log(it.attr("cx"), it.attr("cy"), event)
-		  });
+		  })
 	</script>
 {% endblock %}
