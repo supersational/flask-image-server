@@ -369,8 +369,9 @@ class Schema(Base):
     # root_folder_id = Column(ForeignKey(u'folders.id'))
 
     labels = relationship(u'Label', back_populates='schema')
-    # folders = relationship(u'Folder', back_populates='schema')
+    folders = relationship(u'Folder', back_populates='schema')
     # root_folder = relationship('Folder')
+
 
     def __init__(self, name):
         self.name = name
@@ -378,19 +379,25 @@ class Schema(Base):
     def __repr__(self):
         return "Schema: %s, (id=%s, %s labels)" % (self.name, self.schema_id, len(self.labels))
 
+    @hybrid_property
+    def root_folder(self):
+        if len(self.folders)==0:
+            return None
+        return Folder.query.filter((Folder.schema_id==self.schema_id) & (Folder.parent==None)).one()
+
 
 class Label(Base):
     __tablename__ = 'labels'
 
     label_id = Column(Integer, primary_key=True)
     schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=False)
-    # folder_id = Column(ForeignKey(u'folders.id'))
+    folder_id = Column(ForeignKey(u'folders.id'))
     name = Column(String(50))
     color = Column(String(50))
     UniqueConstraint('name', 'schema_id') # schemas contain uniquely named labels
 
     schema = relationship(u'Schema', back_populates='labels')
-    # folder = relationship(u'Folder', back_populates='labels') # containing folder
+    folder = relationship(u'Folder', back_populates='labels') # can belong to folder
     def __init__(self, name, schema=None):
         self.name = name
         if schema is not None:
@@ -425,8 +432,8 @@ class Folder(Base):
         # on the "name" attribute.
         collection_class=attribute_mapped_collection('name'),
     )
-    # labels = relationship(u"Label", back_populates='folder')
-    schema = relationship(u'Schema')
+    labels = relationship(u"Label", back_populates='folder')
+    schema = relationship(u'Schema', back_populates='folders')
 
     def __init__(self, name, parent=None, schema=None):
         self.name = name

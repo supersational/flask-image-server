@@ -70,7 +70,7 @@ def create_data(session):
     print "done creating fake data."
 
 def test_db(session, create_session):
-    tests = {'duplicateUser':False, 'event_with_images':False, 'negative_time_event':False, 'add_images_to_event':False, 'no_img_event': False, 'node':False}
+    tests = {'duplicateUser':False, 'event_with_images':False, 'negative_time_event':False, 'add_images_to_event':False, 'no_img_event': False, 'node':False, 'find_root_node':False}
     Base.query = session.query_property()
     try:
         test_session = create_session(autocommit=False, autoflush=False)
@@ -164,13 +164,16 @@ def test_db(session, create_session):
     session.flush()
     print "Tree After Save:\n %s" % node.dump()
     if len(Folder.query.all())==6: tests['node'] = True
+    if s.root_folder == node: tests['find_root_node'] = True
 
     session.delete(node)
     session.flush()
+
     print "Tree After Delete:\n %s" % node.dump()
     print Folder.query.all()
     if len(Folder.query.all())!=0: tests['node'] = False
     
+    if s.root_folder!=None: tests['find_root_node'] = False
 
 
 
