@@ -4,7 +4,7 @@ import datetime
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 
-from db import Base, Event, Image, Participant, User, Study, Schema, Label
+from db import Base, Event, Image, Participant, User, Study, Schema, Label, Folder
 
 def create_data(session):
     Base.query = session.query_property()
@@ -70,7 +70,7 @@ def create_data(session):
     print "done creating fake data."
 
 def test_db(session, create_session):
-    tests = {'duplicateUser':False, 'event_with_images':False, 'negative_time_event':False, 'add_images_to_event':False, 'no_img_event': False}
+    tests = {'duplicateUser':False, 'event_with_images':False, 'negative_time_event':False, 'add_images_to_event':False, 'no_img_event': False, 'node':False}
     Base.query = session.query_property()
     try:
         test_session = create_session(autocommit=False, autoflush=False)
@@ -145,6 +145,35 @@ def test_db(session, create_session):
     else:
         print "db didn't delete an event with invalid start/end times!!"
         print "evts %s: " % len(evts) + str(evts)
+
+    # Folder
+    s = Schema('default')
+    node = Folder('rootnode', schema=s)
+
+    Folder('node1', parent=node)
+    Folder('node3', parent=node)
+
+    node2 = Folder('node2', schema=s)
+    Folder('subnode1', parent=node2)
+    node.children['node2'] = node2
+    Folder('subnode2', parent=node.children['node2'])
+
+    print "Created new tree structure:\n%s" % node.dump()
+
+    session.add(node)
+    session.flush()
+    print "Tree After Save:\n %s" % node.dump()
+    if len(Folder.query.all())==6: tests['node'] = True
+
+    session.delete(node)
+    session.flush()
+    print "Tree After Delete:\n %s" % node.dump()
+    print Folder.query.all()
+    if len(Folder.query.all())!=0: tests['node'] = False
+    
+
+
+
 
     # summarize tests
     for key, value in tests.iteritems():
