@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 # create session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
-# to support TreeNode:
+# to support Folder:
 from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 # custom data creation class
@@ -366,9 +366,12 @@ class Schema(Base):
 
     schema_id = Column(Integer, primary_key=True)
     name = Column(String(50))
+    # root_folder_id = Column(ForeignKey(u'folders.id'))
 
     labels = relationship(u'Label', back_populates='schema')
-    
+    # folders = relationship(u'Folder', back_populates='schema')
+    # root_folder = relationship('Folder')
+
     def __init__(self, name):
         self.name = name
 
@@ -381,12 +384,13 @@ class Label(Base):
 
     label_id = Column(Integer, primary_key=True)
     schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=False)
+    # folder_id = Column(ForeignKey(u'folders.id'))
     name = Column(String(50))
-    UniqueConstraint('name', 'schema_id') # schemas contain uniquely named labels
     color = Column(String(50))
+    UniqueConstraint('name', 'schema_id') # schemas contain uniquely named labels
 
     schema = relationship(u'Schema', back_populates='labels')
-
+    # folder = relationship(u'Folder', back_populates='labels') # containing folder
     def __init__(self, name, schema=None):
         self.name = name
         if schema is not None:
@@ -399,20 +403,19 @@ class Label(Base):
     def __repr__(self):
         return "Label: %s, (id=%s)" % (self.name, self.label_id)
 
-class TreeNode(Base):
+class Folder(Base):
     # http://docs.sqlalchemy.org/en/latest/_modules/examples/adjacency_list/adjacency_list.html
 
-    __tablename__ = 'tree'
+    __tablename__ = 'folders'
     
     id = Column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey(id))
     name = Column(String(50), nullable=False)
+    schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=False)
 
-    children = relationship("TreeNode",
-
+    children = relationship("Folder",
         # cascade deletions
         cascade="all, delete-orphan",
-
         # many to one + adjacency list - remote_side
         # is required to reference the 'remote'
         # column in the join condition.
@@ -422,13 +425,31 @@ class TreeNode(Base):
         # on the "name" attribute.
         collection_class=attribute_mapped_collection('name'),
     )
+    # labels = relationship(u"Label", back_populates='folder')
+    schema = relationship(u'Schema')
 
-    def __init__(self, name, parent=None):
+    def __init__(self, name, parent=None, schema=None):
         self.name = name
         self.parent = parent
-
+        if not parent is None:
+            self.schema = parent.schema
+        elif isinstance(schema, Schema):
+            self.schema = schema
+        elif type(schema) is int:
+            self.schema_id = schema
+        else:
+            print "no schema for this Folder"
+            raise ValueError("no schema!")
     def __repr__(self):
-        return "TreeNode(name=%r, id=%r, parent_id=%r)" % (self.name, self.id, self.parent_id)
+        return "Folder(name=%r, id=%r, parent_id=%r)" % (self.name, self.id, self.parent_id)
+
+    def dump(self, _indent=0):
+        return "   " * _indent + repr(self) + \
+                    "\n" + \
+                    "".join([
+                        c.dump(_indent + 1)
+                        for c in self.children.values()]
+                    )
 
 def drop_db():
     Base.metadata.drop_all(engine)
