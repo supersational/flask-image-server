@@ -44,12 +44,21 @@ def create_data(session):
             evt.tag_images()
             # print evt
     s = Schema('default')
+    f = Folder('rootnode', schema=s)
+
+    Folder('node1', parent=f)
+    Folder('node3', parent=f)
+
+    node2 = Folder('node2', parent=f)
+    subnode = Folder('subnode1', parent=node2)
+
+
     session.add(s)
     session.flush()
-    s.labels.extend((Label("walking"), Label("running"), Label("sleeping"), Label("sitting"), Label("standing")))
+    s.labels.extend((Label("walking", folder=f), Label("running", folder=f), Label("sleeping", folder=node2), Label("sitting", folder=node2), Label("standing", folder=subnode)))
     print "\n".join(map(str, Schema.query.all()))
     print "\n".join(map(str, Label.query.all()))
-    
+    print s.root_folder.dump()
     # this will automatically create the 'default' study
     p.studies.append(Study('default'))
     p.studies = []
@@ -155,8 +164,8 @@ def test_db(session, create_session):
 
     node2 = Folder('node2', schema=s)
     Folder('subnode1', parent=node2)
-    node.children['node2'] = node2
-    Folder('subnode2', parent=node.children['node2'])
+    node.children.append(node2)
+    Folder('subnode2', parent=node.children[0])
 
     print "Created new tree structure:\n%s" % node.dump()
 
@@ -164,13 +173,22 @@ def test_db(session, create_session):
     session.flush()
     print "Tree After Save:\n %s" % node.dump()
     if len(Folder.query.all())==6: tests['node'] = True
+
     if s.root_folder == node: tests['find_root_node'] = True
+
+    session.add(Label("lab",schema=s))
+    l = Label("lab2",schema=s)
+    session.add(l)
+    l.folder = node2
+    l = Label("lab3",schema=s)
+    session.add(l)
+    l.folder = node2.children[0]
+    session.flush()
+    print "Tree Before Delete:\n %s" % node.dump()
 
     session.delete(node)
     session.flush()
-
     print "Tree After Delete:\n %s" % node.dump()
-    print Folder.query.all()
     if len(Folder.query.all())!=0: tests['node'] = False
     
     if s.root_folder!=None: tests['find_root_node'] = False
