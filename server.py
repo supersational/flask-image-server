@@ -13,7 +13,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 # import our custom db interfact
 import db
-from db import Event, Image, Participant, User, Study, Schema, Label
+from db import Event, Image, Participant, User, Study, Schema, Label, Folder
 db_session = db.get_session()
 
 # Add Jinja2 filters
