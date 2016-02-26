@@ -18,10 +18,10 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 # custom data creation class
-import db_data
 
 
 Base = declarative_base()
+
 metadata = Base.metadata
 engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine")
 # logging
@@ -334,7 +334,7 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True)
     password = Column(String(50))
-    # UniqueConstraint('username')
+
     studies = relationship(u'Study', secondary='useraccess', back_populates='users')
 
     def __init__(self, username, password):
@@ -366,12 +366,9 @@ class Schema(Base):
 
     schema_id = Column(Integer, primary_key=True)
     name = Column(String(50))
-    # root_folder_id = Column(ForeignKey(u'folders.id'))
 
     labels = relationship(u'Label', back_populates='schema')
     folders = relationship(u'Folder', back_populates='schema')
-    # root_folder = relationship('Folder')
-
 
     def __init__(self, name):
         self.name = name
@@ -398,17 +395,17 @@ class Label(Base):
 
     schema = relationship(u'Schema', back_populates='labels')
     folder = relationship(u'Folder', back_populates='labels') # can belong to folder
-    def __init__(self, name, schema=None):
+
+    def __init__(self, name, schema=None, folder=None):
         self.name = name
-        if schema is not None:
-            if type(schema) is int:
-                self.schema_id = schema_id
-            elif type(schema) is Schema:
-                self.schema_id = schema.schema_id
-                self.schema = schema
+        if isinstance(schema, Schema):
+            self.schema = schema
+        if isinstance(folder, Folder):
+            self.folder = folder
 
     def __repr__(self):
         return "Label: %s, (id=%s)" % (self.name, self.label_id)
+ 
 
 class Folder(Base):
     # http://docs.sqlalchemy.org/en/latest/_modules/examples/adjacency_list/adjacency_list.html
@@ -430,9 +427,9 @@ class Folder(Base):
 
         # children will be represented as a dictionary
         # on the "name" attribute.
-        collection_class=attribute_mapped_collection('name'),
+        # collection_class=attribute_mapped_collection('name'),
     )
-    labels = relationship(u"Label", back_populates='folder')
+    labels = relationship(u"Label", back_populates='folder',cascade="all")
     schema = relationship(u'Schema', back_populates='folders')
 
     def __init__(self, name, parent=None, schema=None):
@@ -442,20 +439,16 @@ class Folder(Base):
             self.schema = parent.schema
         elif isinstance(schema, Schema):
             self.schema = schema
-        elif type(schema) is int:
-            self.schema_id = schema
-        else:
-            print "no schema for this Folder"
-            raise ValueError("no schema!")
+
     def __repr__(self):
-        return "Folder(name=%r, id=%r, parent_id=%r)" % (self.name, self.id, self.parent_id)
+        return "Folder(name=%r, id=%r, parent_id=%r, labels=%s)" % (self.name, self.id, self.parent_id, self.labels)
 
     def dump(self, _indent=0):
         return "   " * _indent + repr(self) + \
                     "\n" + \
                     "".join([
                         c.dump(_indent + 1)
-                        for c in self.children.values()]
+                        for c in self.children]
                     )
 
 def drop_db():
@@ -488,6 +481,7 @@ def get_session(create_data=False, run_tests=False):
         db_data.create_data(session)
     return session
 
+import db_data
 if __name__ == "__main__":
     drop_db()
     get_session(create_data=True, run_tests=True)
