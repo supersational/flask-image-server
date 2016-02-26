@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% set im_width=100 %}
+{% set im_height=87 %}
 {% set im_padding=10 %}
 {% set im_both=im_width+im_padding %}
 {% set im_half=im_both/2 %}
@@ -38,9 +39,7 @@
 		cursor: grab;
 		cursor: -webkit-grab;
 	}
-	.circle:hover {
-		stroke-width:3;
-	}
+
 
 {% endblock %}
 {% block content %}
@@ -54,8 +53,15 @@
 	{% endif%}
 	<div id="jstree">
 		<ul>
-			{% for label in schema.labels %} 
-				<li>{{ label.name }}</li>
+			{% set root = [schema.root_folder] %}
+			{% for folder in root recursive  %} 
+				<li>{{ folder.name }}
+					<ul>{{ loop(folder.children) }}
+					{% for label in folder.labels %}
+					<li> {{ label.name }} </li>
+					{% endfor %}
+					</ul>
+				</li>
 			{% endfor %}
 		</ul>
 	</div>
@@ -113,14 +119,16 @@
 					{% else %}
 				 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
 				 	{% endif %} 
-				 	{% if image.is_last or image.is_first %}
-				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
-					{% endif %}
 				{% else %}
 			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
 				{% endif %}
+			 	{% if image.is_last or image.is_first %}
+			 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
+			 	{% else %}
+			 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
+				{% endif %}
 			</svg>
-		 	<a href='{{image.full_url}}'><img width="" height="74" src='{{image.thumbnail_url}}' ></a>
+		 	<a href='{{image.full_url}}'><img width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}' ></a>
 		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 		 </div>
 	{% else %}
@@ -166,19 +174,29 @@
 		}
 	}
 		  */
+
+		function reset_all() {
+			$(".circle.hidden").attr("visibility", "hidden");
+			$(".circle").attr("cx", {{im_half}});
+			$(".circle.fake").remove();
+		}
 		 var dragging = null;
 		 var drag_id = null;
 		 var drag_event_id = null;
+		 var drag_pair = null;
 		 $(document).mouseup(function() {
+		 	if (dragging) reset_all()
 		 	dragging = null;
-		 	drag_id = null;
 		 	reset_img($(".img"))
 		 })
 		 $('circle').mousedown(function(e) {
 		 	e.preventDefault();
 		 	dragging = $(this).closest(".img");
-		 	drag_id = $(dragging).attr('id')
+		 	drag_id = $(dragging).attr('id');
 		 	drag_event_id = $(dragging).attr('event-id')
+		 	drag_pair = $("[event-id="+drag_event_id+"]").filter( "[is-first='True'],[is-last='True']" ).not(dragging);
+		 	drag_pair = (drag_pair.length==0) ? null : $(drag_pair[0]);
+		 	console.log(drag_pair)
 		 });
 		$('.img').mousemove(function(e) {
 			if (dragging) {
@@ -188,80 +206,122 @@
 				var same_event = (this_event_id == drag_event_id)
 				console.log(this_id, drag_id, same_event)
 				var move = e.pageX - $(this).offset().left
+				$(".circle.hidden").attr("visibility", "hidden");
+				console.log($(".circle.fake"))
+				$(".fake").remove();
 				if (this_id != drag_id) {
 					var between = $("#"+Math.min(this_id, drag_id)).nextUntil("#"+Math.max(this_id, drag_id))
 					// console.log($(".line").not(between))
 					line_full(between)
 					hide_circle(between)
-					hide_circle(this)
+
+					// show_circle(this)
 					reset_img($(".img").not(between))
 					
-					$(".img").not(between).find(".circle").attr("visibility","visible")
+					$(".img").not(between).find(".circle:not(.hidden)").attr("visibility","visible")
 					// pull the original img
-					if (this_id>drag_id) pull_away(dragging, {{im_both}})
-					else				 pull_away(dragging, 0)
-					if (same_event && (is_first(this) || is_last(this))) { // shrinking own event
-						from_mid(this, move);
-					}
-					// pull this into new frame
+					if (this_id>drag_id) pull_away(dragging, {{im_both}}, true)
+					else				 pull_away(dragging, 0, true)
+					hide_circle(dragging)
+					// move our cursor circle
+					move_fake_circle(this, move)
+					var trespassing = false; // TODO
+					// pull the line into new frame
 					// if within same event coming from opposite direction
+					if (same_event && (is_first(this) || is_last(this))) { // shrinking own event
+						line_from_mid(this, move);
+					}
 					else if (!same_event ? (this_id>drag_id) : (this_id<drag_id)) { 
-						from_left(this, move)
+						line_from_left(this, move)
 					} else {
-						from_right(this,move)
+						line_from_right(this,move)
 					}
 				} else {
 					// on same img as started
+					show_circle(this)
 					reset_img($(".img").not(this));
 					pull_away(this, move)
 				}
 			}
 		});
+		function event_id(el) {return int($(el).attr("event-id") || null) }
 		function is_first(el) {return $(el).attr("is-first")=="True";}
 		function is_last(el) {return $(el).attr("is-last")=="True";}
-		function pull_away(el, move) {
+		function pull_away(el, move, c) {
 			var first = is_first(el);
 			var last = is_last(el);
 			if (first && !last) {
-				from_right(el,move);
+				from_right(el,move, c);
 			}
 			else if (last && !first) {
-				from_left(el,move);
+				from_left(el,move, c);
 			} else {
-				from_mid(el, move);
+				from_mid(el, move, c);
 			}
 		}
-		function from_mid(el, move) {
+
+		function from_mid(el, move, c) {
 			if (move>{{im_half}}) {
 				$(el).find(".line").attr({"width":move-{{im_half}}, "x":{{im_half}}});
+				if (!c) move_circle_continuous(el, move);
+				else move_circle(el, move);
 			} else {
 				$(el).find(".line").attr({"width":{{im_half}}-move, "x":move});
+				if (!c) move_circle_continuous(el, move);
+				else move_circle(el, move);	
 			}
 		}
-		function from_left(el, move) {
+		function from_left(el, move, c, no_circ) {
 			$(el).find(".line").attr({"width":move, "x":0});
-			move_circle_continuous(el, move);
+			if (!c) move_circle_continuous(el, move);
+			else move_circle(el, move);	
 		}
-		function from_right(el, move) {
+		function from_right(el, move, c, no_circ) {
 			$(el).find(".line").attr({"width":{{im_both}}-move, "x":move});
-			move_circle_continuous(el, move);
+			if (!c) move_circle_continuous(el, move);
+			else move_circle(el, move);	
 		}
+
+		function line_from_mid(el, move, c) {
+			if (move>{{im_half}}) {
+				makeLine(el,{"width":move-{{im_half}} });
+			} else {
+				makeLine(el,{"width":{{im_half}}-move})
+			}
+		}
+		function line_from_left(el, move, c, no_circ) {
+			makeLine(el,{"width":move, "x":0})
+		}
+		function line_from_right(el, move, c, no_circ) {
+			makeLine(el,{"width":{{im_both}}-move, "x":move})
+		}
+
 		function move_circle(el, move) {
 			$(el).find(".circle").attr("cx",  move)
+			return el;
 		}
 		function move_circle_continuous(el, move) {
 			move_circle(el, move);
-			if (move>{{im_both}}-10) move_circle($(el).next(".img"), move-{{im_both}});
-			if (move<10) move_circle($(el).prev(".img"), {{im_both}}+move);
+			if (move>{{im_both}}-15) move_fake_circle($(el).next(".img"), move-{{im_both}});
+			if (move<15) move_fake_circle($(el).prev(".img"), {{im_both}}+move);
 		}
+		function move_fake_circle(el, move) {
+			$(el).find("svg").append(makeSVG("circle", {"cx":move, "cy":10, "r":10, "class":"circle fake"}));
+			return el;
+		}
+
 		function hide_circle(el) {
 			$(el).find(".circle").attr("visibility","hidden");
 		}
+		function show_circle(el) {
+			$(el).find(".circle").attr("visibility","visible");
+		}
+
 		function line_full(el) {
 			$(el).find(".line").attr({"width":150, "x":0});
 		}
 		function reset_img(el) {
-			$(el).find(".circle").attr("visibility","visible");
+			$(el).find(".circle:not(.hidden)").attr("visibility","visible").attr("cx", {{im_half}});
 			$(el).find(".line").each(function(){
 				$(this).attr({"width":$(this).attr("nw"), "x":$(this).attr("nx")});
 			});
@@ -285,20 +345,27 @@
 		}, function() {
 			$(this).attr("r", 10)
 		});
-		// $('circle').draggable()
-		//   .bind('mousedown', function(event, ui){
-		//   	console.log($(this).attr("cx"))
-		//   	$(this).attr("originalX", $(this).attr("cx")-event.target.parentNode.offsetLeft)
-		//     // bring target to front
-		//     $(event.target).appendTo( "#wrap" );
-		//   }).mouseup(function(event, ui){
-		//   	$(this).removeAttr("originalX")
-		//   }).bind('drag', function(event, ui){
-		// 	var it = $(event.target);
-		//     // update coordinates manually, since top/left style props don't work on SVG
-		//     it.attr('cx', event.clientX);
-		//     // it.attr('cy', ui.position.top-ui.originalPosition.top);
-		//     console.log(it.attr("cx"), it.attr("cy"), event)
-		//   })
+
+		$('.img').hover(function() {
+			$(this).find("img").animate({ "width": {{im_width * 1.03}}, "height" :{{87 * 1.03}}}, "fast");
+		}, function() {
+			$(this).find("img").animate({ "width": {{im_width}}, "height" :{{87}}}, "fast");
+		});
+		function makeLine(el, attrs) {
+			attrs['class'] = 'fake'
+			attrs['height'] = 5
+			attrs['fill'] = "{{fillcol}}"
+			attrs['y'] = 15
+			console.log(attrs)
+			$(el).find("svg").append(makeSVG("rect",attrs));
+		}
+
+		function makeSVG(tag, attrs) {
+            var el= document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (var k in attrs)
+                el.setAttribute(k, attrs[k]);
+            return el;
+        }
+
 	</script>
 {% endblock %}
