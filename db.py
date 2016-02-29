@@ -373,12 +373,21 @@ class Schema(Base):
     def __repr__(self):
         return "Schema: %s, (id=%s, %s labels)" % (self.name, self.schema_id, len(self.labels))
 
-    @hybrid_property
-    def root_folder(self):
-        if len(self.folders)==0:
-            return None
-        return Folder.query.filter((Folder.schema_id==self.schema_id) & (Folder.parent==None)).one()
+    def dump(self, _indent=0):
+        return "   " * _indent + repr(self) + \
+                    "\n" + \
+                    "".join([
+                        c.dump(_indent + 1)
+                        for c in [f for f in self.folders if f.parent is None]]
+                    )
 
+    def from_file(annotation_file):
+        root = self.root_folder
+        for line in annotation_file:
+            if len(line)<=1: continue
+            nodes = line.split(";")
+            for i, n in enumerate(nodes):
+                pass
 
 class Label(Base):
     __tablename__ = 'labels'
@@ -440,6 +449,8 @@ class Folder(Base):
     def __repr__(self):
         return "Folder(name=%r, id=%r, parent_id=%r, labels=%s)" % (self.name, self.id, self.parent_id, self.labels)
 
+
+
     def dump(self, _indent=0):
         return "   " * _indent + repr(self) + \
                     "\n" + \
@@ -476,7 +487,7 @@ def get_session(create_data=False, run_tests=False):
     session = create_db()
     Base.query = session.query_property()
     if create_data:
-        db_data.create_data(session, engine)
+        db_data.create_data(session, engine, fake=True)
     return session
 
 import db_data

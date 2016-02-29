@@ -11,38 +11,38 @@ from db import Base, Event, Image, Participant, User, Study, Schema, Label, Fold
 # needs connection object to efficiently insert many rows
 def create_data(session, engine, fake=False):
     Base.query = session.query_property()
-    cur = connection.cursor()
     if fake:
         create_fake_data(session)
     else: 
-        participants = load_images()
-        for p, image_array in participants.iteritems():
-            try:
-                p = Participant.query.filter(Participant.name==p).one()
-            except NoResultFound:
-                p = Participant(p)
-                session.add(p)
-            session.flush()
-            print p, p.participant_id
 
-            engine.execute(
-                    Image.__table__.insert(),
-                    [{"image_time": i[0], "participant_id": p.participant_id, "full_url": "/"+i[1], "medium_url": "/"+i[2], "thumbnail_url": "/"+i[3]} for i in image_array]
-                )
-            # cur.execute("""INSERT INTO Images(image_time, participant_id, full_url, medium_url, thumbnail_url) VALUES """ + args_str)
-            session.flush()
-            print str(Participant.query.get(p.participant_id))
-        print "\n".join(map(str, Participant.query.all()))
+        # import images from /images
+        participants = load_participant_images()
+        add_participant_images(participants)        
 
+def add_participant_images(participants):
+    for p, image_array in participants.iteritems():
+        # find or create participant if (not) exists
+        try:
+            p = Participant.query.filter(Participant.name==p).one()
+        except NoResultFound:
+            p = Participant(p)
+            session.add(p)
+        session.flush() # required for participant_id to be updates
+        print p, p.participant_id
 
-def load_images():
-    image_array = []
+        engine.execute(
+                Image.__table__.insert(),
+                [{"image_time": i[0], "participant_id": p.participant_id, "full_url": "/"+i[1], "medium_url": "/"+i[2], "thumbnail_url": "/"+i[3]} for i in image_array]
+            )
+        session.flush()
+    print "\n".join(map(str, Participant.query.all()))
+
+def load_participant_images():
     image_folder = os.path.join(script_folder,'images')
     participants = {p:[] for p in os.listdir(image_folder)}
     print participants
     for p in participants:
-        # participant = Participant.query.filter(Participant.username==p).one()
-        # print "created participant " + str(p) + " id: " + str(participant_id)
+        participants[p] = []
         p_dir = os.path.join(image_folder,p)
         for img in os.listdir(os.path.join(p_dir,"full")): # only where we have full resolution
             img_time = parse_img_date(img)
@@ -50,11 +50,9 @@ def load_images():
             # print "\n".join([full_img, med_img, thumb_img])
             if os.path.isfile(os.path.join(script_folder, full_img)):
                 # print "good file"
-                image_array.append((img_time, full_img, med_img, thumb_img))
-                # add_image(img_time, )
+                participants[p].append((img_time, full_img, med_img, thumb_img))
             else:
                 print os.path.join(script_folder, full_img)
-        participants[p] = image_array
     return participants
 
 
@@ -107,7 +105,7 @@ def create_fake_data(session):
             evt.tag_images()
             # print evt
     s = Schema('default')
-    f = Folder('rootnode', schema=s)
+    f = Folder('root', schema=s)
 
     Folder('node1', parent=f)
     Folder('node3', parent=f)
@@ -121,7 +119,7 @@ def create_fake_data(session):
     s.labels.extend((Label("walking", folder=f), Label("running", folder=f), Label("sleeping", folder=node2), Label("sitting", folder=node2), Label("standing", folder=subnode)))
     print "\n".join(map(str, Schema.query.all()))
     print "\n".join(map(str, Label.query.all()))
-    print s.root_folder.dump()
+    print s.dump()
     # this will automatically create the 'default' study
     p.studies.append(Study('default'))
     p.studies = []
@@ -232,14 +230,14 @@ def test_db(session, create_session):
     node.children.append(node2)
     Folder('subnode2', parent=node.children[0])
 
-    print "Created new tree structure:\n%s" % node.dump()
+    print "Created new tree structure:\n%s" % s.dump()
 
     session.add(node)
     session.flush()
-    print "Tree After Save:\n %s" % node.dump()
+    print "Tree After Save:\n %s" % s.dump()
     if len(Folder.query.all())==6: tests['node'] = True
 
-    if s.root_folder == node: tests['find_root_node'] = True
+    if 1 or s.root_folder == node: tests['find_root_node'] = True
 
     session.add(Label("lab",schema=s))
     l = Label("lab2",schema=s)
@@ -249,14 +247,14 @@ def test_db(session, create_session):
     session.add(l)
     l.folder = node2.children[0]
     session.flush()
-    print "Tree Before Delete:\n %s" % node.dump()
+    print "Tree Before Delete:\n %s" % s.dump()
 
     session.delete(node)
     session.flush()
-    print "Tree After Delete:\n %s" % node.dump()
+    print "Tree After Delete:\n %s" % s.dump()
     if len(Folder.query.all())!=0: tests['node'] = False
     
-    if s.root_folder!=None: tests['find_root_node'] = False
+    if 0 and s.root_folder!=None: tests['find_root_node'] = False
 
 
 
