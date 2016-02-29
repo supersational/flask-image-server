@@ -123,13 +123,12 @@ def study(study_id):
 	study = Study.query.filter(Study.study_id==study_id).one()
 	study_participants = study.participants
 	participants_to_add = [x for x in Participant.query.all() if not x in study_participants]
-
 	return render_template('study.html', 
 		study_id=study_id,
 		study_name=study.name,
 		participants=study_participants,
 		participants_to_add=participants_to_add,
-		sql_text=db.read_log()
+		sql_text=db.read_log()[:2000]
 		)
 
 @app.route("/participant/<int:participant_id>")
@@ -153,11 +152,11 @@ def participant(participant_id):
 	return render_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
-		images=images,
+		images=images[:100],
 		days=participant.get_images_by_hour(),
 		daterange=daterange,
 		num_images=len(participant.images),
-		sql_text=db.read_log(),
+		sql_text=db.read_log()[:2000],
 		schema=Schema.query.first()
 		)
 

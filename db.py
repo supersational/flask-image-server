@@ -21,8 +21,8 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 
 
 Base = declarative_base()
-
 metadata = Base.metadata
+
 engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine")
 # logging
 import loghandler
@@ -291,7 +291,6 @@ class Participant(Base):
         for time in data:
             day = str(datetime.date(time.year,time.month,time.day))
             hour = time.hour
-            print day
             if day in unique_days:
                 if hour in unique_days[day]:
                     unique_days[day][hour] += 1
@@ -458,6 +457,7 @@ def create_session(autoflush=True, autocommit=True):
     return scoped_session(sessionmaker(autocommit=autocommit,
                                              autoflush=autoflush,
                                              bind=engine))  
+
 def create_db(drop=False):
     global session
     session = create_session()
@@ -478,7 +478,7 @@ def get_session(create_data=False, run_tests=False):
     session = create_db()
     Base.query = session.query_property()
     if create_data:
-        db_data.create_data(session)
+        db_data.create_data(session, engine)
     return session
 
 import db_data
