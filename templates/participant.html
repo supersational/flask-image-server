@@ -59,12 +59,13 @@
 	{% if schema is not none %}
 	<div id="jstree">
 		<ul>
-			{% set root = [schema.root_folder] %}
+			{% set root = schema.root_folders %}
 			{% for folder in root recursive  %} 
+
 				<li>{{ folder.name }}
-					<ul>{{ loop(folder.children) }}
+					<ul>{{ loop(folder.folders) }}
 					{% for label in folder.labels %}
-					<li> {{ label.name }} </li>
+					<li data-jstree='{"icon":""}'> {{ label.name }} </li>
 					{% endfor %}
 					</ul>
 				</li>
@@ -171,33 +172,6 @@
 		}); 
 
 	});
-	/*
-	function Image(index, image_id, event_id, thumb_url, width, full_url, time, is_first)  {
-		this.index = index;
-		this.image_id = image_id;
-		this.event_id = event_id;
-		this.time = time;
-		this.width = width;
-		this.thumb_url = thumb_url;
-		this.full_url = full_url;
-		this.div = null;
-	}
-	Image.prototype.generateHTML = function() {
-		
-		self.div = $('<div class="img"><a href="'+self.full_url+'"><img width="'+self.width+'" height="74" src='+self.thumb_url+' ></a></div>').appendTo(".shadow-wrapper") 
-		if (self.event_id!=null) $('<a id="'+self.time+'" href="/participant/{{id}}/'+self.event_id+'">event '+self.event_id+'</a>').appendTo(self.div)
-
-	}
-	Image.prototype.genSVG = function() {
-		$('<svg width="{{im_both}}" height="30">').appendTo(self.div)
-	}
-	var images = [{image_id: }
-	function() {
-		if (dragging!=null) {
-
-		}
-	}
-		  */
 
 		function reset_all() {
 			$(".circle.hidden").attr("visibility", "hidden");

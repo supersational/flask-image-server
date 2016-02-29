@@ -373,6 +373,10 @@ class Schema(Base):
     def __repr__(self):
         return "Schema: %s, (id=%s, %s labels)" % (self.name, self.schema_id, len(self.labels))
 
+    @hybrid_property
+    def root_folders(self):
+        return [f for f in self.folders if f.parent is None]
+        
     def dump(self, _indent=0):
         return "   " * _indent + repr(self) + \
                     "\n" + \
@@ -381,21 +385,32 @@ class Schema(Base):
                         for c in [f for f in self.folders if f.parent is None]]
                     )
 
-    def from_file(annotation_file):
-        root = self.root_folder
+    def from_file(self, annotation_file):
         for line in annotation_file:
             if len(line)<=1: continue
-            nodes = line.split(";")
-            for i, n in enumerate(nodes):
-                pass
-
+            names = line.split(";")
+            curr_folder = self
+            for i, n in enumerate(names):
+                if i==len(names)-1:
+                    curr_folder.labels.append(Label(n, schema=self, folder=curr_folder))
+                else:
+                    try:
+                        subfolder = filter(lambda x: x.name==n, curr_folder.folders)[0]
+                    except IndexError:
+                        subfolder = Folder(n, schema=self, parent=curr_folder if self!=curr_folder else None)
+                        curr_folder.folders.append(subfolder)                
+                         # = next(x for x in curr_folder.folders if lambda x: x.name==n)
+                    print i, subfolder
+                    curr_folder = subfolder
+        print self.dump()
+                
 class Label(Base):
     __tablename__ = 'labels'
 
     label_id = Column(Integer, primary_key=True)
     schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=False)
     folder_id = Column(ForeignKey(u'folders.id'))
-    name = Column(String(50))
+    name = Column(String(256))
     color = Column(String(50))
     UniqueConstraint('name', 'schema_id') # schemas contain uniquely named labels
 
@@ -420,10 +435,10 @@ class Folder(Base):
     
     id = Column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey(id))
-    name = Column(String(50), nullable=False)
+    name = Column(String(255), nullable=False)
     schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=False)
 
-    children = relationship("Folder",
+    folders = relationship("Folder",
         # cascade deletions
         cascade="all, delete-orphan",
         # many to one + adjacency list - remote_side
@@ -447,7 +462,8 @@ class Folder(Base):
             self.schema = schema
 
     def __repr__(self):
-        return "Folder(name=%r, id=%r, parent_id=%r, labels=%s)" % (self.name, self.id, self.parent_id, self.labels)
+        return "Folder(name=%r, id=%r, parent_id=%r, labels=%s)" % (self.name, self.id, self.parent_id, \
+            ",".join(map(lambda l: str(l.name).rstrip()[:20], self.labels)))
 
 
 
@@ -456,7 +472,7 @@ class Folder(Base):
                     "\n" + \
                     "".join([
                         c.dump(_indent + 1)
-                        for c in self.children]
+                        for c in self.folders]
                     )
 
 def drop_db():

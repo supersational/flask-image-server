@@ -11,6 +11,9 @@ from db import Base, Event, Image, Participant, User, Study, Schema, Label, Fold
 # needs connection object to efficiently insert many rows
 def create_data(session, engine, fake=False):
     Base.query = session.query_property()
+    s = Schema("from file")
+    session.add(s)
+    s.from_file(open(os.path.join(script_folder, "annotation/annotation.csv"),"r"))
     if fake:
         create_fake_data(session)
     else: 
@@ -18,7 +21,12 @@ def create_data(session, engine, fake=False):
         # import images from /images
         participants = load_participant_images()
         add_participant_images(participants)        
-
+    
+    print "\n".join(map(str, Schema.query.all()))
+    print "\n".join(map(str, Label.query.all()))
+    print "\n".join(map(str, User.query.all()))
+    print "\n".join(map(str, Participant.query.all()))
+    print "\n".join(map(str, Study.query.all()))
 def add_participant_images(participants):
     for p, image_array in participants.iteritems():
         # find or create participant if (not) exists
@@ -117,8 +125,7 @@ def create_fake_data(session):
     session.add(s)
     session.flush()
     s.labels.extend((Label("walking", folder=f), Label("running", folder=f), Label("sleeping", folder=node2), Label("sitting", folder=node2), Label("standing", folder=subnode)))
-    print "\n".join(map(str, Schema.query.all()))
-    print "\n".join(map(str, Label.query.all()))
+
     print s.dump()
     # this will automatically create the 'default' study
     p.studies.append(Study('default'))
@@ -129,9 +136,7 @@ def create_fake_data(session):
             u1.studies.append(s)
         else:
             u2.studies.append(s)
-    print "\n".join(map(str, User.query.all()))
-    print "\n".join(map(str, Participant.query.all()))
-    print "\n".join(map(str, Study.query.all()))
+
     # t = now + datetime.timedelta(minutes=3)
     # print "\n".join(map(str, Image.query.filter(Image.image_time < t).all()))
     # print "> " + str(t)
@@ -227,8 +232,8 @@ def test_db(session, create_session):
 
     node2 = Folder('node2', schema=s)
     Folder('subnode1', parent=node2)
-    node.children.append(node2)
-    Folder('subnode2', parent=node.children[0])
+    node.folders.append(node2)
+    Folder('subnode2', parent=node.folders[0])
 
     print "Created new tree structure:\n%s" % s.dump()
 
@@ -245,7 +250,7 @@ def test_db(session, create_session):
     l.folder = node2
     l = Label("lab3",schema=s)
     session.add(l)
-    l.folder = node2.children[0]
+    l.folder = node2.folders[0]
     session.flush()
     print "Tree Before Delete:\n %s" % s.dump()
 
