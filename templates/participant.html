@@ -74,8 +74,9 @@
 	{% else %}
 		<p>No root folder</p>
 	{% endif %}
-	<p> date range : {{daterange.min}} - {{daterange.max}}
+	<p> date range : {{daterange.min}} - {{daterange.max}} </p>
 	{% for day in days %}
+		<!-- <p>{{day}} - {{days[day]}}</p> -->
 		<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
 	{% endfor %}
 

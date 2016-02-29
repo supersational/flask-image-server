@@ -24,19 +24,7 @@ def create_data(session, engine, fake=False):
                 session.add(p)
             session.flush()
             print p, p.participant_id
-            # for i in image_array:
-            #     print i
-            #     if i in p.images:
-            #         print "has:" + str(i)
-            #     else:
-            # #         p.images.append(Image(p.participant_id, i[0], i[1], i[2], i[3]))
-            # args_str = ','.join(cur.mogrify("(%s,"+str(p.participant_id)+",%s,%s,%s)", x) for x in image_array)
 
-            # print "len:", len(args_str)
-            # print
-            # print args_str[:500]
-            # print
-            # print args_str[-500:]
             engine.execute(
                     Image.__table__.insert(),
                     [{"image_time": i[0], "participant_id": p.participant_id, "full_url": "/"+i[1], "medium_url": "/"+i[2], "thumbnail_url": "/"+i[3]} for i in image_array]

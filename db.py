@@ -2,6 +2,7 @@
 # from:
 # C:\Users\shollowell\Documents\wearable-webapp\python-flask>sqlacodegen postgres://postgres:testing@localhost:3145/linker
 import datetime
+from collections import OrderedDict
 # define database
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.sql.expression import func, funcfilter
@@ -282,11 +283,8 @@ class Participant(Base):
             return txt + ' studies=%s)' % [x.name for x in self.studies]
     
     def get_images_by_hour(self):
-        # cur.execute("""SELECT image_time FROM Images WHERE Images.participant_id=%s""", [participant_id])
         data =  [x.image_time for x in self.images]
-        # for x in data:
-        #   print x
-        # data_by_day = map(lambda x: x[0].toordinal(), data)
+
         unique_days = {}
         for time in data:
             day = str(datetime.date(time.year,time.month,time.day))
@@ -302,7 +300,7 @@ class Participant(Base):
         #   print day
         #   for hour in unique_days[day]:
         #       print day, "- " + str(hour) + ":00 : ", unique_days[day][hour], " images"
-        return unique_days
+        return OrderedDict(sorted(unique_days.items(), key=lambda  d:d[0]))
 
 t_useraccess = Table(
     'useraccess', metadata,
