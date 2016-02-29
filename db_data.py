@@ -1,4 +1,6 @@
 import datetime
+import os
+script_folder = os.path.dirname(os.path.realpath(__file__))
 
 # sqlalchemy errors
 from sqlalchemy.orm.exc import NoResultFound
@@ -6,8 +8,81 @@ from sqlalchemy.exc import IntegrityError
 
 from db import Base, Event, Image, Participant, User, Study, Schema, Label, Folder
 
-def create_data(session):
+# needs connection object to efficiently insert many rows
+def create_data(session, engine, fake=False):
     Base.query = session.query_property()
+    cur = connection.cursor()
+    if fake:
+        create_fake_data(session)
+    else: 
+        participants = load_images()
+        for p, image_array in participants.iteritems():
+            try:
+                p = Participant.query.filter(Participant.name==p).one()
+            except NoResultFound:
+                p = Participant(p)
+                session.add(p)
+            session.flush()
+            print p, p.participant_id
+            # for i in image_array:
+            #     print i
+            #     if i in p.images:
+            #         print "has:" + str(i)
+            #     else:
+            # #         p.images.append(Image(p.participant_id, i[0], i[1], i[2], i[3]))
+            # args_str = ','.join(cur.mogrify("(%s,"+str(p.participant_id)+",%s,%s,%s)", x) for x in image_array)
+
+            # print "len:", len(args_str)
+            # print
+            # print args_str[:500]
+            # print
+            # print args_str[-500:]
+            engine.execute(
+                    Image.__table__.insert(),
+                    [{"image_time": i[0], "participant_id": p.participant_id, "full_url": "/"+i[1], "medium_url": "/"+i[2], "thumbnail_url": "/"+i[3]} for i in image_array]
+                )
+            # cur.execute("""INSERT INTO Images(image_time, participant_id, full_url, medium_url, thumbnail_url) VALUES """ + args_str)
+            session.flush()
+            print str(Participant.query.get(p.participant_id))
+        print "\n".join(map(str, Participant.query.all()))
+
+
+def load_images():
+    image_array = []
+    image_folder = os.path.join(script_folder,'images')
+    participants = {p:[] for p in os.listdir(image_folder)}
+    print participants
+    for p in participants:
+        # participant = Participant.query.filter(Participant.username==p).one()
+        # print "created participant " + str(p) + " id: " + str(participant_id)
+        p_dir = os.path.join(image_folder,p)
+        for img in os.listdir(os.path.join(p_dir,"full")): # only where we have full resolution
+            img_time = parse_img_date(img)
+            (full_img, med_img, thumb_img) = map(lambda x: os.path.join('images',p,x,img), ('full', 'medium', 'thumbnail'))
+            # print "\n".join([full_img, med_img, thumb_img])
+            if os.path.isfile(os.path.join(script_folder, full_img)):
+                # print "good file"
+                image_array.append((img_time, full_img, med_img, thumb_img))
+                # add_image(img_time, )
+            else:
+                print os.path.join(script_folder, full_img)
+        participants[p] = image_array
+    return participants
+
+
+def parse_img_date(n):
+    return "".join([
+        n[17:21]+"-", # year
+        n[21:23]+"-", # month
+        n[23:25]+" ", # day
+        n[26:28]+":", # hour
+        n[28:30]+":", # minutes
+        n[30:32]+".", # seconds
+        n[6:9] # this is the photo's sequence number, used as a tiebreaker millisecond value for photos with the same timestamp 
+       ])
+
+
+def create_fake_data(session):
     now = datetime.datetime.today()
     now = now.replace(minute=0, second=0, microsecond=0)
     u1 = User('Aiden', 'Aiden')
@@ -78,6 +153,8 @@ def create_data(session):
 
     print "done creating fake data."
 
+# this runs tests for each key in 'tests'.
+# requires a session object and the 'create session' function from db.py
 def test_db(session, create_session):
     tests = {'duplicateUser':False, 'event_with_images':False, 'negative_time_event':False, 'add_images_to_event':False, 'no_img_event': False, 'node':False, 'find_root_node':False}
     Base.query = session.query_property()
@@ -202,3 +279,4 @@ def test_db(session, create_session):
     if all(value == True for value in tests.values()):
         print "all %s tests passed" % len(tests)
         return
+
