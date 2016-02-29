@@ -55,3 +55,6 @@
 .ui-timepicker .ui-timepicker-deselect { float: left; }
 
 
+div.ui-timepicker{
+ font-size:10px;
+}

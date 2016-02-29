@@ -137,7 +137,11 @@ def participant(participant_id):
 	if "date_min" in request.args.keys() and "date_max" in request.args.keys():
 		date_min = request.args.get('date_min', default=None, type=datetimeformat)
 		date_max = request.args.get('date_max', default=None, type=datetimeformat)
-		print date_min, date_max
+		if date_max is None:
+			# fails parsing 24:00:00 so add special case
+			if request.args['date_max'].split('T')[1][0:2]=='24':
+				date_max = datetimeformat(request.args['date_max'].replace('T24:', 'T23:'))
+				date_max += datetime.timedelta(hours=1)
 		daterange={'min':date_min,'max':date_max}
 
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
