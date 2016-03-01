@@ -1,5 +1,11 @@
 select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'folders'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
 {'name': u'users'}
+Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'labels'}
 Col ('relname',)
 select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
 {'name': u'participants'}
@@ -19,12 +25,16 @@ Col ('relname',)
 select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
 {'name': u'events'}
 Col ('relname',)
+select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where pg_catalog.pg_table_is_visible(c.oid) and relname=%(name)s
+{'name': u'schemas'}
+Col ('relname',)
 
 CREATE TABLE users (
 	user_id SERIAL NOT NULL, 
 	username VARCHAR(50), 
 	password VARCHAR(50), 
-	PRIMARY KEY (user_id)
+	PRIMARY KEY (user_id), 
+	UNIQUE (username)
 )
 
 
@@ -45,6 +55,30 @@ CREATE TABLE studies (
 	study_id SERIAL NOT NULL, 
 	name VARCHAR(256), 
 	PRIMARY KEY (study_id)
+)
+
+
+{}
+COMMIT
+
+CREATE TABLE schemas (
+	schema_id SERIAL NOT NULL, 
+	name VARCHAR(50), 
+	PRIMARY KEY (schema_id)
+)
+
+
+{}
+COMMIT
+
+CREATE TABLE folders (
+	id SERIAL NOT NULL, 
+	parent_id INTEGER, 
+	name VARCHAR(255) NOT NULL, 
+	schema_id INTEGER NOT NULL, 
+	PRIMARY KEY (id), 
+	FOREIGN KEY(parent_id) REFERENCES folders (id), 
+	FOREIGN KEY(schema_id) REFERENCES schemas (schema_id)
 )
 
 
@@ -77,8 +111,7 @@ COMMIT
 
 CREATE TABLE events (
 	event_id SERIAL NOT NULL, 
-	participant_id INTEGER, 
-	day DATE NOT NULL, 
+	participant_id INTEGER NOT NULL, 
 	start_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
 	end_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
 	comment TEXT, 
@@ -91,10 +124,25 @@ CREATE TABLE events (
 {}
 COMMIT
 
+CREATE TABLE labels (
+	label_id SERIAL NOT NULL, 
+	schema_id INTEGER NOT NULL, 
+	folder_id INTEGER, 
+	name VARCHAR(256), 
+	color VARCHAR(50), 
+	PRIMARY KEY (label_id), 
+	FOREIGN KEY(schema_id) REFERENCES schemas (schema_id), 
+	FOREIGN KEY(folder_id) REFERENCES folders (id)
+)
+
+
+{}
+COMMIT
+
 CREATE TABLE images (
 	image_id SERIAL NOT NULL, 
-	image_time TIMESTAMP WITHOUT TIME ZONE, 
-	participant_id INTEGER, 
+	image_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+	participant_id INTEGER NOT NULL, 
 	event_id INTEGER, 
 	full_url VARCHAR(256), 
 	medium_url VARCHAR(256), 

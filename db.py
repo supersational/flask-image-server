@@ -331,7 +331,7 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True)
     password = Column(String(50))
-
+    # add admin T/F
     studies = relationship(u'Study', secondary='useraccess', back_populates='users')
 
     def __init__(self, username, password):
