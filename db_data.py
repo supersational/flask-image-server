@@ -14,6 +14,7 @@ def create_data(session, engine, fake=False):
     s = Schema("from file")
     session.add(s)
     s.from_file(open(os.path.join(script_folder, "annotation/annotation.csv"),"r"))
+    print s.dump()
     if fake:
         create_fake_data(session)
     else: 

@@ -410,7 +410,7 @@ class Schema(Base):
                          # = next(x for x in curr_folder.folders if lambda x: x.name==n)
                     print i, subfolder
                     curr_folder = subfolder
-        print self.dump()
+        return self
                 
 class Label(Base):
     __tablename__ = 'labels'

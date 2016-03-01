@@ -117,7 +117,7 @@
 	<div style="width:100%;padding:30px;" class="shadow-wrapper">
 	{% set fillcol="lightblue" %}
 	{% for image in images %}
-		 <div class="img" id="{{image.image_id}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
+		 <div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
 	 		<svg width="{{im_both}}" height="30">
 	 			{% if image.event is not none %}			 	
 				 	{% if not image.is_last %}
@@ -200,6 +200,7 @@
 		 var drag_id = null;
 		 var drag_event_id = null;
 		 var drag_pair = null;
+		 var drag_pair_id = null;
 		 $(document).mouseup(function() {
 		 	if (dragging) reset_all()
 		 	dragging = null;
@@ -212,7 +213,8 @@
 		 	drag_event_id = $(dragging).attr('event-id')
 		 	drag_pair = $("[event-id="+drag_event_id+"]").filter( "[is-first='True'],[is-last='True']" ).not(dragging);
 		 	drag_pair = (drag_pair.length==0) ? null : $(drag_pair[0]);
-		 	console.log(drag_pair)
+		 	drag_pair_id = (drag_pair == null) ? null : $(drag_pair).attr('id') ;
+		 	console.log(drag_id, drag_pair_id)
 		 });
 		$('.img').mousemove(function(e) {
 			if (dragging) {
@@ -226,6 +228,9 @@
 				console.log($(".circle.fake"))
 				$(".fake").remove();
 				if (this_id != drag_id) {
+					// if (drag_pair!=null) {
+					// 	if (drag_pair_id < 
+					// }
 					var between = $("#"+Math.min(this_id, drag_id)).nextUntil("#"+Math.max(this_id, drag_id))
 					// console.log($(".line").not(between))
 					line_full(between)
