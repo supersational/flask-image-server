@@ -80,10 +80,19 @@
 		<p>No root folder</p>
 	{% endif %}
 	<p> date range : {{daterange.min}} - {{daterange.max}} </p>
-	{% for day in days %}
-		<!-- <p>{{day}} - {{days[day]}}</p> -->
-		<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
-	{% endfor %}
+
+	{% if days|length >0 %}
+	<div style="disply:inline-block; height:100px;">
+		{% set curr_day = None %}
+		{% for day in days %}
+			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
+			{% if curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
+				<div style="height:40px; float: left; margin-top:45px;">...</div>
+			{% endif %}
+			{% set curr_day = day.split("-")[2]|int %}
+		{% endfor %}
+	</div>
+	{% endif %}
 
 	<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
 		<div style="text-align:left;float:left;margin:5px;">
@@ -146,11 +155,16 @@
 	</div>
 	<script>
 
-	function onSelect(hour, div) {
+	function urlByHour(hour, div) {
 		var day = $(this).attr("date")
 		var hour = parseInt(hour)
 		// console.log(hour,"date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00")
 		 document.location.search = "date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00"
+	}
+	function urlByDate(date, div) {
+		console.log(date)
+		// console.log(hour,"date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00")
+		 document.location.search = "date_min="+date+"T00:00:00&date_max="+date+"T23:59:59"
 	}
 	function onHourShow(hour) {
 		return $.inArray(hour.toString(), $(this).attr("hours").split(" "))>-1;
@@ -158,12 +172,12 @@
 	$('.timepicker').timepicker({
 		showMinutes:false,
 		onHourShow:onHourShow,
-		onSelect:onSelect,
+		onSelect:urlByHour,
 		showLeadingZero: false,
 		defaultTime: ''
 	});
 	$('.timepicker').each(function() {
-		$(this).find(".ui-timepicker-title").html($(this).attr("date"))
+		$(this).find(".ui-timepicker-title").html("<a style='display:inline;' onclick='urlByDate(\""+$(this).attr("date")+"\")'>"+$(this).attr("date") + "</a>")
 	})
 	$(function () {
 		$('#jstree').jstree({
