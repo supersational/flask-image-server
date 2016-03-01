@@ -21,7 +21,7 @@ def create_data(session, engine, fake=False):
         # import images from /images
         participants = load_participant_images()
         add_participant_images(participants, session, engine)        
-    
+        segment_images_into_events()
     print "\n".join(map(str, Schema.query.all()))
     print "\n".join(map(str, Label.query.all()))
     print "\n".join(map(str, User.query.all()))
@@ -64,7 +64,6 @@ def load_participant_images():
                 print os.path.join(script_folder, full_img)
     return participants
 
-
 def parse_img_date(n):
     return "".join([
         n[17:21]+"-", # year
@@ -76,6 +75,28 @@ def parse_img_date(n):
         n[6:9] # this is the photo's sequence number, used as a tiebreaker millisecond value for photos with the same timestamp 
        ])
 
+def segment_images_into_events(t=datetime.timedelta(hours=1)):
+    for img in Image.query.all():
+        if img.event is None:
+            im_t = img.image_time
+            e = Event(img.participant_id, \
+                roundTime(im_t, t),
+                roundTime(im_t+t, t),
+                'automatically generated')
+            img.event = e
+            e.tag_images()
+
+def roundTime(dt=None, dateDelta=datetime.timedelta(minutes=1)):
+    """Round a datetime object to a multiple of a timedelta
+    dt : datetime.datetime object.
+    dateDelta : timedelta object, we round to a multiple of this, default 1 minute.
+    http://stackoverflow.com/questions/3463930/how-to-round-the-minute-of-a-datetime-object-python
+    """
+    roundTo = dateDelta.total_seconds()
+    seconds = (dt - dt.min).seconds
+    # // is a floor division, not a comment on following line:
+    rounding = (seconds) // roundTo * roundTo
+    return dt + datetime.timedelta(0,rounding-seconds,-dt.microsecond)
 
 def create_fake_data(session):
     now = datetime.datetime.today()

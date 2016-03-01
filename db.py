@@ -503,7 +503,7 @@ def get_session(create_data=False, run_tests=False):
     session = create_db()
     Base.query = session.query_property()
     if create_data:
-        db_data.create_data(session, engine, fake=True)
+        db_data.create_data(session, engine, fake=False)
     return session
 
 import db_data
