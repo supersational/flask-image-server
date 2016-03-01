@@ -20,14 +20,15 @@ def create_data(session, engine, fake=False):
 
         # import images from /images
         participants = load_participant_images()
-        add_participant_images(participants)        
+        add_participant_images(participants, session, engine)        
     
     print "\n".join(map(str, Schema.query.all()))
     print "\n".join(map(str, Label.query.all()))
     print "\n".join(map(str, User.query.all()))
     print "\n".join(map(str, Participant.query.all()))
     print "\n".join(map(str, Study.query.all()))
-def add_participant_images(participants):
+
+def add_participant_images(participants, session, engine):
     for p, image_array in participants.iteritems():
         # find or create participant if (not) exists
         try:
