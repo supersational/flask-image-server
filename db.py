@@ -1,8 +1,10 @@
 # coding: utf-8
 # from:
 # C:\Users\shollowell\Documents\wearable-webapp\python-flask>sqlacodegen postgres://postgres:testing@localhost:3145/linker
-import datetime
+import datetime, sys
 from collections import OrderedDict
+# security
+import hashlib, uuid
 # define database
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.sql.expression import func, funcfilter
@@ -330,13 +332,15 @@ class User(Base):
 
     user_id = Column(Integer, primary_key=True)
     username = Column(String(50), unique=True)
-    password = Column(String(50))
+    password = Column(String(128))
+    salt = Column(String(32))
     # add admin T/F
     studies = relationship(u'Study', secondary='useraccess', back_populates='users')
 
     def __init__(self, username, password):
         self.username = username
-        self.password = password
+        self.salt = uuid.uuid4().hex
+        self.password = hashlib.sha512(password + self.salt).hexdigest()
 
     # authentication methods    
     def is_authenticated(self):
@@ -353,6 +357,10 @@ class User(Base):
     def get_id(self):
         print "get_id"
         return unicode(self.user_id)
+
+    def check_password(self, password):
+        return self.password == hashlib.sha512(password + self.salt).hexdigest()
+
  
     def __repr__(self):
             return 'User: %s (id=%s, password=%s, %s studies)' % (self.username, self.user_id, '*' * len(self.password), len(self.studies))
@@ -503,7 +511,10 @@ def get_session(create_data=False, run_tests=False):
     session = create_db()
     Base.query = session.query_property()
     if create_data:
-        db_data.create_data(session, engine, fake=False)
+        if "--real" in sys.argv:
+            db_data.create_data(session, engine, fake=False)
+        else:
+            db_data.create_data(session, engine, fake=True)
     return session
 
 import db_data

@@ -56,7 +56,7 @@ def login():
 
 	if registered_user is None:
 		return render_template('login.html', message="error: incorrect username")
-	elif registered_user.password != password:
+	elif not registered_user.check_password(password):
 		return render_template('login.html', message="error: incorrect password")
 	elif login_user(registered_user, remember=True):
 		return redirect('/')
