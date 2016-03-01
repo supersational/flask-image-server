@@ -132,7 +132,9 @@ def study(study_id):
 		)
 
 @app.route("/participant/<int:participant_id>")
-def participant(participant_id):
+def oneparticipant(participant_id):
+	return render_participant(participant_id)
+def render_participant(participant_id, event=None, kwargs={}):
 	daterange = None
 	if "date_min" in request.args.keys() and "date_max" in request.args.keys():
 		date_min = request.args.get('date_min', default=None, type=datetimeformat)
@@ -145,10 +147,12 @@ def participant(participant_id):
 		daterange={'min':date_min,'max':date_max}
 
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
-	if daterange is None:
-		images = participant.images
-	else:
-		images = [img for img in participant.images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
+	images = participant.images
+	if event is not None:
+		images = event.images
+		
+	if daterange is not None:
+		images = [img for img in images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
 	images = sorted(images, key=lambda x: x.image_time)[0:100]
 	# print "sorted list:"
 	# for img in images
@@ -161,32 +165,22 @@ def participant(participant_id):
 		daterange=daterange,
 		num_images=len(participant.images),
 		sql_text=db.read_log()[:2000],
-		schema=Schema.query.first()
+		schema=Schema.query.first(),
+		**kwargs
 		)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
-def event(participant_id, event_id):
-	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+def render_event(participant_id, event_id):
 	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
-	images = sorted(event.images, key=lambda x: x.image_time)
+	kwargs = {}
+	kwargs['prev_event_id']=getattr(event.prev_event, 'event_id', None) # None as default if no prev_event exists
+	kwargs['next_event_id']=getattr(event.next_event, 'event_id', None)
+	kwargs['prev_image']=event.prev_image
+	kwargs['next_image']=event.next_image
+	kwargs['event_id']=event.event_id
+	kwargs['event_seconds']=event.length.total_seconds()
 
-	daterange={'min':event.start_time,'max':event.end_time}
-	return render_template('participant.html', 
-		name=participant.name,
-		id=participant.participant_id,
-		images=images[0:100],
-		days=participant.get_images_by_hour(),
-		daterange=daterange,
-		num_images=len(event.images),
-		prev_event_id=getattr(event.prev_event, 'event_id', None), # None as default if no prev_event exists
-		next_event_id=getattr(event.next_event, 'event_id', None),
-		prev_image=event.prev_image,
-		next_image=event.next_image,
-		event_id=event.event_id,
-		event_seconds=event.length.total_seconds(),
-		sql_text=db.read_log(),
-		schema=Schema.query.first()
-		)
+	return render_participant(participant_id, event=event, kwargs=kwargs)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
 def event_check_valid(participant_id, event_id):
