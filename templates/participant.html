@@ -18,34 +18,38 @@
 	Participant
 {% endblock %}
 {% block style %}
-	.img {
-		margin: 0px;
-		float: left;
-		width: {{im_both}}px;
-		height: 190px;
-		text-align:center
-	}
-	.img :after {
-		content: '';
-	    display: block;
-	    clear: both;
-	}
-	.shadow-wrapper:after {
-	    clear:both;
-	    content:" ";
-	    display:block;
-	}
-	.circle {
-		stroke: lightblue;
-		stroke-width:5;
-		fill:white;
-		cursor: grab;
-		cursor: -webkit-grab;
-	}
-	.timepicker {
-		margin: 5px;
-		float: left;
-	}
+.img {
+	margin: 0px;
+	float: left;
+	width: {{im_both}}px;
+	height: 190px;
+	text-align:center
+}
+.img :after {
+	content: '';
+    display: block;
+    clear: both;
+}
+.shadow-wrapper:after {
+    clear:both;
+    content:" ";
+    display:block;
+}
+.circle {
+	stroke: lightblue;
+	stroke-width:5;
+	fill:white;
+	cursor: grab;
+	cursor: -webkit-grab;
+}
+.timepicker {
+	margin: 5px;
+	float: left;
+}
+.split {
+	fill-opacity:0;
+	z-index:10;
+}
 {% endblock %}
 {% block content %}
 	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
@@ -176,7 +180,7 @@
 		function reset_all() {
 			$(".circle.hidden").attr("visibility", "hidden");
 			$(".circle").attr("cx", {{im_half}});
-			$(".circle.fake").remove();
+			$(".fake").remove();
 		}
 		 var dragging = null;
 		 var drag_id = null;
@@ -337,6 +341,20 @@
 					me.attr("fill", "red")
 				}
 			});
+		}).hover(function(){
+			var dir = $(this).attr("split-dir");
+			var img = $(this).closest(".img")
+			console.log(this, dir) 
+			if (dir=="left") {
+				makeSeperator(img, {'x':10})
+				makeSeperator(img.prev(".img"), {'x':{{im_both}}-10})
+			} 
+			if (dir=="right") {
+				makeSeperator(img, {'x':{{im_both}}-10})
+				makeSeperator(img.next(".img"), {'x':10})
+			}
+		}, function() {
+			$(".fake").remove()
 		});
 		$('circle').hover(function() {
 			$(this).attr("r", 10) // was 10
@@ -349,6 +367,15 @@
 		}, function() {
 			$(this).find("img").animate({ "width": {{im_width}}, "height" :{{87}}}, "fast");
 		});
+		function makeSeperator(el, attrs) {
+			attrs['class'] = 'fake'
+			attrs['height'] = 20
+			attrs['width'] = 5
+			attrs['fill'] = "{{fillcol}}"
+			attrs['y'] = 5
+			$(el).find("svg").prepend(makeSVG("rect",attrs));
+			console.log($(el).closest("svg")[0])
+		}
 		function makeLine(el, attrs) {
 			attrs['class'] = 'fake'
 			attrs['height'] = 5
