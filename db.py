@@ -6,7 +6,7 @@ from collections import OrderedDict
 # security
 import hashlib, uuid
 # define database
-from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
+from sqlalchemy import Column, Date, DateTime, Boolean, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.sql.expression import func, funcfilter
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -334,14 +334,16 @@ class User(Base):
     username = Column(String(50), unique=True)
     password = Column(String(128))
     salt = Column(String(32))
-    # add admin T/F
+    admin = Column(Boolean, default=False)
+
     studies = relationship(u'Study', secondary='useraccess', back_populates='users')
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, admin=False):
         self.username = username
         self.salt = uuid.uuid4().hex
         self.password = hashlib.sha512(password + self.salt).hexdigest()
-
+        self.admin = admin
+        
     # authentication methods    
     def is_authenticated(self):
         print "is_authenticated"

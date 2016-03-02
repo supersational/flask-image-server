@@ -102,7 +102,7 @@ def roundTime(dt=None, dateDelta=datetime.timedelta(minutes=1)):
 def create_fake_data(session):
     now = datetime.datetime.today()
     now = now.replace(minute=0, second=0, microsecond=0)
-    u1 = User('Aiden', 'Aiden')
+    u1 = User('Aiden', 'Aiden', admin=True)
     if len(User.query.filter(User.username==u1.username).all())==0:
         session.add(u1)
     u2 = User('Sven', 'Sven')
