@@ -15,7 +15,7 @@
     <script src="/static/jquery.ui.timepicker.js"></script>
 {% endblock %}
 {% block title %}
-	Participant
+	Participant: {{name}} 
 {% endblock %}
 {% block style %}
 .img {
@@ -52,7 +52,7 @@
 }
 {% endblock %}
 {% block content %}
-	<h2> Participant: {{name}} (showing {{images | length}} images out of {{num_images}})</h2>
+	<h3>Showing {{images | length}} images out of {{num_images}}</h3>
 	{% if event_id %}
 		<h3> Event ID: {{event_id}} <h3>
 		{% if event_seconds %}
