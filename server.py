@@ -149,11 +149,11 @@ def render_event(participant_id, event_id):
 	kwargs['next_image']=event.next_image
 	kwargs['event_id']=event.event_id
 	kwargs['event_seconds']=event.length.total_seconds()
-
 	return render_participant(participant_id, event=event, kwargs=kwargs)
 
 	
 def render_participant(participant_id, event=None, kwargs={}):
+	print kwargs
 	daterange = None
 	if "date_min" in request.args.keys() and "date_max" in request.args.keys():
 		date_min = request.args.get('date_min', default=None, type=datetimeformat)
@@ -185,7 +185,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		num_images=len(participant.images),
 		sql_text=db.read_log()[:2000],
 		schema=Schema.query.first(),
-		schema_list=Schema.query.filter()
+		schema_list=Schema.query.filter(),
 		**kwargs
 		)
 
