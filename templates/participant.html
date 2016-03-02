@@ -52,111 +52,117 @@
 }
 {% endblock %}
 {% block content %}
-	<h3>Showing {{images | length}} images out of {{num_images}}</h3>
+	<div style="width:200px; position: absolute; padding-left: 10px;padding-top:10px">
+		{% if schema is not none %}
+		<div id="jstree_box"  style="display:none;">
+			<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver;">
+			<div id="jstree">
+				<ul>
+					{% set root = schema.root_folders %}
+					{% for folder in root recursive  %} 
 
-	{% if days|length >0 %}
-	<div class="clearfix" style="disply:inline-block; margin-bottom: 20px">
-		{% set curr_day = None %}
-		{% for day in days %}
-			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
-			{% if curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
-				<div style="height:40px; float: left; margin-top:45px;">...</div>
-			{% endif %}
-			{% set curr_day = day.split("-")[2]|int %}
-		{% endfor %}
-	</div>
-	{% endif %}
-
-	{% if event_id %}
-		<h3> Event ID: {{event_id}} <h3>
-		{% if event_seconds %}
-			<h3> Length: {{event_seconds | verbose_seconds}}</h3>
-		{% endif%}
-		<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
-	{% endif %}
-	{% if schema is not none %}
-	<input type="text" id="jstree_q" style="padding:4px; border-radius:4px; border:1px solid silver;">
-	<div id="jstree">
-		<ul>
-			{% set root = schema.root_folders %}
-			{% for folder in root recursive  %} 
-
-				<li>{{ folder.name }}
-					<ul>{{ loop(folder.folders) }}
-					{% for label in folder.labels %}
-					<li data-jstree='{"icon":""}'> {{ label.name }} </li>
+						<li>{{ folder.name }}
+							<ul>{{ loop(folder.folders) }}
+							{% for label in folder.labels %}
+							<li data-jstree='{"icon":""}'> {{ label.name }} </li>
+							{% endfor %}
+							</ul>
+						</li>
 					{% endfor %}
-					</ul>
-				</li>
+				</ul>
+			</div>
+		</div>
+		{% else %}
+			<p>No root folder</p>
+		{% endif %}
+	</div>
+
+	<div style="float:left; margin-left: 200px;">
+		{% if days|length >0 %}
+		<div class="clearfix" style="disply:inline-block; margin-bottom: 20px">
+			{% set curr_day = None %}
+			{% for day in days %}
+				<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
+				{% if curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
+					<div style="height:40px; float: left; margin-top:45px;">...</div>
+				{% endif %}
+				{% set curr_day = day.split("-")[2]|int %}
 			{% endfor %}
-		</ul>
-	</div>
-	{% else %}
-		<p>No root folder</p>
-	{% endif %}
+		</div>
+		{% endif %}
 
-	{% if daterange is defined and daterange is not none %}
-	<p> date range : {{daterange.min}} - {{daterange.max}} </p>
-	{% endif %}
+		{% if event_id %}
+			<h3> Event ID: {{event_id}} <h3>
+			{% if event_seconds %}
+				<h3> Length: {{event_seconds | verbose_seconds}}</h3>
+			{% endif%}
+			<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
+		{% endif %}
 
-	<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
-		<div style="text-align:left;float:left;margin:5px;">
-			{% if prev_event_id %} 
-				<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
-			{% endif %}
-			{% if prev_image %} 
-				<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
-				<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);location.reload();})">Add prev image</button><p id="prev_result"></p>
-			{% endif %}
-		</div> 
-		<div style="text-align:right;float:right;margin:5px;">
-			{% if next_event_id %}  
-				<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event_id}}">next event</a>
-			{% endif %}
-			{% if next_image %} 
-				<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
-				<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);location.reload();})">Add next image</button><p id="next_result"></p>
-			{% endif %}
-		</div> 
-	</div>
-	<div class="shadow-wrapper">
-	{% set fillcol="lightblue" %}
-	{% for image in images %}
-		 <div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
-	 		<svg width="{{im_both}}" height="30">
-	 			{% if image.event is not none %}			 	
-				 	{% if not image.is_last %}
-				 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" style="cursor:col-resize;" class="split right" split-dir="right" /> 
-				 	{% endif %} 
-				 	{% if not image.is_first %}
-				 		<rect width="{{im_half}}" height="15" x="0" y="15" fill="yellow" style="cursor:col-resize;" class="split left" split-dir="left" /> 
-				 	{% endif %} 
-				 	{% if not (image.is_last and image.is_first) %}
-					 	{% if image.is_last %}
-					 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-					 	{% elif image.is_first %}
-					 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-					 	{% else %}
-					 		<rect class="line" nw="{{im_both}}" width="{{im_both}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
+		{% if daterange is defined and daterange is not none %}
+		<p> date range : {{daterange.min}} - {{daterange.max}} </p>
+		{% endif %}
+
+		<h3>Showing {{images | length}} images out of {{num_images}}</h3>
+		<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
+			<div style="text-align:left;float:left;margin:5px;">
+				{% if prev_event_id %} 
+					<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
+				{% endif %}
+				{% if prev_image %} 
+					<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
+					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);location.reload();})">Add prev image</button><p id="prev_result"></p>
+				{% endif %}
+			</div> 
+			<div style="text-align:right;float:right;margin:5px;">
+				{% if next_event_id %}  
+					<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event_id}}">next event</a>
+				{% endif %}
+				{% if next_image %} 
+					<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
+					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);location.reload();})">Add next image</button><p id="next_result"></p>
+				{% endif %}
+			</div> 
+		</div>
+		<div class="shadow-wrapper">
+		{% set fillcol="lightblue" %}
+		{% for image in images %}
+			 <div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
+		 		<svg width="{{im_both}}" height="30">
+		 			{% if image.event is not none %}			 	
+					 	{% if not image.is_last %}
+					 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" style="cursor:col-resize;" class="split right" split-dir="right" /> 
+					 	{% endif %} 
+					 	{% if not image.is_first %}
+					 		<rect width="{{im_half}}" height="15" x="0" y="15" fill="yellow" style="cursor:col-resize;" class="split left" split-dir="left" /> 
+					 	{% endif %} 
+					 	{% if not (image.is_last and image.is_first) %}
+						 	{% if image.is_last %}
+						 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+						 	{% elif image.is_first %}
+						 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+						 	{% else %}
+						 		<rect class="line" nw="{{im_both}}" width="{{im_both}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
+						 	{% endif %} 
+						{% else %}
+					 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
 					 	{% endif %} 
 					{% else %}
 				 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-				 	{% endif %} 
-				{% else %}
-			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-				{% endif %}
-			 	{% if image.is_last or image.is_first %}
-			 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
-			 	{% else %}
-			 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
-				{% endif %}
-			</svg>
-		 	<a href='{{image.full_url}}'><img width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}' ></a>
-		 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
-		 </div>
-	{% else %}
-		<p>No images</p>
-	{% endfor %}
+					{% endif %}
+				 	{% if image.is_last or image.is_first %}
+				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
+				 	{% else %}
+				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
+					{% endif %}
+				</svg>
+			 	<a href='{{image.full_url}}'><img width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}' ></a>
+			 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
+			 </div>
+		{% else %}
+			<p>No images</p>
+		{% endfor %}
+		</div>
 	</div>
 	<script>
 	// SCRIPT FOR DATE/HOUR BOXES
@@ -164,12 +170,16 @@
 		var day = $(this).attr("date")
 		var hour = parseInt(hour)
 		// console.log(hour,"date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00")
-		 document.location.search = "date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00"
+		 window.location.href =  "/participant/{{id}}?" + "date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00"
+		 console.log(window.location.href)
+		 // document.location.search = "date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00"
 	}
 	function urlByDate(date, div) {
 		console.log(date)
 		// console.log(hour,"date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00")
-		 document.location.search = "date_min="+date+"T00:00:00&date_max="+date+"T23:59:59"
+		 window.location.href =  "/participant/{{id}}?"+ "date_min="+date+"T00:00:00&date_max="+date+"T23:59:59"
+		 console.log(window.location.href)
+		 // document.location.search = "date_min="+date+"T00:00:00&date_max="+date+"T23:59:59"
 	}
 	function onHourShow(hour) {
 		return $.inArray(hour.toString(), $(this).attr("hours").split(" "))>-1;
@@ -189,7 +199,10 @@
 
 	// SCRIPT FOR ANNOTATION FOLDER
 	$(function () {
-		$('#jstree').jstree({
+		$('#jstree').on('loaded.jstree', function() {
+			console.log("loaded")
+			$('#jstree_box').show()
+		}).jstree({
 			"core" : {
 				"multiple" : false,
 				"animation" : 0,
@@ -198,10 +211,10 @@
 			"plugins" : [ "search",  "contextmenu"  ]
 		}); 
 		var to = false;
-		$('#jstree_q').keyup(function () {
+		$('#jstree_searchbox').keyup(function () {
 			if(to) { clearTimeout(to); }
 			to = setTimeout(function () {
-				var v = $('#jstree_q').val();
+				var v = $('#jstree_searchbox').val();
 				$('#jstree').jstree(true).search(v, {show_only_matches:true});
 			}, 250);
 		});
