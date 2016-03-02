@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block title %}
-Study: {{study_id}}, {{study_name}}
+Study: {{study_name}}
 {% endblock %}
 {% block content %}
 	<p> {{participants|length}} participant{% if participants | length > 1 %}s{% endif %} in this study: </p>

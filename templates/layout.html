@@ -15,7 +15,7 @@
         font-family: 'Source Sans Pro', sans-serif;
       }
       h1, h2, h3, h4, h5 {
-        font-family: 'Montserrat', sans-serif;
+        font-family: 'Montserrat', sans-serif, #F00;
       }
 	    .textwrapper
 	    {
@@ -48,11 +48,16 @@
   <body>
 
     {% if not hide_login %}
-      <div style="top:0px; left:0px; width:100%; height:50px;border-bottom:1px solid #333; text-align">
-        <h1 style="position:absolute; width:100%; text-align:center; margin:5px 0 0 15px;">{{ self.title() }}</h1>
+      <div style="top:0px; left:0px; width:100%; height:50px;border-bottom:1px solid #333; text-align:center;">
+        {% if request.path != "/" %} 
+        <h4 style="position: absolute; left: 10px; margin: 0px; top: 20px; ">
+          <a style="color:inherit; font-family:inherit;" href="/">Home</a>
+        </h4>
+        {% endif %}
+        <h1 style=" margin:5px 0 0 15px;">{{ self.title() }}</h1>
         <div style="position:absolute; top:20px; right:10px;">
           {% if current_user.is_authenticated %}
-             Currently logged in as {{ current_user.username }} | <a style="padding-left:9x" href="/logout">Logout</a>
+             Currently logged in as {{ current_user.username }} | <a style="padding-left:3px" href="/logout">Logout</a>
           {% else %}
             <a href="/login">Login</a>
           {% endif %}
