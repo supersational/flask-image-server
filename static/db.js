@@ -35,3 +35,17 @@ var Event = {
 			});
 	}
 }
+var Study = {
+	remove_participant: function(participant_id, study_id, complete) {
+		$.ajax({
+			type: "POST",
+			url: "/remove_studyparticipant",
+			data: {participant_id: participant_id, study_id:study_id},
+			complete : function(jqXHR, textStatus) {
+				console.log("/remove_studyparticipant("+participant_id+","+study_id+") " + textStatus);
+				console.log(jqXHR)
+				if (complete) complete(textStatus)
+			} 
+		});
+	}
+}

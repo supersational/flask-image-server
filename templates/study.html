@@ -1,18 +1,17 @@
 {% extends "layout.html" %}
 {% block title %}
-Study
+Study: {{study_id}}, {{study_name}}
 {% endblock %}
 {% block content %}
-	<h2> Study: {{study_id}}, {{study_name}} </h2>
 	<p> {{participants|length}} participant{% if participants | length > 1 %}s{% endif %} in this study: </p>
+	<div class="clearfix">
 	{% for participant in participants %}
-		 <a href='/participant/{{participant.participant_id}} '>{{participant.participant_id}}: {{participant.name}}</a>
-		 <form action='/remove_studyparticipant' method='POST'> 
-		 <input type='hidden' name='study_id' value='{{study_id}}'>
-		 <input type='hidden' name='participant_id' value='{{participant.participant_id}}'>
-		 <input type='submit' value='Delete'> </form>
-		 <br>
+		<div style="min-width:150px; padding:5px;">
+			<a href='/participant/{{participant.participant_id}} '>{{participant.name}}</a>
+			<button style="float:right;" onclick="$(this).attr('disabled',true);Study.remove_participant({{participant.participant_id}},{{study_id}}, function() {location.reload();})"> Delete</button>
+		</div>
 	{% endfor %}
+	</div>
 	{% if participants_to_add | length > 0 %}
 	<form action='/add_studyparticipant' method='POST'> 
 		<p>add a participant to this study: </p>

@@ -126,14 +126,31 @@ def study(study_id):
 	return render_template('study.html', 
 		study_id=study_id,
 		study_name=study.name,
-		participants=study_participants,
-		participants_to_add=participants_to_add,
+		participants=sorted(study_participants, key=lambda x: x.name),
+		participants_to_add=sorted(participants_to_add, key=lambda x: x.name),
 		sql_text=db.read_log()[:2000]
 		)
+
 
 @app.route("/participant/<int:participant_id>")
 def oneparticipant(participant_id):
 	return render_participant(participant_id)
+
+
+@app.route("/participant/<int:participant_id>/<int:event_id>")
+def render_event(participant_id, event_id):
+	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
+	kwargs = {}
+	kwargs['prev_event_id']=getattr(event.prev_event, 'event_id', None) # None as default if no prev_event exists
+	kwargs['next_event_id']=getattr(event.next_event, 'event_id', None)
+	kwargs['prev_image']=event.prev_image
+	kwargs['next_image']=event.next_image
+	kwargs['event_id']=event.event_id
+	kwargs['event_seconds']=event.length.total_seconds()
+
+	return render_participant(participant_id, event=event, kwargs=kwargs)
+
+	
 def render_participant(participant_id, event=None, kwargs={}):
 	daterange = None
 	if "date_min" in request.args.keys() and "date_max" in request.args.keys():
@@ -169,18 +186,6 @@ def render_participant(participant_id, event=None, kwargs={}):
 		**kwargs
 		)
 
-@app.route("/participant/<int:participant_id>/<int:event_id>")
-def render_event(participant_id, event_id):
-	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
-	kwargs = {}
-	kwargs['prev_event_id']=getattr(event.prev_event, 'event_id', None) # None as default if no prev_event exists
-	kwargs['next_event_id']=getattr(event.next_event, 'event_id', None)
-	kwargs['prev_image']=event.prev_image
-	kwargs['next_image']=event.next_image
-	kwargs['event_id']=event.event_id
-	kwargs['event_seconds']=event.length.total_seconds()
-
-	return render_participant(participant_id, event=event, kwargs=kwargs)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
 def event_check_valid(participant_id, event_id):
