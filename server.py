@@ -83,7 +83,7 @@ def index():
 		users=User.query.all(),
 		num_images=len(Image.query.all()),
 		sql_create=open('create_db.txt','r').read(),
-		sql_text=db.read_log()
+		sql_text=db.read_log()[:2000]
 		)
 
 # Custom static data
@@ -185,6 +185,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		num_images=len(participant.images),
 		sql_text=db.read_log()[:2000],
 		schema=Schema.query.first(),
+		schema_list=Schema.query.filter()
 		**kwargs
 		)
 
