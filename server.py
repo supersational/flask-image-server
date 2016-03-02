@@ -3,6 +3,8 @@ import datetime
 dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
 datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
+# custom sorting e.g. ['hi10', 'hi1', 'hi2', 'hi3'] -> ['hi1', 'hi2', 'hi3', 'hi10'] 
+from natsort import natural_sort, natural_keys
 # import flask
 from flask import Flask, request, redirect, send_from_directory, url_for
 from flask import render_template
@@ -126,8 +128,8 @@ def study(study_id):
 	return render_template('study.html', 
 		study_id=study_id,
 		study_name=study.name,
-		participants=sorted(study_participants, key=lambda x: x.name),
-		participants_to_add=sorted(participants_to_add, key=lambda x: x.name),
+		participants=sorted(study_participants, key=lambda x: natural_keys(x.name)),
+		participants_to_add=sorted(participants_to_add, key=lambda x: natural_keys(x.name)),
 		sql_text=db.read_log()[:2000]
 		)
 
