@@ -53,6 +53,20 @@
 {% endblock %}
 {% block content %}
 	<h3>Showing {{images | length}} images out of {{num_images}}</h3>
+
+	{% if days|length >0 %}
+	<div class="clearfix" style="disply:inline-block; margin-bottom: 20px">
+		{% set curr_day = None %}
+		{% for day in days %}
+			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
+			{% if curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
+				<div style="height:40px; float: left; margin-top:45px;">...</div>
+			{% endif %}
+			{% set curr_day = day.split("-")[2]|int %}
+		{% endfor %}
+	</div>
+	{% endif %}
+
 	{% if event_id %}
 		<h3> Event ID: {{event_id}} <h3>
 		{% if event_seconds %}
@@ -61,6 +75,7 @@
 		<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
 	{% endif %}
 	{% if schema is not none %}
+	<input type="text" id="jstree_q" style="padding:4px; border-radius:4px; border:1px solid silver;">
 	<div id="jstree">
 		<ul>
 			{% set root = schema.root_folders %}
@@ -79,19 +94,9 @@
 	{% else %}
 		<p>No root folder</p>
 	{% endif %}
-	<p> date range : {{daterange.min}} - {{daterange.max}} </p>
 
-	{% if days|length >0 %}
-	<div style="disply:inline-block; height:100px;">
-		{% set curr_day = None %}
-		{% for day in days %}
-			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
-			{% if curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
-				<div style="height:40px; float: left; margin-top:45px;">...</div>
-			{% endif %}
-			{% set curr_day = day.split("-")[2]|int %}
-		{% endfor %}
-	</div>
+	{% if daterange is defined and daterange is not none %}
+	<p> date range : {{daterange.min}} - {{daterange.max}} </p>
 	{% endif %}
 
 	<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
@@ -114,7 +119,7 @@
 			{% endif %}
 		</div> 
 	</div>
-	<div style="width:100%;padding:30px;" class="shadow-wrapper">
+	<div class="shadow-wrapper">
 	{% set fillcol="lightblue" %}
 	{% for image in images %}
 		 <div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
@@ -154,7 +159,7 @@
 	{% endfor %}
 	</div>
 	<script>
-
+	// SCRIPT FOR DATE/HOUR BOXES
 	function urlByHour(hour, div) {
 		var day = $(this).attr("date")
 		var hour = parseInt(hour)
@@ -179,6 +184,10 @@
 	$('.timepicker').each(function() {
 		$(this).find(".ui-timepicker-title").html("<a style='display:inline;' onclick='urlByDate(\""+$(this).attr("date")+"\")'>"+$(this).attr("date") + "</a>")
 	})
+
+
+
+	// SCRIPT FOR ANNOTATION FOLDER
 	$(function () {
 		$('#jstree').jstree({
 			"core" : {
@@ -188,7 +197,14 @@
 			},
 			"plugins" : [ "search",  "contextmenu"  ]
 		}); 
-
+		var to = false;
+		$('#jstree_q').keyup(function () {
+			if(to) { clearTimeout(to); }
+			to = setTimeout(function () {
+				var v = $('#jstree_q').val();
+				$('#jstree').jstree(true).search(v, {show_only_matches:true});
+			}, 250);
+		});
 	});
 
 		function reset_all() {
