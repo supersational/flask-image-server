@@ -13,46 +13,49 @@
     <link rel="stylesheet" href="/static/jquery-ui-1.10.0.custom.min.css" />
     <link rel="stylesheet" href="/static/jquery.ui.timepicker.css" />
     <script src="/static/jquery.ui.timepicker.js"></script>
+    <style>
+    .img {
+    	margin: 0px;
+    	float: left;
+    	width: {{im_both}}px;
+    	height: 190px;
+    	text-align:center;
+    	position:relative;
+    }
+    .img :after {
+    	content: '';
+        display: block;
+        clear: both;
+    }
+    .shadow-wrapper:after {
+        clear:both;
+        content:" ";
+        display:block;
+    }
+    .circle {
+    	stroke: lightblue;
+    	stroke-width:5;
+    	fill:white;
+    	cursor: grab;
+    	cursor: -webkit-grab;
+    }
+    .timepicker {
+    	margin: 5px;
+    	float: left;
+    }
+    .split {
+    	fill-opacity:0;
+    	z-index:10;
+    	/*background-color: yellow;*/
+    }
+    li.jstree-leaf > a .jstree-icon { display: none; }
+    </style>
 {% endblock %}
 {% block title %}
 	Participant: {{name}} 
 {% endblock %}
-{% block style %}
-.img {
-	margin: 0px;
-	float: left;
-	width: {{im_both}}px;
-	height: 190px;
-	text-align:center
-}
-.img :after {
-	content: '';
-    display: block;
-    clear: both;
-}
-.shadow-wrapper:after {
-    clear:both;
-    content:" ";
-    display:block;
-}
-.circle {
-	stroke: lightblue;
-	stroke-width:5;
-	fill:white;
-	cursor: grab;
-	cursor: -webkit-grab;
-}
-.timepicker {
-	margin: 5px;
-	float: left;
-}
-.split {
-	fill-opacity:0;
-	z-index:10;
-}
-{% endblock %}
 {% block content %}
-	<div id="left-bar" style="position: absolute; ; background: rgba(255,255,255,0.5); overflow: hidden; width: 180px">
+	<div id="left-bar" style="position: absolute; padding:10px; background: rgba(255,255,255,0.5); overflow: hidden; width: 180px">
 		{% if schema is not none %}
 		<div id="jstree_box"  style="display:none;">
 			<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver;">
@@ -64,7 +67,7 @@
 						<li>{{ folder.name }}
 							<ul>{{ loop(folder.folders) }}
 							{% for label in folder.labels %}
-							<li data-jstree='{"icon":""}' label-id="{{ label.label_id }}"> {{ label.name }} </li>
+							<li label-id="{{ label.label_id }}"> {{ label.name }} </li>
 							{% endfor %}
 							</ul>
 						</li>
@@ -79,7 +82,8 @@
 
 	<div style="float:left; margin-left: 200px;">
 		{% if days|length >0 %}
-		<div class="clearfix" style="disply:inline-block; margin-bottom: 20px">
+		<div class="clearfix" style="display:inline-block; margin-bottom: 20px; overflow-y:scroll; height:170px;">
+		{% for i in [1,2,3,4,5,6,7,8] %}
 			{% set curr_day = None %}
 			{% for day in days %}
 				<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
@@ -88,6 +92,7 @@
 				{% endif %}
 				{% set curr_day = day.split("-")[2]|int %}
 			{% endfor %}
+		{% endfor %}
 		</div>
 		{% endif %}
 
@@ -127,8 +132,17 @@
 		<div class="shadow-wrapper">
 		{% set fillcol="lightblue" %}
 		{% for image in images %}
-			 <div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
+			<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
+	 			{% if image.event is not none %}			 	
+				 	{% if not image.is_last %}
+						 <div style="width:{{im_half-10}}px;height:15px;top:15px;left:{{im_half+10}}px;position:absolute;cursor:col-resize;" class="split right" split-dir="right"></div>
+				 	{% endif %}
+				 	{% if not image.is_first %}
+						 <div style="width:{{im_half-10}}px;height:15px;top:15px;left:0px;position:absolute;cursor:col-resize;" class="split left" split-dir="left"></div>
+				 	{% endif %} 
+			 	{% endif %} 
 		 		<svg width="{{im_both}}" height="30">
+
 		 			{% if image.event is not none %}			 	
 					 	{% if not image.is_last %}
 					 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" style="cursor:col-resize;" class="split right" split-dir="right" /> 
@@ -155,6 +169,7 @@
 				 	{% else %}
 				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
 					{% endif %}
+
 				</svg>
 			 	<a href='{{image.full_url}}'><img width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}' ></a>
 			 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
@@ -266,12 +281,12 @@
 		left_col_expanded = true;
 		expand_left_col();
 	});
-	$(".img").mouseup(function() {
+	$("div.img").mouseup(function() {
 			if (dragging_annotation) {
 				var event_id = parseInt($(this).attr("event-id"))
 				console.log("Event_annotate!", event_id)
 				// Event.annotate(participant_id, event_id, label_id, complete)
-				Event.annotate({{id}}, {{event_id}}, dragging_annotation, function(e) {alert("done" + e)})
+				Event.annotate({{id}}, event_id, dragging_annotation, function(e) {alert("done" + e);})
 			} else {
 				console.log("no annotation", dragging_annotation)
 			}
@@ -283,6 +298,7 @@
 			$(".circle.hidden").attr("visibility", "hidden");
 			$(".circle").attr("cx", {{im_half}});
 			$(".fake").remove();
+			$(".line").attr("visibility", "visible");
 		}
 		 var dragging = null;
 		 var drag_id = null;
@@ -292,7 +308,7 @@
 		 $(document).mouseup(function() {
 		 	if (dragging) reset_all()
 		 	dragging = null;
-		 	reset_img($(".img"))
+		 	reset_img($("div.img"))
 		 	dragging_annotation = false;
 		 })
 		 $('circle').mousedown(function(e) {
@@ -306,55 +322,85 @@
 		 	console.log(drag_id, drag_pair_id)
 		 });
 		$('.img').mousemove(function(e) {
-			if (dragging_annotation===false) {
+				console.log(e)
+			if (dragging_annotation!==false) {
+				console.log("dragging_annotation")
 			 	reset_img($(".img"))
 			 	var this_id = $(this).attr('id');
 
 			} else if (dragging) {
 				e.preventDefault()
+				// this is the currently dragged .img
 				var this_id = $(this).attr('id');
-				var this_event_id = $(this).attr('event-id');
-				var same_event = (this_event_id == drag_event_id)
-				console.log(this_id, drag_id, same_event)
+				var this_img = this;
+				// x distance relative to .img box
 				var move = e.pageX - $(this).offset().left
+				var same_event = (this_event_id == drag_event_id)
+				// limit the drag to 
+				if (drag_pair!=null) {
+					if ((drag_pair_id < drag_id && this_id <= drag_pair_id) ||
+						(drag_pair_id > drag_id && this_id >= drag_pair_id)) {
+						if (this_id==drag_pair_id)
+							move = (drag_pair_id > drag_id) ? Math.min(move, {{im_half}}) : Math.max(move, {{im_half}});
+						else 
+							move = {{im_half}}
+						console.log("overstepped own limit!", move)
+						this_id=drag_pair_id;
+						this_img = $("div.img#"+this_id+"")
+						same_event = true
+						// $(this_img).css("background-color", "red")
+						// $("div.img").not(this_img).css("background-color", "")
+					}
+				}
+				var this_event_id = $(this).attr('event-id');
+				console.log(this_id, drag_id, same_event)
 				$(".circle.hidden").attr("visibility", "hidden");
-				console.log($(".circle.fake"))
 				$(".fake").remove();
 				if (this_id != drag_id) {
-					// if (drag_pair!=null) {
-					// 	if (drag_pair_id < 
-					// }
 					var between = $("#"+Math.min(this_id, drag_id)).nextUntil("#"+Math.max(this_id, drag_id))
 					// console.log($(".line").not(between))
-					line_full(between)
-					hide_circle(between)
-
+					if (!same_event) {
+						line_full(between)
+						hide_circle(between)
+					} else {
+						hide_line(between)
+					}
 					// show_circle(this)
 					reset_img($(".img").not(between))
 					
 					$(".img").not(between).find(".circle:not(.hidden)").attr("visibility","visible")
+					$(".img").not(between).find(".line").attr("visibility","visible")
 					// pull the original img
 					if (this_id>drag_id) pull_away(dragging, {{im_both}}, true)
 					else				 pull_away(dragging, 0, true)
 					hide_circle(dragging)
 					// move our cursor circle
-					move_fake_circle(this, move)
+					move_fake_circle(this_img, move)
 					var trespassing = false; // TODO
 					// pull the line into new frame
 					// if within same event coming from opposite direction
-					if (same_event && (is_first(this) || is_last(this))) { // shrinking own event
-						line_from_mid(this, move);
+					if (same_event) {
+						if (is_first(this_img) || is_last(this_img)) { // shrinking own event
+							console.log("on other end", move)
+							hide_line(this_img)
+							line_from_mid(this_img, move);
+						} else {
+							if (this_id<drag_id) from_left(this_img, move)
+							if (this_id>drag_id) from_right(this_img, move)
+						}
 					}
-					else if (!same_event ? (this_id>drag_id) : (this_id<drag_id)) { 
-						line_from_left(this, move)
-					} else {
-						line_from_right(this,move)
+					else {
+						if (this_id>drag_id) { 
+							line_from_left(this_img, move)
+						} else {
+							line_from_right(this_img,move)
+						}
 					}
 				} else {
 					// on same img as started
-					show_circle(this)
-					reset_img($(".img").not(this));
-					pull_away(this, move)
+					show_circle(this_img)
+					reset_img($(".img").not(this_img));
+					pull_away(this_img, move)
 				}
 			}
 		});
@@ -398,9 +444,9 @@
 
 		function line_from_mid(el, move, c) {
 			if (move>{{im_half}}) {
-				makeLine(el,{"width":move-{{im_half}} });
+				makeLine(el,{"width":move-{{im_half}}, "x":{{im_half}} });
 			} else {
-				makeLine(el,{"width":{{im_half}}-move})
+				makeLine(el,{"width":{{im_half}}-move, "x":move})
 			}
 		}
 		function line_from_left(el, move, c, no_circ) {
@@ -420,10 +466,13 @@
 			if (move<15) move_fake_circle($(el).prev(".img"), {{im_both}}+move);
 		}
 		function move_fake_circle(el, move) {
-			$(el).find("svg").append(makeSVG("circle", {"cx":move, "cy":10, "r":10, "class":"circle fake"}));
+			$(el).find("svg").append(makeSVG("circle", {"cx":move, "cy":15, "r":10, "class":"circle fake"}));
 			return el;
 		}
 
+		function hide_line(el) {
+			$(el).find(".line").attr("visibility","hidden");
+		}
 		function hide_circle(el) {
 			$(el).find(".circle").attr("visibility","hidden");
 		}
@@ -437,7 +486,7 @@
 		function reset_img(el) {
 			$(el).find(".circle:not(.hidden)").attr("visibility","visible").attr("cx", {{im_half}});
 			$(el).find(".line").each(function(){
-				$(this).attr({"width":$(this).attr("nw"), "x":$(this).attr("nx")});
+				$(this).attr({"width":$(this).attr("nw"), "x":$(this).attr("nx"), "visibility":"visible"});
 			});
 		}
 
@@ -456,7 +505,6 @@
 		}).hover(function(){
 			var dir = $(this).attr("split-dir");
 			var img = $(this).closest(".img")
-			console.log(this, dir) 
 			if (dir=="left") {
 				makeSeperator(img, {'x':10})
 				makeSeperator(img.prev(".img"), {'x':{{im_both}}-10})
@@ -474,29 +522,38 @@
 			$(this).attr("r", 10)
 		});
 
-		$('.img').hover(function() {
-			$(this).find("img").animate({ "width": {{im_width * 1.03}}, "height" :{{87 * 1.03}}}, "fast");
-		}, function() {
-			$(this).find("img").animate({ "width": {{im_width}}, "height" :{{87}}}, "fast");
-		})
+		// $('.img').hover(function() {
+		// 	$(this).find("img").animate({ "width": {{im_width * 1.03}}, "height" :{{87 * 1.03}}}, "fast");
+		// }, function() {
+		// 	$(this).find("img").animate({ "width": {{im_width}}, "height" :{{87}}}, "fast");
+		// })
 		function makeSeperator(el, attrs) {
+			attrs['fill'] = "{{fillcol}}"
+			attrs['width'] = 5
+			makeSeperatorLine(el, attrs);
+			attrs['fill'] = "white"
+			attrs['width'] = 15
+			attrs['x'] +=  (attrs['x']>{{im_half}} ? 5 : -attrs['width'])
+			makeSeperatorLine(el, attrs);
+		}
+			
+		function makeSeperatorLine(el, attrs) {
 			attrs['class'] = 'fake'
 			attrs['height'] = 20
-			attrs['width'] = 5
-			attrs['fill'] = "{{fillcol}}"
 			attrs['y'] = 5
-			$(el).find("svg").prepend(makeSVG("rect",attrs));
+			$(el).find("svg").append(makeSVG("rect",attrs));
 			// if attrs[]
 			// $(el).find("svg").prepend(makeSVG("rect",attrs));
-			console.log($(el).closest("svg")[0])
+			// console.log($(el).closest("svg")[0])
 		}
 		function makeLine(el, attrs) {
 			attrs['class'] = 'fake'
 			attrs['height'] = 5
 			attrs['fill'] = "{{fillcol}}"
-			attrs['y'] = 15
-			console.log(attrs)
-			$(el).find("svg").append(makeSVG("rect",attrs));
+			attrs['y'] = 12.5
+			attrs['z-index'] = 5
+			// console.log(attrs)
+			$(el).find("svg").prepend(makeSVG("rect",attrs));
 		}
 
 		function makeSVG(tag, attrs) {

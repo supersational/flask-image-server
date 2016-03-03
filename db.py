@@ -73,7 +73,7 @@ class Event(Base):
             self.delete()
             return False
         return True
-
+        Event.query.filter(Event.prev_event==some_event).one()
     @hybrid_property 
     def prev_event(self):
         prev_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.end_time < self.end_time)).all()
