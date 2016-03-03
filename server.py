@@ -172,7 +172,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		
 	if daterange is not None:
 		images = [img for img in images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
-	images = sorted(images, key=lambda x: x.image_time)[0:100]
+	images = sorted(images, key=lambda x: x.image_time)
 	# print "sorted list:"
 	# for img in images
 	# 	print img, '' if not daterange else str(img.image_time > daterange['max']) + str(img.image_time < daterange['min'])
@@ -182,7 +182,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		images=images[:100],
 		days=participant.get_images_by_hour(),
 		daterange=daterange,
-		num_images=len(participant.images),
+		num_images=len(images),
 		sql_text=db.read_log()[:2000],
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
