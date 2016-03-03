@@ -52,7 +52,7 @@
 }
 {% endblock %}
 {% block content %}
-	<div id="left-bar" style="position: absolute; padding: 10px; background: rgba(255,255,255,0.5); overflow: hidden; width: 200px">
+	<div id="left-bar" style="position: absolute; padding: 10px; background: rgba(255,255,255,0.5); overflow: hidden; width: 180px">
 		{% if schema is not none %}
 		<div id="jstree_box"  style="display:none;">
 			<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver;">
@@ -222,14 +222,15 @@
 
 	// SLIDE OUT SIDE ANNOTATION BAR
     var left_col_expanded = false;
+    var left_bar_width = 180;
 	function expand_left_col() { // on
 	        var fn = function() { console.log("done")};
 	        // if (!left_col_expanded) {fn = function() {console.log("done and resize");if (chart.flush) chart.flush(); resizeLayout(true)};} // must resize if chart area squished by drawer
-	        var max_width = 200+left_col_expanded*500;
+	        var max_width = left_bar_width+left_col_expanded*500;
 	        console.log(left_col_expanded ? "on" : "off", max_width, $('#left-bar')[0].scrollWidth)
 	        // console.log(Lbottom[0].scrollWidth)
-	        $('#left-bar').stop().animate({width:Math.min(max_width, Math.max(200, $('#left-bar')[0].scrollWidth))}, {duration: 200, done: fn});
-	        // Rcol.stop().animate({marginLeft:Math.min(max_width, Math.max(200, Lbottom[0].scrollWidth))}, {duration: 200});
+	        $('#left-bar').stop().animate({width:Math.min(max_width, Math.max(left_bar_width, $('#left-bar')[0].scrollWidth))}, {duration: 200, done: fn});
+	        // Rcol.stop().animate({marginLeft:Math.min(max_width, Math.max(left_bar_width, Lbottom[0].scrollWidth))}, {duration: 200});
 	    }
 	$('#left-bar').hover(
 	    function() {

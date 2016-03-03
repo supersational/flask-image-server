@@ -150,7 +150,7 @@ def create_fake_data(session):
     session.flush()
     s.labels.extend((Label("walking", folder=f), Label("running", folder=f), Label("sleeping", folder=node2), Label("sitting", folder=node2), Label("standing", folder=subnode)))
 
-    print s.dump()
+    # print s.dump()
     # this will automatically create the 'default' study
     p.studies.append(Study('default'))
     p.studies = []
