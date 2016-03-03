@@ -33,6 +33,18 @@ var Event = {
 					if (complete) complete(textStatus)
 				} 
 			});
+	},
+	annotate: function(participant_id, event_id, label_id, complete) {
+		$.ajax({
+			type: "POST",
+			data: {label_id:label_id},
+			url: "/participant/"+participant_id+"/"+event_id+"/annotate",
+			complete : function(jqXHR, textStatus) {
+				console.log("Event.annotate("+participant_id+","+event_id+","+label_id+") " + textStatus);
+				console.log(jqXHR)
+				if (complete) complete(textStatus)
+			} 
+		});
 	}
 }
 var Study = {

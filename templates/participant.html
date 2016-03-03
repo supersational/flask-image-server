@@ -52,7 +52,7 @@
 }
 {% endblock %}
 {% block content %}
-	<div id="left-bar" style="position: absolute; padding: 10px; background: rgba(255,255,255,0.5); overflow: hidden; width: 180px">
+	<div id="left-bar" style="position: absolute; ; background: rgba(255,255,255,0.5); overflow: hidden; width: 180px">
 		{% if schema is not none %}
 		<div id="jstree_box"  style="display:none;">
 			<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver;">
@@ -64,7 +64,7 @@
 						<li>{{ folder.name }}
 							<ul>{{ loop(folder.folders) }}
 							{% for label in folder.labels %}
-							<li data-jstree='{"icon":""}'> {{ label.name }} </li>
+							<li data-jstree='{"icon":""}' label-id="{{ label.label_id }}"> {{ label.name }} </li>
 							{% endfor %}
 							</ul>
 						</li>
@@ -198,17 +198,31 @@
 
 
 	// SCRIPT FOR ANNOTATION FOLDER
+	var dragging_annotation = false;
 	$(function () {
 		$('#jstree').on('loaded.jstree', function() {
 			console.log("loaded")
 			$('#jstree_box').show()
+		}).on('drag.jstree', function(e) {
+			if (dragging_annotation==false) {
+				dragging_annotation = parseInt($(e.target).closest("li").attr("label-id"));
+				if (!isNaN(dragging_annotation)) {
+					console.log("drag", dragging_annotation);
+					left_col_expanded = false;
+					expand_left_col();
+				} else {
+					console.log("dragging_annotation failed",e.target, $(e.target).closest("li"), $(e.target).closest(".jstree-node[label-id]"));
+					dragging_annotation = false;
+					e.preventDefault()
+				}
+			}
 		}).jstree({
 			"core" : {
 				"multiple" : false,
 				"animation" : 0,
 				"check_callback" : true
 			},
-			"plugins" : [ "search",  "contextmenu"  ]
+			"plugins" : [ "search" /*,  "contextmenu"*/  ]
 		}); 
 		var to = false;
 		$('#jstree_searchbox').keyup(function () {
@@ -225,19 +239,20 @@
     var left_bar_width = 180;
 	function expand_left_col() { // on
 	        var fn = function() { console.log("done")};
-	        // if (!left_col_expanded) {fn = function() {console.log("done and resize");if (chart.flush) chart.flush(); resizeLayout(true)};} // must resize if chart area squished by drawer
 	        var max_width = left_bar_width+left_col_expanded*500;
 	        console.log(left_col_expanded ? "on" : "off", max_width, $('#left-bar')[0].scrollWidth)
 	        // console.log(Lbottom[0].scrollWidth)
-	        $('#left-bar').stop().animate({width:Math.min(max_width, Math.max(left_bar_width, $('#left-bar')[0].scrollWidth))}, {duration: 200, done: fn});
-	        // Rcol.stop().animate({marginLeft:Math.min(max_width, Math.max(left_bar_width, Lbottom[0].scrollWidth))}, {duration: 200});
+	        $('#left-bar').stop().animate({
+	        	width:Math.min(max_width, Math.max(left_bar_width, $('#left-bar')[0].scrollWidth))
+	        }, {duration: 200, done: fn});
 	    }
 	$('#left-bar').hover(
 	    function() {
-	        // console.log('on');
-	        left_col_expanded = true;
-	        // $('#left-bar').css({"width":""})
-	        expand_left_col();
+	        if (dragging_annotation===false) {
+		        left_col_expanded = true;
+		        // $('#left-bar').css({"width":""})
+		        expand_left_col();
+		    }
 	    }, 
 	    function() { // off
 	        // console.log('off');
@@ -247,11 +262,23 @@
 	    }
 	);
 	$("#jstree").on('click', function() {
-		// console.log("click")
+		console.log("click");
 		left_col_expanded = true;
 		expand_left_col();
 	});
+	$(".img").mouseup(function() {
+			if (dragging_annotation) {
+				var event_id = parseInt($(this).attr("event-id"))
+				console.log("Event_annotate!", event_id)
+				// Event.annotate(participant_id, event_id, label_id, complete)
+				Event.annotate({{id}}, {{event_id}}, dragging_annotation, function(e) {alert("done" + e)})
+			} else {
+				console.log("no annotation", dragging_annotation)
+			}
+		});
 
+
+	// EVENT MANIPULATION
 		function reset_all() {
 			$(".circle.hidden").attr("visibility", "hidden");
 			$(".circle").attr("cx", {{im_half}});
@@ -266,6 +293,7 @@
 		 	if (dragging) reset_all()
 		 	dragging = null;
 		 	reset_img($(".img"))
+		 	dragging_annotation = false;
 		 })
 		 $('circle').mousedown(function(e) {
 		 	e.preventDefault();
@@ -278,7 +306,11 @@
 		 	console.log(drag_id, drag_pair_id)
 		 });
 		$('.img').mousemove(function(e) {
-			if (dragging) {
+			if (dragging_annotation===false) {
+			 	reset_img($(".img"))
+			 	var this_id = $(this).attr('id');
+
+			} else if (dragging) {
 				e.preventDefault()
 				var this_id = $(this).attr('id');
 				var this_event_id = $(this).attr('event-id');
@@ -446,7 +478,7 @@
 			$(this).find("img").animate({ "width": {{im_width * 1.03}}, "height" :{{87 * 1.03}}}, "fast");
 		}, function() {
 			$(this).find("img").animate({ "width": {{im_width}}, "height" :{{87}}}, "fast");
-		});
+		})
 		function makeSeperator(el, attrs) {
 			attrs['class'] = 'fake'
 			attrs['height'] = 20

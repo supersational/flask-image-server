@@ -248,11 +248,20 @@ def remove_studyparticipant():
 			return "participant not in that study"
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
-
-
-@app.route("/create_event", methods=["POST"])
-def create_event():
-	start_time = request.form['study_id'], request.form['participant_id']
+@app.route("/participant/<int:participant_id>/<int:event_id>/annotate", methods=["POST"])
+def annotate(participant_id, event_id):
+	label_id = request.form['label_id']
+	label = Label.query.filter(Label.label_id==label_id).one()
+	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+	event = event.query.filter(event.event_id==event_id).one()
+	return str(label) + str(participant) + str(event)
+	if study and participant:
+		if study in participant.studies:
+			participant.studies.remove(study)	
+			return redirect("/study/" + study_id)
+		else:
+			return "participant not in that study"
+	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
 @app.errorhandler(500)
 def internal_server_error(error):

@@ -39,6 +39,7 @@ class Event(Base):
 
     event_id = Column(Integer, primary_key=True)
     participant_id = Column(ForeignKey(u'participants.participant_id'), nullable=False)
+    label_id = Column(ForeignKey(u'labels.label_id'))
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     comment = Column(Text)
@@ -46,6 +47,7 @@ class Event(Base):
 
     participant = relationship(u'Participant', back_populates='events')
     images = relationship(u'Image', back_populates='event', order_by='Image.image_time')
+    label = relationship(u'Label', back_populates='events')
 
     def __init__(self, participant_id, start_time, end_time, comment=''):
         self.participant_id = participant_id
@@ -410,7 +412,7 @@ class Schema(Base):
                         subfolder = Folder(n, schema=self, parent=curr_folder if self!=curr_folder else None)
                         curr_folder.folders.append(subfolder)                
                          # = next(x for x in curr_folder.folders if lambda x: x.name==n)
-                    print i, subfolder
+                    # print i, subfolder
                     curr_folder = subfolder
         return self
                 
@@ -426,6 +428,7 @@ class Label(Base):
 
     schema = relationship(u'Schema', back_populates='labels')
     folder = relationship(u'Folder', back_populates='labels') # can belong to folder
+    events = relationship(u'Event', back_populates='label')
 
     def __init__(self, name, schema=None, folder=None):
         self.name = name
