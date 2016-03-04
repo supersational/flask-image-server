@@ -47,6 +47,11 @@
     	fill-opacity:0;
     	z-index:10;
     	/*background-color: yellow;*/
+    	width: {{im_half/3}}px;
+    	height:30px;
+    	top:0px;
+    	position:absolute;
+    	cursor:col-resize;
     }
     li.jstree-leaf > a .jstree-icon { display: none; }
     </style>
@@ -82,7 +87,7 @@
 
 	<div style="float:left; margin-left: 200px;">
 		{% if days|length >0 %}
-		<div class="clearfix" style="display:inline-block; margin-bottom: 20px; overflow-y:scroll; height:170px;">
+		<div class="clearfix" style="display:inline-block; margin-bottom: 20px; overflow-y:scroll; height:140px;width:100%">
 		{% for i in [1,2,3,4,5,6,7,8] %}
 			{% set curr_day = None %}
 			{% for day in days %}
@@ -135,21 +140,16 @@
 			<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
 	 			{% if image.event is not none %}			 	
 				 	{% if not image.is_last %}
-						 <div style="width:{{im_half-10}}px;height:15px;top:15px;left:{{im_half+10}}px;position:absolute;cursor:col-resize;" class="split right" split-dir="right"></div>
+						 <div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>
 				 	{% endif %}
 				 	{% if not image.is_first %}
-						 <div style="width:{{im_half-10}}px;height:15px;top:15px;left:0px;position:absolute;cursor:col-resize;" class="split left" split-dir="left"></div>
+						 <div style="left:0px;" class="split left" split-dir="left"></div>
 				 	{% endif %} 
 			 	{% endif %} 
 		 		<svg width="{{im_both}}" height="30">
 
 		 			{% if image.event is not none %}			 	
-					 	{% if not image.is_last %}
-					 		<rect width="{{im_half}}" height="15" x="{{im_half}}" y="15" fill="yellow" style="cursor:col-resize;" class="split right" split-dir="right" /> 
-					 	{% endif %} 
-					 	{% if not image.is_first %}
-					 		<rect width="{{im_half}}" height="15" x="0" y="15" fill="yellow" style="cursor:col-resize;" class="split left" split-dir="left" /> 
-					 	{% endif %} 
+
 					 	{% if not (image.is_last and image.is_first) %}
 						 	{% if image.is_last %}
 						 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
@@ -219,32 +219,36 @@
 			console.log("loaded")
 			$('#jstree_box').show()
 		}).on('drag.jstree', function(e) {
-			if (dragging_annotation==false) {
-				dragging_annotation = parseInt($(e.target).closest("li").attr("label-id"));
-				if (!isNaN(dragging_annotation)) {
-					console.log("drag", dragging_annotation);
-					left_col_expanded = false;
-					expand_left_col();
-				} else {
-					console.log("dragging_annotation failed",e.target, $(e.target).closest("li"), $(e.target).closest(".jstree-node[label-id]"));
-					dragging_annotation = false;
-					e.preventDefault()
-				}
-			}
+			// if (dragging_annotation==false) {
+			// 	dragging_annotation = parseInt($(e.target).closest("li").attr("label-id"));
+			// 	if (!isNaN(dragging_annotation)) {
+			// 		console.log("drag", dragging_annotation);
+			// 		left_col_expanded = false;
+			// 		expand_left_col();
+			// 	} else {
+			// 		console.log("dragging_annotation failed",e.target, $(e.target).closest("li"), $(e.target).closest(".jstree-node[label-id]"));
+			// 		dragging_annotation = false;
+			// 		e.preventDefault()
+			// 	}
+			// }
 		}).jstree({
 			"core" : {
 				"multiple" : false,
 				"animation" : 0,
 				"check_callback" : true
 			},
-			"plugins" : [ "search" /*,  "contextmenu"*/  ]
+			"plugins" : [ "search" /*,  "contextmenu"*/  ],
+			"search" :  {
+				"case_insensitive" : true,
+				"show_only_matches":true
+			}
 		}); 
 		var to = false;
 		$('#jstree_searchbox').keyup(function () {
 			if(to) { clearTimeout(to); }
 			to = setTimeout(function () {
 				var v = $('#jstree_searchbox').val();
-				$('#jstree').jstree(true).search(v, {show_only_matches:true});
+				$('#jstree').jstree(true).search(v);
 			}, 250);
 		});
 	});
@@ -296,7 +300,7 @@
 	// EVENT MANIPULATION
 		function reset_all() {
 			$(".circle.hidden").attr("visibility", "hidden");
-			$(".circle").attr("cx", {{im_half}});
+			$(".circle:not(.hidden)").attr("visibility", "visible");
 			$(".fake").remove();
 			$(".line").attr("visibility", "visible");
 		}
@@ -305,23 +309,262 @@
 		 var drag_event_id = null;
 		 var drag_pair = null;
 		 var drag_pair_id = null;
+
+
+		var curr_img = null;
+		var curr_id = null;
+		var start_img = null;
+		var start_id = null;
+		var start_event_id = null;
+		var event_pair_img = null;
+		var event_pair_id = null;
+		var event_to_left = null;
+		var event_to_left_is_standalone = null;
+		var event_to_right = null;
+		var event_to_right_is_standalone = null;
 		 $(document).mouseup(function() {
-		 	if (dragging) reset_all()
-		 	dragging = null;
+		 	if (start_img!==null) reset_all()
 		 	reset_img($("div.img"))
-		 	dragging_annotation = false;
+
+		 	curr_img = null;
+		 	curr_id = null;
+		 	start_img = null;
+		 	start_id = null;
+		 	start_event_id = null;
+		 	event_pair_img = null;
+		 	event_pair_id = null;
+		 	event_to_left = null;
+		 	event_to_right = null;
+		 	event_to_left_is_standalone = null;
+		 	event_to_right_is_standalone = null;
+
 		 })
-		 $('circle').mousedown(function(e) {
-		 	e.preventDefault();
-		 	dragging = $(this).closest(".img");
-		 	drag_id = $(dragging).attr('id');
-		 	drag_event_id = $(dragging).attr('event-id')
-		 	drag_pair = $("[event-id="+drag_event_id+"]").filter( "[is-first='True'],[is-last='True']" ).not(dragging);
-		 	drag_pair = (drag_pair.length==0) ? null : $(drag_pair[0]);
-		 	drag_pair_id = (drag_pair == null) ? null : $(drag_pair).attr('id') ;
-		 	console.log(drag_id, drag_pair_id)
-		 });
+
+		$('circle').mousedown(function(e) {
+			e.preventDefault()
+			start_img = curr_img = $(this).closest("div.img")[0];
+			start_img_is_standalone = ( $(start_img).attr('is-first')=="True" && $(start_img).attr('is-last')=="True" )
+			start_id  = curr_id  = parseInt(start_img.id)
+			start_event_id = parseInt($(start_img).attr('event-id'));
+			// find other 'end' of event (if none set to null)
+			event_pair_img = $("[event-id="+start_event_id+"]").filter( "[is-first='True'],[is-last='True']" ).not(start_img);
+			event_pair_img = (event_pair_img.length==0) ? null : event_pair_img[0];
+			event_pair_id = (event_pair_img == null) ? null : parseInt($(event_pair_img).attr('id'));
+			// check sides for another event
+			var left = $("div#"+(start_id-1)+".img")
+			var right = $("div#"+(start_id+1)+".img")
+			if (left.length == 1 && left.attr("event-id").length != 0) {
+				event_to_left = parseInt(left.attr("id"))
+				event_to_left_is_standalone = (left.attr("is-first")=="True" && left.attr("event-id") != start_event_id)
+			} else event_to_left = false;
+			if (right.length == 1 && right.attr("event-id").length != 0) {
+				event_to_right = parseInt(right.attr("id"))
+				event_to_right_is_standalone = (right.attr("is-last")=="True" && right.attr("event-id") != start_event_id)
+			} else event_to_right = false;
+			console.log(event_to_left, event_to_right, left, right)
+			console.log(this, curr_img, event_pair_img)
+		});
+
 		$('.img').mousemove(function(e) {
+			if (start_img===null) {return 0;}
+			e.preventDefault()
+			// if it has moved from previous position
+			if (this !== curr_img) {
+				// make sure we can not move futher back than the end of the event
+				curr_id = parseInt(this.id);
+				// if we have gone further than the other end of our own event
+				if (event_pair_id!==null && (
+					(start_id < event_pair_id && curr_id > event_pair_id) || 
+					(start_id > event_pair_id && curr_id < event_pair_id) 
+					)) {
+					// limit the movement
+					curr_id = event_pair_id;
+					// re-check that we have moved
+					if (curr_img==event_pair_img) return 0;
+					curr_img = event_pair_img;
+				} else {
+					curr_img = this;
+				}
+				curr_event_id = parseInt($(curr_img).attr('event-id'));
+				var same_event = (curr_event_id == start_event_id)
+
+				// create dict of id's to modify
+				var modify = {}
+				// if same id as started do nothing
+				if (!(start_id == curr_id)) {
+					
+					if (same_event) {
+						// if shrinking own event, hide parts that will no longer exist
+						if (start_id < curr_id) {
+							// moving towards left, this does the strike-through
+							for( var i=start_id; i<curr_id; i++ ){
+								if (event_to_left!==false) modify[i] = "through"
+								else modify[i] = "blank"
+		 					}
+		 					if (curr_id !== event_pair_id) modify[curr_id] = "from-right";
+		 					else modify[curr_id] = "standalone"; // if event is now only 1-img long
+		 					if (event_to_left!==false) {
+		 						modify[curr_id-1] = "from-left";
+		 						if (event_to_left_is_standalone) modify[event_to_left] = "from-right"
+		 						else modify[event_to_left] = "through"
+		 					}
+		 				} else {
+							// moving towards right
+		 					for( var i=start_id; i>curr_id; i-- ){
+								if (event_to_right!==false) modify[i] = "through"
+								else modify[i] = "blank"
+		 					}
+		 					if (curr_id !== event_pair_id) modify[curr_id] = "from-left"
+		 					else modify[curr_id] = "standalone"; // if event is now only 1-img long
+		 					if (event_to_right!==false) {
+		 						modify[curr_id+1] = "from-right"
+		 						if (event_to_right_is_standalone) modify[event_to_right] = "from-left"
+		 						else modify[event_to_right] = "through"
+		 					}
+		 				}
+					} else {
+						// must be expanding into another event:
+						if (start_id < curr_id) {
+							// moving towards right
+							console.log("moving towards right")
+							// strike-through images behind move
+							for( var i=start_id; i<curr_id; i++ ){
+								modify[i] = "through"
+							}
+							// unless we're dragging from a singleton
+							if (start_img_is_standalone) modify[start_id] = "from-right"
+							modify[curr_id] = "from-left";
+
+							var img_on_right = $("div#"+(curr_id+1)+".img");
+							if (img_on_right.length==1) {
+								if (img_on_right.attr("event-id")!=="") {
+									if (img_on_right.attr("is-last")=="True") modify[curr_id+1] = "standalone"
+									else modify[curr_id+1] = "from-right"
+								}
+							}
+						} else {
+							// moving towards left
+							console.log("moving towards left")
+
+							for( var i=start_id; i>curr_id; i-- ){
+								modify[i] = "through"
+							}
+							if (start_img_is_standalone) modify[start_id] = "from-left"
+							modify[curr_id] = "from-right";
+
+							var img_on_left = $("div#"+(curr_id-1)+".img");
+							if (img_on_left.length==1) {
+								if (img_on_left.attr("event-id")!=="") {
+									if (img_on_left.attr("is-first")=="True") modify[curr_id-1] = "standalone"
+									else modify[curr_id-1] = "from-left"
+								}
+							}
+						}
+					}
+				}
+				reset_all()
+ 				for (i in modify) {
+ 					console.log(i, modify[i])
+ 					modify_img(i, modify[i]);
+ 				}
+				console.log("moved" ,same_event ? "same_event" : "", start_id, curr_id)
+			}
+		});
+		function modify_img(id, state) {
+			var img = $("div#"+id+".img")
+			var svg = img.find("svg")
+			if (state=="from-left") {
+				svg.find(".line:not(.fake)").attr("visibility","hidden");
+				makeLine(svg, {"x":0,"width":{{im_half}} })
+				if (svg.find(".circle:not(.fake)").length!==1) makeCircle(svg);
+				else svg.find(".circle:not(.fake)").attr("visibility","visible")
+			}
+			else if (state=="from-right") {
+				svg.find(".line:not(.fake)").attr("visibility","hidden");
+				makeLine(svg, {"x":{{im_half}},"width":{{im_half}} })
+				if (svg.find(".circle:not(.fake)").length!==1) makeCircle(svg);
+				else svg.find(".circle:not(.fake)").attr("visibility","visible")
+			} else if (state=="standalone") {
+				svg.find(".line:not(.fake)").attr("visibility","hidden");
+				if (svg.find(".circle:not(.fake)").length!==1) makeCircle(svg);
+				else svg.find(".circle:not(.fake)").attr("visibility","visible")
+			} else if (state=="through") {
+				svg.find(".line:not(.fake)").attr("visibility","hidden");
+				makeLine(svg, {"x":0,"width":{{im_both}} })
+				svg.find(".circle").attr("visibility","hidden")
+			} else if (state=="blank") {
+				svg.find(".line").attr("visibility","hidden");
+				svg.find(".circle").attr("visibility","hidden")
+			}
+		}
+
+		function makeCircle(el) {
+			el.append(makeSVG("circle", {"cx":{{im_half}}, "cy":15, "r":10, "class":"circle fake"}));
+		}
+		function makeLine(el, attrs) {
+			attrs['class'] = 'line fake'
+			attrs['height'] = 5
+			attrs['fill'] = "{{fillcol}}"
+			attrs['y'] = 12.5
+			attrs['z-index'] = 5
+			// console.log(attrs)
+			el.prepend(makeSVG("rect",attrs));
+		}
+
+		function makeSVG(tag, attrs) {
+            var el= document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (var k in attrs)
+                el.setAttribute(k, attrs[k]);
+            return el;
+        }
+
+
+        $('.split').click(function() {
+        	me = $(this)
+        	var image_id = me.closest(".img").attr("image-id");
+        	var event_id = me.closest(".img").attr("event-id");
+        	var dir = me.attr("split-dir");
+        	Event.split(dir, {{id}},event_id, image_id, function(status) {
+        		if (status=="success") location.reload();
+        		else {
+        			console.log(status);
+        			me.attr("fill", "red")
+        		}
+        	});
+        }).hover(function(){
+        	if (start_img!==null) return 0;
+        	var dir = $(this).attr("split-dir");
+        	var img = $(this).closest(".img")
+        	if (dir=="left") {
+        		makeSeperator(img, {'x':10})
+        		makeSeperator(img.prev(".img"), {'x':{{im_both}}-10})
+        	} 
+        	if (dir=="right") {
+        		makeSeperator(img, {'x':{{im_both}}-10})
+        		makeSeperator(img.next(".img"), {'x':10})
+        	}
+        }, function() {
+        	$(".fake.seperator").remove()
+        });
+
+        function makeSeperator(el, attrs) {
+        	attrs['fill'] = "{{fillcol}}"
+        	attrs['width'] = 5
+        	makeSeperatorLine(el, attrs);
+        	attrs['fill'] = "white"
+        	attrs['width'] = 15
+        	attrs['x'] +=  (attrs['x']>{{im_half}} ? 5 : -attrs['width'])
+        	makeSeperatorLine(el, attrs);
+        }
+        	
+        function makeSeperatorLine(el, attrs) {
+        	attrs['class'] = 'fake seperator'
+        	attrs['height'] = 20
+        	attrs['y'] = 5
+        	$(el).find("svg").append(makeSVG("rect",attrs));
+        }
+
+		if (0)	{
 				console.log(e)
 			if (dragging_annotation!==false) {
 				console.log("dragging_annotation")
@@ -403,7 +646,7 @@
 					pull_away(this_img, move)
 				}
 			}
-		});
+		};
 		function event_id(el) {return int($(el).attr("event-id") || null) }
 		function is_first(el) {return $(el).attr("is-first")=="True";}
 		function is_last(el) {return $(el).attr("is-last")=="True";}
@@ -490,78 +733,6 @@
 			});
 		}
 
-		$('.split').click(function() {
-			me = $(this)
-			var image_id = me.closest(".img").attr("image-id");
-			var event_id = me.closest(".img").attr("event-id");
-			var dir = me.attr("split-dir");
-			Event.split(dir, {{id}},event_id, image_id, function(status) {
-				if (status=="success") location.reload();
-				else {
-					console.log(status);
-					me.attr("fill", "red")
-				}
-			});
-		}).hover(function(){
-			var dir = $(this).attr("split-dir");
-			var img = $(this).closest(".img")
-			if (dir=="left") {
-				makeSeperator(img, {'x':10})
-				makeSeperator(img.prev(".img"), {'x':{{im_both}}-10})
-			} 
-			if (dir=="right") {
-				makeSeperator(img, {'x':{{im_both}}-10})
-				makeSeperator(img.next(".img"), {'x':10})
-			}
-		}, function() {
-			$(".fake").remove()
-		});
-		$('circle').hover(function() {
-			$(this).attr("r", 10) // was 10
-		}, function() {
-			$(this).attr("r", 10)
-		});
-
-		// $('.img').hover(function() {
-		// 	$(this).find("img").animate({ "width": {{im_width * 1.03}}, "height" :{{87 * 1.03}}}, "fast");
-		// }, function() {
-		// 	$(this).find("img").animate({ "width": {{im_width}}, "height" :{{87}}}, "fast");
-		// })
-		function makeSeperator(el, attrs) {
-			attrs['fill'] = "{{fillcol}}"
-			attrs['width'] = 5
-			makeSeperatorLine(el, attrs);
-			attrs['fill'] = "white"
-			attrs['width'] = 15
-			attrs['x'] +=  (attrs['x']>{{im_half}} ? 5 : -attrs['width'])
-			makeSeperatorLine(el, attrs);
-		}
-			
-		function makeSeperatorLine(el, attrs) {
-			attrs['class'] = 'fake'
-			attrs['height'] = 20
-			attrs['y'] = 5
-			$(el).find("svg").append(makeSVG("rect",attrs));
-			// if attrs[]
-			// $(el).find("svg").prepend(makeSVG("rect",attrs));
-			// console.log($(el).closest("svg")[0])
-		}
-		function makeLine(el, attrs) {
-			attrs['class'] = 'fake'
-			attrs['height'] = 5
-			attrs['fill'] = "{{fillcol}}"
-			attrs['y'] = 12.5
-			attrs['z-index'] = 5
-			// console.log(attrs)
-			$(el).find("svg").prepend(makeSVG("rect",attrs));
-		}
-
-		function makeSVG(tag, attrs) {
-            var el= document.createElementNS('http://www.w3.org/2000/svg', tag);
-            for (var k in attrs)
-                el.setAttribute(k, attrs[k]);
-            return el;
-        }
 
 	</script>
 {% endblock %}

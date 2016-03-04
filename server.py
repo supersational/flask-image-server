@@ -84,7 +84,7 @@ def index():
 		num_images=len(Image.query.all()),
 		sql_create=open('create_db.txt','r').read(),
 		sql_text=db.read_log()[:2000]
-		)
+	)
 
 # Custom static data
 @app.route('/images/<path:filename>')
@@ -131,7 +131,7 @@ def study(study_id):
 		participants=sorted(study_participants, key=lambda x: natural_keys(x.name)),
 		participants_to_add=sorted(participants_to_add, key=lambda x: natural_keys(x.name)),
 		sql_text=db.read_log()[:2000]
-		)
+	)
 
 
 @app.route("/participant/<int:participant_id>")
@@ -187,7 +187,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
 		**kwargs
-		)
+	)
 
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
