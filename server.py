@@ -189,6 +189,8 @@ def render_participant(participant_id, event=None, kwargs={}):
 		images = event.images
 	else:
 		images = participant.images
+		# this is 0.3s faster.. but takes longer to render template when used
+		# images = participant.get_images()
 
 	t1 = time.time()
 	print "time_before_get_image_in_range: ", t1-t0

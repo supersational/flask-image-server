@@ -304,6 +304,10 @@ class Participant(Base):
         else:
             return txt + ' studies=%s)' % [x.name for x in self.studies]
     
+    @hybrid_method
+    def get_images(self):
+        return Image.query.filter(Image.participant_id==self.participant_id)
+        
     def get_images_by_hour(self):
         data =  [x.image_time for x in self.images]
 
