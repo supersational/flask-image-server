@@ -304,12 +304,6 @@
 			$(".fake").remove();
 			$(".line").attr("visibility", "visible");
 		}
-		 var dragging = null;
-		 var drag_id = null;
-		 var drag_event_id = null;
-		 var drag_pair = null;
-		 var drag_pair_id = null;
-
 
 		var curr_img = null;
 		var curr_id = null;
@@ -324,8 +318,6 @@
 		var event_to_right_is_standalone = null;
 		 $(document).mouseup(function() {
 		 	if (start_img!==null) reset_all()
-		 	reset_img($("div.img"))
-
 		 	curr_img = null;
 		 	curr_id = null;
 		 	start_img = null;
@@ -392,7 +384,7 @@
 				var modify = {}
 				// if same id as started do nothing
 				if (!(start_id == curr_id)) {
-					
+
 					if (same_event) {
 						// if shrinking own event, hide parts that will no longer exist
 						if (start_id < curr_id) {
@@ -564,174 +556,7 @@
         	$(el).find("svg").append(makeSVG("rect",attrs));
         }
 
-		if (0)	{
-				console.log(e)
-			if (dragging_annotation!==false) {
-				console.log("dragging_annotation")
-			 	reset_img($(".img"))
-			 	var this_id = $(this).attr('id');
 
-			} else if (dragging) {
-				e.preventDefault()
-				// this is the currently dragged .img
-				var this_id = $(this).attr('id');
-				var this_img = this;
-				// x distance relative to .img box
-				var move = e.pageX - $(this).offset().left
-				var same_event = (this_event_id == drag_event_id)
-				// limit the drag to 
-				if (drag_pair!=null) {
-					if ((drag_pair_id < drag_id && this_id <= drag_pair_id) ||
-						(drag_pair_id > drag_id && this_id >= drag_pair_id)) {
-						if (this_id==drag_pair_id)
-							move = (drag_pair_id > drag_id) ? Math.min(move, {{im_half}}) : Math.max(move, {{im_half}});
-						else 
-							move = {{im_half}}
-						console.log("overstepped own limit!", move)
-						this_id=drag_pair_id;
-						this_img = $("div.img#"+this_id+"")
-						same_event = true
-						// $(this_img).css("background-color", "red")
-						// $("div.img").not(this_img).css("background-color", "")
-					}
-				}
-				var this_event_id = $(this).attr('event-id');
-				console.log(this_id, drag_id, same_event)
-				$(".circle.hidden").attr("visibility", "hidden");
-				$(".fake").remove();
-				if (this_id != drag_id) {
-					var between = $("#"+Math.min(this_id, drag_id)).nextUntil("#"+Math.max(this_id, drag_id))
-					// console.log($(".line").not(between))
-					if (!same_event) {
-						line_full(between)
-						hide_circle(between)
-					} else {
-						hide_line(between)
-					}
-					// show_circle(this)
-					reset_img($(".img").not(between))
-					
-					$(".img").not(between).find(".circle:not(.hidden)").attr("visibility","visible")
-					$(".img").not(between).find(".line").attr("visibility","visible")
-					// pull the original img
-					if (this_id>drag_id) pull_away(dragging, {{im_both}}, true)
-					else				 pull_away(dragging, 0, true)
-					hide_circle(dragging)
-					// move our cursor circle
-					move_fake_circle(this_img, move)
-					var trespassing = false; // TODO
-					// pull the line into new frame
-					// if within same event coming from opposite direction
-					if (same_event) {
-						if (is_first(this_img) || is_last(this_img)) { // shrinking own event
-							console.log("on other end", move)
-							hide_line(this_img)
-							line_from_mid(this_img, move);
-						} else {
-							if (this_id<drag_id) from_left(this_img, move)
-							if (this_id>drag_id) from_right(this_img, move)
-						}
-					}
-					else {
-						if (this_id>drag_id) { 
-							line_from_left(this_img, move)
-						} else {
-							line_from_right(this_img,move)
-						}
-					}
-				} else {
-					// on same img as started
-					show_circle(this_img)
-					reset_img($(".img").not(this_img));
-					pull_away(this_img, move)
-				}
-			}
-		};
-		function event_id(el) {return int($(el).attr("event-id") || null) }
-		function is_first(el) {return $(el).attr("is-first")=="True";}
-		function is_last(el) {return $(el).attr("is-last")=="True";}
-		function pull_away(el, move, c) {
-			var first = is_first(el);
-			var last = is_last(el);
-			if (first && !last) {
-				from_right(el,move, c);
-			}
-			else if (last && !first) {
-				from_left(el,move, c);
-			} else {
-				from_mid(el, move, c);
-			}
-		}
-
-		function from_mid(el, move, c) {
-			if (move>{{im_half}}) {
-				$(el).find(".line").attr({"width":move-{{im_half}}, "x":{{im_half}}});
-				if (!c) move_circle_continuous(el, move);
-				else move_circle(el, move);
-			} else {
-				$(el).find(".line").attr({"width":{{im_half}}-move, "x":move});
-				if (!c) move_circle_continuous(el, move);
-				else move_circle(el, move);	
-			}
-		}
-		function from_left(el, move, c, no_circ) {
-			$(el).find(".line").attr({"width":move, "x":0});
-			if (!c) move_circle_continuous(el, move);
-			else move_circle(el, move);	
-		}
-		function from_right(el, move, c, no_circ) {
-			$(el).find(".line").attr({"width":{{im_both}}-move, "x":move});
-			if (!c) move_circle_continuous(el, move);
-			else move_circle(el, move);	
-		}
-
-		function line_from_mid(el, move, c) {
-			if (move>{{im_half}}) {
-				makeLine(el,{"width":move-{{im_half}}, "x":{{im_half}} });
-			} else {
-				makeLine(el,{"width":{{im_half}}-move, "x":move})
-			}
-		}
-		function line_from_left(el, move, c, no_circ) {
-			makeLine(el,{"width":move, "x":0})
-		}
-		function line_from_right(el, move, c, no_circ) {
-			makeLine(el,{"width":{{im_both}}-move, "x":move})
-		}
-
-		function move_circle(el, move) {
-			$(el).find(".circle").attr("cx",  move)
-			return el;
-		}
-		function move_circle_continuous(el, move) {
-			move_circle(el, move);
-			if (move>{{im_both}}-15) move_fake_circle($(el).next(".img"), move-{{im_both}});
-			if (move<15) move_fake_circle($(el).prev(".img"), {{im_both}}+move);
-		}
-		function move_fake_circle(el, move) {
-			$(el).find("svg").append(makeSVG("circle", {"cx":move, "cy":15, "r":10, "class":"circle fake"}));
-			return el;
-		}
-
-		function hide_line(el) {
-			$(el).find(".line").attr("visibility","hidden");
-		}
-		function hide_circle(el) {
-			$(el).find(".circle").attr("visibility","hidden");
-		}
-		function show_circle(el) {
-			$(el).find(".circle").attr("visibility","visible");
-		}
-
-		function line_full(el) {
-			$(el).find(".line").attr({"width":150, "x":0});
-		}
-		function reset_img(el) {
-			$(el).find(".circle:not(.hidden)").attr("visibility","visible").attr("cx", {{im_half}});
-			$(el).find(".line").each(function(){
-				$(this).attr({"width":$(this).attr("nw"), "x":$(this).attr("nx"), "visibility":"visible"});
-			});
-		}
 
 
 	</script>
