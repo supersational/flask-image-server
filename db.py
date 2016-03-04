@@ -26,10 +26,28 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 Base = declarative_base()
 metadata = Base.metadata
 
-engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine")
+engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine remove_to_reenable_logging")
+
+
 # logging
-import loghandler
-loghandler.init("sqlalchemy.engine")
+import loghandler, time
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
+
+logger = loghandler.init("sqlalchemy.engine")
+
+@event.listens_for(Engine, "before_cursor_execute")
+def before_cursor_execute(conn, cursor, statement,
+                        parameters, context, executemany):
+    conn.info.setdefault('query_start_time', []).append(time.time())
+    logger.info("Start Query: %s", statement)
+
+@event.listens_for(Engine, "after_cursor_execute")
+def after_cursor_execute(conn, cursor, statement,
+                        parameters, context, executemany):
+    total = time.time() - conn.info['query_start_time'].pop(-1)
+    logger.info("Query Complete!")
+    logger.info("Total Time: %f", total)
 
 def read_log():
     return loghandler.read()

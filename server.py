@@ -9,6 +9,9 @@ from natsort import natural_sort, natural_keys
 from flask import Flask, request, redirect, send_from_directory, url_for
 from flask import render_template
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
+# profiling
+from werkzeug.contrib.profiler import ProfilerMiddleware
+
 # flask setup
 app = Flask(__name__, static_folder='static', template_folder='templates')
 login_manager = LoginManager()
@@ -136,11 +139,15 @@ def study(study_id):
 
 @app.route("/participant/<int:participant_id>")
 def oneparticipant(participant_id):
+	global t0
+	t0 = time.time()
 	return render_participant(participant_id)
 
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
 def render_event(participant_id, event_id):
+	global t0
+	t0 = time.time()
 	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
 	kwargs = {}
 	kwargs['prev_event_id']=getattr(event.prev_event, 'event_id', None) # None as default if no prev_event exists
@@ -153,8 +160,10 @@ def render_event(participant_id, event_id):
 
 	
 def render_participant(participant_id, event=None, kwargs={}):
-	print kwargs
 	daterange = None
+	t1 = time.time()
+	print "time_before_date: ", t1-t0
+
 	if "date_min" in request.args.keys() and "date_max" in request.args.keys():
 		date_min = request.args.get('date_min', default=None, type=datetimeformat)
 		date_max = request.args.get('date_max', default=None, type=datetimeformat)
@@ -165,17 +174,35 @@ def render_participant(participant_id, event=None, kwargs={}):
 				date_max += datetime.timedelta(hours=1)
 		daterange={'min':date_min,'max':date_max}
 
+	t1 = time.time()
+	print "time_after_date: ", t1-t0
+
+	# according to SQL alchemy this request takes 0.015 seconds:
+	# SELECT images.image_id AS images_image_id, images.image_time AS images_image_time, images.participant_id AS images_participant_id, images.event_id AS images_event_id, images.full_url AS images_full_url, images.medium_url AS images_medium_url, images.thumbnail_url AS images_thumbnail_url 
+	# FROM images 
+	# WHERE %(param_1)s = images.participant_id
+
+	t1 = time.time()
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
-	images = participant.images
+	print "time_after_participant: ", t1-t0
 	if event is not None:
 		images = event.images
+	else:
+		images = participant.images
+
+	t1 = time.time()
+	print "time_before_get_image_in_range: ", t1-t0
 		
 	if daterange is not None:
 		images = [img for img in images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
+	t1 = time.time()
+	print "time_before_sort: ", t1-t0
 	images = sorted(images, key=lambda x: x.image_time)
 	# print "sorted list:"
 	# for img in images
 	# 	print img, '' if not daterange else str(img.image_time > daterange['max']) + str(img.image_time < daterange['min'])
+	t1 = time.time()
+	print "time_before_render: ", t1-t0
 	return render_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
@@ -183,7 +210,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		days=participant.get_images_by_hour(),
 		daterange=daterange,
 		num_images=len(images),
-		sql_text=db.read_log()[:2000],
+		sql_text=db.read_log()[:6000],
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
 		**kwargs
@@ -205,6 +232,7 @@ def event_check_valid(participant_id, event_id):
 		
 @app.route("/participant/<int:participant_id>/<int:event_id>/<int:image_id>/<code>", methods=["POST"])
 def event_modify(participant_id, event_id, image_id, code):
+
 	evt = Event.query.filter((Event.participant_id==participant_id) &
 							 (Event.event_id==event_id)).one()
 
@@ -267,7 +295,19 @@ def annotate(participant_id, event_id):
 def internal_server_error(error):
 	return "Error 500: " + str(error)
 
+import time
+@app.before_request
+def start_timer():
+	pass
+
+@app.after_request
+def end_timer(response):
+	t1 = time.time()
+	print "time : ", t1-t0
+	return response
+
 if __name__ == "__main__":
 	print "running on port 5000"
 	app.config["SECRET_KEY"] = "secret? what's that?"
 	app.run(port=5000, debug=True)
+	# app = ProfilerMiddleware(app)
