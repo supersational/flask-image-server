@@ -292,7 +292,7 @@ class Participant(Base):
     name = Column(String(50), nullable=False)
 
     studies = relationship(u'Study', secondary='studyparticipants', back_populates='participants')
-    images = relationship(u'Image', back_populates='participant')
+    images = relationship(u'Image', back_populates='participant', lazy='dynamic')
     events = relationship(u'Event', back_populates='participant')
     def __init__(self, name):
         self.name = name
@@ -307,7 +307,7 @@ class Participant(Base):
     @hybrid_method
     def get_images(self):
         return Image.query.filter(Image.participant_id==self.participant_id)
-        
+
     def get_images_by_hour(self):
         data =  [x.image_time for x in self.images]
 

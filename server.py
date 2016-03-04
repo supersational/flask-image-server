@@ -158,11 +158,11 @@ def render_event(participant_id, event_id):
 	kwargs['event_seconds']=event.length.total_seconds()
 	return render_participant(participant_id, event=event, kwargs=kwargs)
 
-	
+from sqlalchemy.orm import subqueryload
 def render_participant(participant_id, event=None, kwargs={}):
 	daterange = None
-	t1 = time.time()
-	print "time_before_date: ", t1-t0
+
+	print "time_before_date: ", time.time()-t0
 
 	if "date_min" in request.args.keys() and "date_max" in request.args.keys():
 		date_min = request.args.get('date_min', default=None, type=datetimeformat)
@@ -174,45 +174,52 @@ def render_participant(participant_id, event=None, kwargs={}):
 				date_max += datetime.timedelta(hours=1)
 		daterange={'min':date_min,'max':date_max}
 
-	t1 = time.time()
-	print "time_after_date: ", t1-t0
+
+	print "time_after_date: ", time.time()-t0
 
 	# according to SQL alchemy this request takes 0.015 seconds:
 	# SELECT images.image_id AS images_image_id, images.image_time AS images_image_time, images.participant_id AS images_participant_id, images.event_id AS images_event_id, images.full_url AS images_full_url, images.medium_url AS images_medium_url, images.thumbnail_url AS images_thumbnail_url 
 	# FROM images 
 	# WHERE %(param_1)s = images.participant_id
 
-	t1 = time.time()
+
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
-	print "time_after_participant: ", t1-t0
+	print "time_after_participant: ", time.time()-t0
 	if event is not None:
 		images = event.images
+		if daterange is not None:
+			images = [img for img in images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
+
 	else:
-		images = participant.images
+		if daterange is not None:
+			images = participant.images.filter(Image.image_time>=daterange['min']).order_by(Image.image_time).limit(100)
+		else:
+			images = participant.images.order_by(Image.image_time).limit(100)
+
 		# this is 0.3s faster.. but takes longer to render template when used
 		# images = participant.get_images()
 
-	t1 = time.time()
-	print "time_before_get_image_in_range: ", t1-t0
+		# images = db_session.query(Participant).filter(Participant.participant_id==participant_id).options(subqueryload(Participant.images)).first().images
+	print "time_before_get_image_in_range: ", time.time()-t0
 		
-	if daterange is not None:
-		images = [img for img in images if img.image_time<daterange['max'] and img.image_time > daterange['min']]
-	t1 = time.time()
-	print "time_before_sort: ", t1-t0
+
+	print "time_before_sort: ", time.time()-t0
 	images = sorted(images, key=lambda x: x.image_time)
 	# print "sorted list:"
 	# for img in images
 	# 	print img, '' if not daterange else str(img.image_time > daterange['max']) + str(img.image_time < daterange['min'])
-	t1 = time.time()
-	print "time_before_render: ", t1-t0
+	images_by_hour = participant.get_images_by_hour()
+	sql_text = db.read_log()[:6000]
+
+	print "time_before_render: ", time.time()-t0
 	return render_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
 		images=images[:100],
-		days=participant.get_images_by_hour(),
+		days=images_by_hour,
 		daterange=daterange,
 		num_images=len(images),
-		sql_text=db.read_log()[:6000],
+		sql_text=sql_text,
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
 		**kwargs
