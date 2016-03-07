@@ -22,12 +22,13 @@ var Event = {
 			} 
 		});
 	},
-	remove_image: function(participant_id, event_id, image_id, direction, complete) {
+	remove_image: function(participant_id, event_id, image_id, direction, include_target, complete) {
 		$.ajax({
 			type: "POST",
-			url: "/participant/"+participant_id+"/"+event_id+"/"+image_id+"/remove_"+direction,
+			url: "/participant/"+participant_id+"/"+event_id+"/"+image_id+"/remove",
+			data: {direction:direction, include_target:include_target},
 			complete : function(jqXHR, textStatus) {
-				console.log("Event.remove_image("+participant_id+","+event_id+") " + direction + ", " + textStatus);
+				console.log("Event.remove_image("+participant_id+","+event_id+", " + direction + ", "+include_target+")" + textStatus);
 				console.log(jqXHR)
 				if (complete) complete(textStatus)
 			} 

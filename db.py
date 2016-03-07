@@ -166,30 +166,39 @@ class Event(Base):
         print self.images
         return True
 
-    def remove_left(self, image, steal=True):
+    def remove_left(self, image, steal=True, include_target=True):
+        print 'incllude_target', include_target
         if image.event_id!=self.event_id:
             raise ValueError("image to be removed isn't in event")
         if steal and self.prev_event is not None:
             prev = self.prev_event
             for img in [x for x in self.images if x.image_time <= image.image_time]:
-                print img.image_time, "added to ", prev 
+                if include_target or img.image_id!=image.image_id: 
+                    img.event_id = prev.event_id
+                    print img.image_id, "added to event ", prev.event_id 
         else: 
             # set to no event
             for img in [x for x in self.images if x.image_time <= image.image_time]:
-                print img.image_time, "removed" 
+                if include_target or img.image_id!=image.image_id: 
+                    img.event_id = None
+                    print img.image_id, "removed" , image.image_id , image.image_id!=img.image_id
         return True
 
-    def remove_right(self, image, steal=True):
+    def remove_right(self, image, steal=True, include_target=True):
         if image.event_id!=self.event_id:
             raise ValueError("image to be removed isn't in event")
         if steal and self.next_event is not None:
             next = self.next_event
             for img in [x for x in self.images if x.image_time >= image.image_time]:
-                print img.image_time, " added to ", next 
+                if include_target or img.image_id!=image.image_id: 
+                    img.event_id = next.event_id
+                    print img.image_id, " added to event ", next.event_id
         else: 
             # set to no event
             for img in [x for x in self.images if x.image_time >= image.image_time]:
-                print img.image_time, " removed" 
+                if include_target or img.image_id!=image.image_id: 
+                    img.event_id = None
+                    print img.image_id, " removed" 
         return True
 
     def split_left(self, image):

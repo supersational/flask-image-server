@@ -260,14 +260,18 @@ def event_modify(participant_id, event_id, image_id, code):
 		if evt.split_right(img):
 			return "success"
 		return "split_right failed"
-	if code=="remove_left":
-		if evt.remove_left(img):
+	if code=="remove":
+		direction = request.form['direction']
+		include_target =  request.form['include_target'].lower()=="true"
+		print direction, include_target
+		cmd = evt.remove_left if direction=="left" else evt.remove_right
+		if cmd(img, include_target=include_target):
 			return "success"
-		return "remove_left failed"
-	if code=="remove_right":
-		if evt.remove_right(img):
-			return "success"
-		return "remove_right failed"
+		return "remove_"+direction+" failed"
+	# if code=="remove_right":
+	# 	if evt.remove_right(img):
+	# 		return "success"
+	# 	return "remove_right failed"
 
 @app.route("/add_studyparticipant", methods=["POST"])
 def add_studyparticipant():

@@ -333,9 +333,11 @@
 				if (selection_is_expanding==false) {
 					if (curr_id > start_id) var direction = "left"
 					else var direction = "right"
-					console.log("db.remove_image("+{{id}}+","+start_event_id+","+image_id+","+direction+")")
+					if (curr_id == event_pair_id) include_target = false;
+					else include_target = true;
+					console.log("db.remove_image("+{{id}}+","+start_event_id+","+image_id+","+direction+", "+include_target+")")
 					// need to make sure don't remove the last image in the event!
-					Event.remove_image({{id}}, start_event_id, image_id, direction, reload_page)
+					Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_page)
 				}
 			}
 		})
