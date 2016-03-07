@@ -492,7 +492,7 @@ class Label(Base):
     events = relationship(u'Event', back_populates='label')
 
     def __init__(self, name, schema=None, folder=None):
-        self.name = name
+        self.name = str(name).rstrip()
         if isinstance(schema, Schema):
             self.schema = schema
         if isinstance(folder, Folder):

@@ -22,8 +22,14 @@ def create_data(session, engine, fake=False):
         # import images from /images
         participants = load_participant_images()
         add_participant_images(participants, session, engine)        
-        segment_images_into_events()
+        print "now dividing images into hour long segments"
+        s = Study("Main Study")
+        session.add(s)
         create_fake_users(session)
+        for p in Participant.query.all():
+            p.studies = [s]
+        segment_images_into_events()
+
     print "\n".join(map(str, Schema.query.all()))
     print "\n".join(map(str, Label.query.all()))
     print "\n".join(map(str, User.query.all()))

@@ -27,6 +27,10 @@
         display: block;
         clear: both;
     }
+    .img.selected {
+    	background-color: lightcyan;
+    }
+
     .shadow-wrapper:after {
         clear:both;
         content:" ";
@@ -92,7 +96,7 @@
 		{% for day in days %}
 			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
 			{% if curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
-				<div style="height:40px; float: left; margin-top:45px;">...</div>
+				<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
 			{% endif %}
 			{% set curr_day = day.split("-")[2]|int %}
 		{% endfor %}
@@ -298,9 +302,17 @@
 			}
 		});
 
+	// IMAGE SELECTION
+	$(".img").click(function(e) {
+		$(this).addClass("selected")
+		var event_id = $(this).attr("event-id")
+		if (event_id!=undefined)  
+			$(".img[event-id="+event_id+"]").addClass("selected")
+	})
 
 	// EVENT MANIPULATION
 		function reset_all() {
+			console.log("reset_all()")
 			$(".circle.hidden").attr("visibility", "hidden");
 			$(".circle:not(.hidden)").attr("visibility", "visible");
 			$(".fake").remove();
@@ -319,7 +331,10 @@
 		var event_to_right = null;
 		var event_to_right_is_standalone = null;
 		var selection_is_expanding = null;
-		$('.img').mouseup(function() {
+
+		 $(document).mouseup(function() {
+
+		 	// modify event boundaries
 			if (start_img!=null && start_id != curr_id) {
 				console.log("mouseup on ", this);
 				image_id = $(curr_img).attr("image-id");
@@ -339,8 +354,6 @@
 					Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_page)
 				}
 			}
-		})
-		 $(document).mouseup(function() {
 		 	if (start_img!==null) reset_all()
 		 	curr_img = null;
 		 	curr_id = null;
@@ -381,7 +394,7 @@
 			console.log(this, curr_img, event_pair_img)
 		});
 
-		$('.img').mousemove(function(e) {
+		$('div.img').mousemove(function(e) {
 			if (start_img===null) {return 0;}
 			e.preventDefault()
 			// if it has moved from previous position
@@ -539,8 +552,8 @@
 
         $('.split').click(function() {
         	me = $(this)
-        	var image_id = me.closest(".img").attr("image-id");
-        	var event_id = me.closest(".img").attr("event-id");
+        	var image_id = me.closest("div.img").attr("image-id");
+        	var event_id = me.closest("div.img").attr("event-id");
         	var dir = me.attr("split-dir");
         	Event.split(dir, {{id}},event_id, image_id, function(status) {
         		if (status=="success") reload_page();
@@ -552,27 +565,42 @@
         }).hover(function(){
         	if (start_img!==null) return 0;
         	var dir = $(this).attr("split-dir");
-        	var img = $(this).closest(".img")
+        	var img = $(this).closest("div.img")
         	if (dir=="left") {
         		makeSeperator(img, {'x':10})
-        		makeSeperator(img.prev(".img"), {'x':{{im_both}}-10})
+        		makeSeperator(img.prev("div.img"), {'x':{{im_both}}-10})
         	} 
         	if (dir=="right") {
         		makeSeperator(img, {'x':{{im_both}}-10})
-        		makeSeperator(img.next(".img"), {'x':10})
+        		makeSeperator(img.next("div.img"), {'x':10})
         	}
         }, function() {
+        	var img = $(this).closest("div.img")
         	$(".fake.seperator").remove()
+        	$(".line").each(function(){
+				$(this).attr({"width":$(this).attr("nw"), "x":$(this).attr("nx")});
+			});
         });
 
         function makeSeperator(el, attrs) {
+        	// $(el).find(".line").attr("visibility",'hidden')
         	attrs['fill'] = "{{fillcol}}"
         	attrs['width'] = 5
         	makeSeperatorLine(el, attrs);
-        	attrs['fill'] = "white"
-        	attrs['width'] = 15
-        	attrs['x'] +=  (attrs['x']>{{im_half}} ? 5 : -attrs['width'])
-        	makeSeperatorLine(el, attrs);
+        	curr_line = $(el).find(".line");
+        	console.log( curr_line.attr("width"),  curr_line.attr("x"))
+    		curr_line.attr("width", curr_line.attr("nw")-10)
+        	if (attrs['x']<{{im_half}}) {
+        		curr_line.attr("x", curr_line.attr("nx") + 10)
+        	}
+        	return 0
+        		// curr_line.attr("width", curr_line.attr("width")-15)
+        	// attrs['fill'] = ""
+        	attrs['width'] = {{im_both-15}}
+
+        	attrs['x'] =  (attrs['x']>{{im_half}} ? 15 : 0)
+        	console.log(attrs)
+        	makeLine(el, attrs);
         }
         	
         function makeSeperatorLine(el, attrs) {
