@@ -121,7 +121,7 @@
 				{% endif %}
 				{% if prev_image %} 
 					<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
-					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);location.reload();})">Add prev image</button><p id="prev_result"></p>
+					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);reload_page();})">Add prev image</button><p id="prev_result"></p>
 				{% endif %}
 			</div> 
 			<div style="text-align:right;float:right;margin:5px;">
@@ -130,7 +130,7 @@
 				{% endif %}
 				{% if next_image %} 
 					<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
-					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);location.reload();})">Add next image</button><p id="next_result"></p>
+					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);reload_page();})">Add next image</button><p id="next_result"></p>
 				{% endif %}
 			</div> 
 		</div>
@@ -180,6 +180,10 @@
 		</div>
 	</div>
 	<script>
+	function reload_page() {
+		console.log("reloading page..")
+		location.reload()
+	}
 	// SCRIPT FOR DATE/HOUR BOXES
 	function urlByHour(hour, div) {
 		var day = $(this).attr("date")
@@ -316,6 +320,25 @@
 		var event_to_left_is_standalone = null;
 		var event_to_right = null;
 		var event_to_right_is_standalone = null;
+		var selection_is_expanding = null;
+		$('.img').mouseup(function() {
+			if (start_img!=null && start_id != curr_id) {
+				console.log("mouseup on ", this);
+				image_id = $(curr_img).attr("image-id");
+				if (image_id===undefined) return false;
+				if (selection_is_expanding==true) {
+					console.log("db.add_image("+{{id}}+","+start_event_id+","+image_id+")")
+					Event.add_image({{id}}, start_event_id, image_id, reload_page)
+				}
+				if (selection_is_expanding==false) {
+					if (curr_id > start_id) var direction = "left"
+					else var direction = "right"
+					console.log("db.remove_image("+{{id}}+","+start_event_id+","+image_id+","+direction+")")
+					// need to make sure don't remove the last image in the event!
+					Event.remove_image({{id}}, start_event_id, image_id, direction, reload_page)
+				}
+			}
+		})
 		 $(document).mouseup(function() {
 		 	if (start_img!==null) reset_all()
 		 	curr_img = null;
@@ -329,7 +352,7 @@
 		 	event_to_right = null;
 		 	event_to_left_is_standalone = null;
 		 	event_to_right_is_standalone = null;
-
+		 	selection_is_expanding = null;
 		 })
 
 		$('circle').mousedown(function(e) {
@@ -386,6 +409,7 @@
 				if (!(start_id == curr_id)) {
 
 					if (same_event) {
+						selection_is_expanding = false;
 						// if shrinking own event, hide parts that will no longer exist
 						if (start_id < curr_id) {
 							// moving towards left, this does the strike-through
@@ -416,6 +440,7 @@
 		 				}
 					} else {
 						// must be expanding into another event:
+						selection_is_expanding = true;
 						if (start_id < curr_id) {
 							// moving towards right
 							console.log("moving towards right")
@@ -517,7 +542,7 @@
         	var event_id = me.closest(".img").attr("event-id");
         	var dir = me.attr("split-dir");
         	Event.split(dir, {{id}},event_id, image_id, function(status) {
-        		if (status=="success") location.reload();
+        		if (status=="success") reload_page();
         		else {
         			console.log(status);
         			me.attr("fill", "red")

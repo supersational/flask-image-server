@@ -22,6 +22,17 @@ var Event = {
 			} 
 		});
 	},
+	remove_image: function(participant_id, event_id, image_id, direction, complete) {
+		$.ajax({
+			type: "POST",
+			url: "/participant/"+participant_id+"/"+event_id+"/"+image_id+"/remove_"+direction,
+			complete : function(jqXHR, textStatus) {
+				console.log("Event.remove_image("+participant_id+","+event_id+") " + direction + ", " + textStatus);
+				console.log(jqXHR)
+				if (complete) complete(textStatus)
+			} 
+		});
+	},
 	split: function(dir, participant_id, event_id, image_id, complete) {
 		if (dir=="left" || dir=="right") 
 			$.ajax({

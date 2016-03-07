@@ -260,6 +260,14 @@ def event_modify(participant_id, event_id, image_id, code):
 		if evt.split_right(img):
 			return "success"
 		return "split_right failed"
+	if code=="remove_left":
+		if evt.remove_left(img):
+			return "success"
+		return "remove_left failed"
+	if code=="remove_right":
+		if evt.remove_right(img):
+			return "success"
+		return "remove_right failed"
 
 @app.route("/add_studyparticipant", methods=["POST"])
 def add_studyparticipant():
@@ -310,7 +318,7 @@ def start_timer():
 
 @app.after_request
 def end_timer(response):
-	if 't0' in locals():
+	if 't0' in globals():
 		print "time : ".ljust(40),  round(time.time()-t0, 4)
 	return response
 
