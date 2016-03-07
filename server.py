@@ -7,7 +7,7 @@ timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 from natsort import natural_sort, natural_keys
 # import flask
 from flask import Flask, request, redirect, send_from_directory, url_for
-from flask import render_template
+from flask import render_template, Response, stream_with_context
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 # profiling
 from werkzeug.contrib.profiler import ProfilerMiddleware
@@ -45,6 +45,7 @@ def verbose_seconds(seconds):
 # Login handling
 @login_manager.user_loader
 def load_user(id):
+	print "load user: ", id
 	return User.query.get(int(id))
 
 
@@ -58,7 +59,8 @@ def login():
 	password = request.form['password']
 	print username, password
 	registered_user = User.query.filter_by(username=username).first()
-
+	print registered_user
+	print request.endpoint
 	if registered_user is None:
 		return render_template('login.html', message="error: incorrect username")
 	elif not registered_user.check_password(password):
@@ -92,7 +94,7 @@ def index():
 # Custom static data
 @app.route('/images/<path:filename>')
 def serve_images(filename):
-    return send_from_directory('images', filename)
+    return send_from_directory('images', filename, cache_timeout=60*60)
 
 @app.route("/reboot_db")
 def create():
@@ -138,6 +140,7 @@ def study(study_id):
 
 
 @app.route("/participant/<int:participant_id>")
+@login_required
 def oneparticipant(participant_id):
 	global t0
 	t0 = time.time()
@@ -145,6 +148,7 @@ def oneparticipant(participant_id):
 
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
+@login_required
 def render_event(participant_id, event_id):
 	global t0
 	t0 = time.time()
@@ -157,6 +161,14 @@ def render_event(participant_id, event_id):
 	kwargs['event_id']=event.event_id
 	kwargs['event_seconds']=event.length.total_seconds()
 	return render_participant(participant_id, event=event, kwargs=kwargs)
+
+
+def stream_template(template_name, **context):
+	yield render_template(template_name, only_head=True, **context)
+	# print context
+	yield render_template(template_name, skip_head=True, **context)
+	# return "hi"
+
 
 def render_participant(participant_id, event=None, kwargs={}):
 	daterange = None
@@ -191,7 +203,9 @@ def render_participant(participant_id, event=None, kwargs={}):
 
 	else:
 		if daterange is not None:
-			images = participant.images.filter(Image.image_time>=daterange['min']).order_by(Image.image_time).limit(100)
+			print daterange
+			images = participant.images.filter((Image.image_time>=daterange['min']) & \
+				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(100)
 		else:
 			# this is 0.3s faster.. but takes longer to render template when used
 			# images = participant.get_images()
@@ -211,7 +225,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 	sql_text = db.read_log()[:6000]
 
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
-	return render_template('participant.html', 
+	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
 		images=images[:100],
@@ -222,7 +236,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
 		**kwargs
-	)
+	)))
 
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
@@ -322,8 +336,8 @@ def start_timer():
 
 @app.after_request
 def end_timer(response):
-	if 't0' in globals():
-		print "time : ".ljust(40),  round(time.time()-t0, 4)
+	if 't0' in globals() and str(response._status)!="304 NOT MODIFIED":
+		print ("time : "+str(response._status)+"").ljust(40),  str(round(time.time()-t0, 4)).ljust(10), response.mimetype
 	return response
 
 if __name__ == "__main__":
