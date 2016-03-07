@@ -23,6 +23,7 @@ def create_data(session, engine, fake=False):
         participants = load_participant_images()
         add_participant_images(participants, session, engine)        
         segment_images_into_events()
+        create_fake_users(session)
     print "\n".join(map(str, Schema.query.all()))
     print "\n".join(map(str, Label.query.all()))
     print "\n".join(map(str, User.query.all()))
@@ -99,9 +100,7 @@ def roundTime(dt=None, dateDelta=datetime.timedelta(minutes=1)):
     rounding = (seconds) // roundTo * roundTo
     return dt + datetime.timedelta(0,rounding-seconds,-dt.microsecond)
 
-def create_fake_data(session):
-    now = datetime.datetime.today()
-    now = now.replace(minute=0, second=0, microsecond=0)
+def create_fake_users(session):
     u1 = User('Aiden', 'Aiden', admin=True)
     if len(User.query.filter(User.username==u1.username).all())==0:
         session.add(u1)
@@ -111,6 +110,12 @@ def create_fake_data(session):
     u3 = User('Testing', '')
     if len(User.query.filter(User.username==u3.username).all())==0:
         session.add(u3)
+
+
+def create_fake_data(session):
+    now = datetime.datetime.today()
+    now = now.replace(minute=0, second=0, microsecond=0)
+    create_fake_users(session)
     studies = []
     for i in range(1,20):
         s = Study("S" + str(i))

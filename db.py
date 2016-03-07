@@ -334,8 +334,9 @@ class Participant(Base):
     def __init__(self, name):
         self.name = name
 
+
     def __repr__(self):
-        txt = 'Participant: %s (id=%s, %s images, ' % (self.name, self.participant_id, len(self.images))
+        txt = 'Participant: %s (id=%s, %s images, ' % (self.name, self.participant_id, len(self.images.all()))
         if len(self.studies)>5:
             return txt + ' in %s studies)' % len(self.studies)
         else:
@@ -427,7 +428,7 @@ class User(Base):
 
  
     def __repr__(self):
-            return 'User: %s (id=%s, password=%s, %s studies)' % (self.username, self.user_id, '*' * len(self.password), len(self.studies))
+        return 'User: %s (id=%s, password=%s, %s studies)' % (self.username, self.user_id, '*' * len(self.password), len(self.studies))
 
 
 class Schema(Base):
