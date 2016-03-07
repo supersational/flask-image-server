@@ -27,7 +27,7 @@ Base = declarative_base()
 metadata = Base.metadata
 
 engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine remove_to_reenable_logging")
-
+connection = engine.connect()
 
 # logging
 import loghandler, time
@@ -284,6 +284,7 @@ t_studyparticipants = Table(
     Column('participant_id', Integer, ForeignKey(u'participants.participant_id')),
     UniqueConstraint('study_id', 'participant_id')
 ) 
+from sqlalchemy.sql import text
 
 class Participant(Base):
     __tablename__ = 'participants'
@@ -309,12 +310,13 @@ class Participant(Base):
         return Image.query.filter(Image.participant_id==self.participant_id)
 
     def get_images_by_hour(self):
-        data =  [x.image_time for x in self.images]
-
         unique_days = {}
-        for time in data:
-            day = str(datetime.date(time.year,time.month,time.day))
-            hour = time.hour
+        for time in connection.execute(text("SELECT DISTINCT DATE_TRUNC('HOUR', image_time) FROM images WHERE (participant_id=:pid)"), {"pid":self.participant_id}):
+            # print time[0]
+            # print type(time[0])
+            # print time[0].day, time[0].hour
+            day = time[0].strftime("%Y-%m-%d")
+            hour = time[0].hour
             if day in unique_days:
                 if hour in unique_days[day]:
                     unique_days[day][hour] += 1
