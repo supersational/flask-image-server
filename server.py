@@ -3,6 +3,8 @@ import datetime
 dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
 datetimeformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%S")
 timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
+# function wrapping tools
+from functools import wraps
 # custom sorting e.g. ['hi10', 'hi1', 'hi2', 'hi3'] -> ['hi1', 'hi2', 'hi3', 'hi10'] 
 from natsort import natural_sort, natural_keys
 # import flask
@@ -45,8 +47,37 @@ def verbose_seconds(seconds):
 # Login handling
 @login_manager.user_loader
 def load_user(id):
-	print "load user: ", id
 	return User.query.get(int(id))
+
+# automatically checks for user access to study_id, participant_id, or user_id (all specified by <int:study_id> etc. in kwargs)
+def login_check():
+	def true_decorator(f):
+		@wraps(f)
+		def wrapped(*args, **kwargs):
+			# print "wrapped"
+			# print args, kwargs
+			# print current_user
+			if not current_user:
+				return render_template('login.html', message="You must be logged in to view this page")
+			if current_user.admin is True:
+				return f(*args, **kwargs)
+
+			if 'study_id' in kwargs:
+				print 'study_id ', kwargs['study_id']
+				if not Study.query.filter(Study.study_id==kwargs['study_id']).one() in current_user.studies:
+					return render_template('login.html', message="You do not have access to this study")
+			if 'participant_id' in kwargs:
+				print 'participant_id ', kwargs['participant_id']
+				if not Participant.query.filter(Participant.participant_id==kwargs['participant_id']).one() in \
+					[study.participants for study in current_user.studies]:
+					return render_template('login.html', message="You do not have access to this participant")
+			if 'user_id' in kwargs:
+				print 'user_id ', kwargs['user_id']
+				if not User.query.filter(User.user_id==kwargs['user_id']).one()==current_user:
+					return render_template('login.html', message="You do not have access to this user")
+			return f(*args, **kwargs)
+		return wrapped
+	return true_decorator
 
 
 login_manager.login_view = 'login'
@@ -117,6 +148,8 @@ def images():
 	return res
 
 @app.route("/user/<int:user_id>")
+@login_required
+@login_check()
 def user(user_id):
 	user = User.query.filter(User.user_id==user_id).one()
 	res = "<h2> User: " + user.username + " (" + str(user_id) + ")</h2>\n"
@@ -126,6 +159,8 @@ def user(user_id):
 	return res
 
 @app.route("/study/<int:study_id>")
+@login_required
+@login_check()
 def study(study_id):
 	study = Study.query.filter(Study.study_id==study_id).one()
 	study_participants = study.participants
@@ -141,6 +176,7 @@ def study(study_id):
 
 @app.route("/participant/<int:participant_id>")
 @login_required
+@login_check()
 def oneparticipant(participant_id):
 	global t0
 	t0 = time.time()
@@ -149,6 +185,7 @@ def oneparticipant(participant_id):
 
 @app.route("/participant/<int:participant_id>/<int:event_id>")
 @login_required
+@login_check()
 def render_event(participant_id, event_id):
 	global t0
 	t0 = time.time()
@@ -240,6 +277,8 @@ def render_participant(participant_id, event=None, kwargs={}):
 
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
+@login_required
+@login_check()
 def event_check_valid(participant_id, event_id):
 	evt = Event.query.filter(
 		(Event.participant_id==participant_id) &
@@ -253,6 +292,8 @@ def event_check_valid(participant_id, event_id):
 	return "error, no event : %s" % event_id
 		
 @app.route("/participant/<int:participant_id>/<int:event_id>/<int:image_id>/<code>", methods=["POST"])
+@login_required
+@login_check()
 def event_modify(participant_id, event_id, image_id, code):
 
 	evt = Event.query.filter((Event.participant_id==participant_id) &
@@ -311,6 +352,8 @@ def remove_studyparticipant():
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/annotate", methods=["POST"])
+@login_required
+@login_check()
 def annotate(participant_id, event_id):
 	label_id = request.form['label_id']
 	label = Label.query.filter(Label.label_id==label_id).one()
