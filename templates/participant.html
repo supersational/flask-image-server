@@ -76,7 +76,7 @@
 						<li>{{ folder.name }}
 							<ul>{{ loop(folder.folders) }}
 							{% for label in folder.labels %}
-							<li label-id="{{ label.label_id }}"> {{ label.name }} </li>
+							<li  draggable="true" ondragstart="drag(event)" label-id="{{ label.label_id }}"> {{ label.name }} </li>
 							{% endfor %}
 							</ul>
 						</li>
@@ -139,7 +139,7 @@
 		<div class="shadow-wrapper">
 		{% set fillcol="lightblue" %}
 		{% for image in images %}
-			<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}">
+			<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="drop(event)" ondragover="allowDrop(event)">
 	 			{% if image.event is not none %}			 	
 				 	{% if not image.is_last %}
 						 <div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>
@@ -216,6 +216,29 @@
 		$(this).find(".ui-timepicker-title").html("<a style='display:inline;' onclick='urlByDate(\""+$(this).attr("date")+"\")'>"+$(this).attr("date") + "</a>")
 	})
 
+
+	function allowDrop(ev) {
+	    ev.preventDefault();
+	    var event_id = $(ev.target).closest("div.img").attr("event-id")
+	    if (event_id!==undefined) {
+	    	$("div.img[event-id="+event_id+"]").css("background-color", "red")
+	    }
+	}
+
+	function drag(ev) {
+		var label_id =  $(ev.target).closest("li").attr("label-id")
+	    ev.dataTransfer.setData("text", label_id);
+	    console.log("drag",ev.target, ev.dataTransfer.getData("text"),label_id)	
+	    left_col_expanded = false;
+	    expand_left_col();
+	}
+
+	function drop(ev) {
+	    ev.preventDefault();
+	    var data = ev.dataTransfer.getData("text");
+	    console.log(data, ev.target, $(ev.target).closest("div.img")[0])
+	    ev.target.appendChild(document.getElementById(data));
+	}
 
 
 	// SCRIPT FOR ANNOTATION FOLDER
