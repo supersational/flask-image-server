@@ -73,7 +73,6 @@
       {% block content %}{% endblock %}
     </div>
 
-  {% if not request.path.startswith("participant/")  %} 
     {% if sql_text %}
       <div id="footer">
   		<pre class="prettyprint lang-sql">
@@ -81,7 +80,6 @@
   		</pre>
       </div>
     {% endif %}
-	{% endif %}
   </body>
 </html>
 {% endif %}
