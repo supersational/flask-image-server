@@ -49,6 +49,16 @@
     	margin: 5px;
     	float: left;
     }
+    /*.ui-timepicker-table {*/
+   	/*padding: 0px;
+    }
+   .ui-timepicker-title {
+   	padding: 0px;
+   	font-size: 2em;
+   }
+   .ui-timepicker-hour-cell {
+   	font-size: 1.4em;
+   }*/
     .split {
     	fill-opacity:0;
     	z-index:10;
@@ -250,17 +260,21 @@
 
 	// DRAG DROP FOR ANNOTATIONS
 	function allowDrop(ev) {
-	    ev.preventDefault();
-	    var data = ev.dataTransfer.getData("label-id");
-	    console.log("allowDrop", data)
-	    if (!isNaN(parseInt(data))) {
-			console.log("allow")
+	    var label_id = ev.dataTransfer.getData("label-id");
+	    console.log("allowDrop", label_id, ".")
+	    if (!isNaN(parseInt(label_id))) {
+		    ev.preventDefault();
+	    	var event_id = $(ev.target).closest("div.img").attr("event-id")
+	    	if (event_id!==undefined) {
+	    		$("div.img[event-id="+event_id+"]").addClass("selected")
+				console.log("addClass")
+	    	}
 		}
 	}
 
 	function drag(ev) {
-		console.log("drag", $("#jstree").contains(ev.target))
-		if ($("#jstree").contains(ev.target)) {
+		console.log("drag",$("#jstree")[0], $.contains($("#jstree")[0],ev.target))
+		if ($.contains($("#jstree")[0],ev.target)) {
 			var label_id =  $(ev.target).closest("li").attr("label-id")
 		    ev.dataTransfer.setData("label-id", label_id);
 		    console.log("drag",label_id,ev.dataTransfer.getData("label-id"))	
@@ -271,19 +285,27 @@
 
 	function drop(ev) {
 	    ev.preventDefault();
-	    var data = ev.dataTransfer.getData("label-id");
-	    console.log(data)
-	    if (!isNaN(parseInt(data))) {
+	    var label_id = ev.dataTransfer.getData("label-id");
+	    console.log(label_id)
+	    if (!isNaN(parseInt(label_id))) {
 	    	var event_id = $(ev.target).closest("div.img").attr("event-id")
 	    	if (event_id!==undefined) {
-	    		$("div.img[event-id="+event_id+"]").css("background-color", "red")
+	    		$("div.img[event-id="+event_id+"]").css("background-color", getRandomColor())
+	    		Event.annotate({{id}}, event_id, label_id, function(e) {alert("done" + e);})
 	    	}
-		    console.log("drop data:", data,"target: ", ev.target, $(ev.target).closest("div.img")[0])
+		    console.log("drop data:", label_id,"target: ", ev.target, $(ev.target).closest("div.img")[0])
 		}
 	}
 
 
-
+	function getRandomColor() {
+	    var letters = '0123456789ABCDEF'.split('');
+	    var color = '#';
+	    for (var i = 0; i < 6; i++ ) {
+	        color += letters[Math.floor(Math.random() * 16)];
+	    }
+	    return color;
+	}
 
 
 
@@ -352,8 +374,6 @@
 			expand_left_col();
 		});
 	})();
-
-	// Event.annotate({{id}}, event_id, dragging_annotation, function(e) {alert("done" + e);})
 
 
 

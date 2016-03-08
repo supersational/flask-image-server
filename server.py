@@ -168,6 +168,7 @@ def study(study_id):
 	return render_template('study.html', 
 		study_id=study_id,
 		study_name=study.name,
+		study_users=study.users,
 		participants=sorted(study_participants, key=lambda x: natural_keys(x.name)),
 		participants_to_add=sorted(participants_to_add, key=lambda x: natural_keys(x.name)),
 		sql_text=db.read_log()[:2000]
@@ -242,11 +243,11 @@ def render_participant(participant_id, event=None, kwargs={}):
 		if daterange is not None:
 			print daterange
 			images = participant.images.filter((Image.image_time>=daterange['min']) & \
-				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(100)
+				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(100000)
 		else:
 			# this is 0.3s faster.. but takes longer to render template when used
 			# images = participant.get_images()
-			images = participant.images.order_by(Image.image_time).limit(100)
+			images = participant.images.order_by(Image.image_time).limit(100000)
 
 	print "time_before_get_image_in_range: ".ljust(40), round(time.time()-t0, 4)
 		
@@ -265,7 +266,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
-		images=images[:100], # TODO :  flask.ext.sqlalchemy.Pagination
+		images=images[:100000], # TODO :  flask.ext.sqlalchemy.Pagination
 		days=images_by_hour,
 		daterange=daterange,
 		num_images=len(images),
@@ -358,7 +359,7 @@ def annotate(participant_id, event_id):
 	label_id = request.form['label_id']
 	label = Label.query.filter(Label.label_id==label_id).one()
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
-	event = event.query.filter(event.event_id==event_id).one()
+	event = Event.query.filter(Event.event_id==event_id).one()
 	return str(label) + str(participant) + str(event)
 	if study and participant:
 		if study in participant.studies:
@@ -379,7 +380,7 @@ def start_timer():
 
 @app.after_request
 def end_timer(response):
-	if 't0' in globals() and str(response._status)!="304 NOT MODIFIED":
+	if 't0' in globals():# and str(response._status)!="304 NOT MODIFIED":
 		print ("time : "+str(response._status)+"").ljust(40),  str(round(time.time()-t0, 4)).ljust(10), response.mimetype
 	return response
 

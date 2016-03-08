@@ -26,4 +26,9 @@ Study: {{study_name}}
 	<p>all participants are already in this study</p>
 	{% endif %}
 	</form> 
+	<h4>Users:</h4>
+
+	{% for user in users %}
+		<p>{{user.username}}</p>
+	{% endfor %}
 {% endblock %}
