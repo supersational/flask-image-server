@@ -227,9 +227,10 @@
 		{% endfor %}
 		</div>
 	</div>
+	{{shiz}}
 	<script>
 	function create_image(props) { 
-		{{shiz}}
+
 		var image_id, event_id, is_last, is_first, event, full_url, thumbnail_url, image_time;
 		var str = '<div class="img" id="'+loop.index+'" image-id="'+image.image_id+'" event-id="'+image.event.event_id+'" is-last="'+image.is_last+'" is-first="'+image.is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
 	 	if (!(image.event!==undefined)) {			 	
@@ -267,7 +268,7 @@
 
 		str += '</svg>'
 		str += '<a href="'+image.full_url+'"><img width="{{im_width}}" height="{{87}}" src="'+image.thumbnail_url+'" ></a>'
-		str += '<p>' + image.image_time.hour ':' +image.image_time.minute+':'+image.image_time.second+'</p></div>'
+		str += '<p>' + image.image_time.hour+':'+image.image_time.minute+':'+image.image_time.second+'</p></div>'
 	}
 	function reload_page() {
 		console.log("reloading page..")

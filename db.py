@@ -280,6 +280,9 @@ class Event(Base):
     def __repr__(self):
         return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time)+i.full_url for i in self.images]))
 
+
+
+from json import dumps as json_dumps
 class Image(Base):
     __tablename__ = 'images'
 
@@ -314,6 +317,10 @@ class Image(Base):
     def is_last(self):
         return self.image_id == self.event.last_image.image_id
 
+    @hybrid_property
+    def jsonify(self):
+        return {x:str(getattr(self,x)) for x in ['image_id', 'image_time', 'participant_id']}
+        
 t_studyparticipants = Table(
     'studyparticipants', metadata,
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),

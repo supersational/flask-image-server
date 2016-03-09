@@ -83,6 +83,8 @@ def parse_img_date(n):
         n[6:9] # this is the photo's sequence number, used as a tiebreaker millisecond value for photos with the same timestamp 
        ])
 
+    
+
 def segment_images_into_events(t=datetime.timedelta(hours=1)):
     for img in Image.query.all():
         if img.event is None:
