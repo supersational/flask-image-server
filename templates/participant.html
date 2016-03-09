@@ -49,16 +49,9 @@
     	margin: 5px;
     	float: left;
     }
-    /*.ui-timepicker-table {*/
-   	/*padding: 0px;
+    .ui-timepicker-title {
+    	/*background-color:lightblue;*/
     }
-   .ui-timepicker-title {
-   	padding: 0px;
-   	font-size: 2em;
-   }
-   .ui-timepicker-hour-cell {
-   	font-size: 1.4em;
-   }*/
     .split {
     	fill-opacity:0;
     	z-index:10;
@@ -138,7 +131,7 @@
 		{% set curr_day = None %}
 		{% for day in days %}
 			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
-			{% if curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
+			{% if 0 and curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
 				<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
 			{% endif %}
 			{% set curr_day = day.split("-")[2]|int %}
@@ -155,7 +148,7 @@
 		{% endif %}
 
 		{% if daterange is defined and daterange is not none %}
-		<p> date range : {{daterange.min}} - {{daterange.max}} </p>
+		<p>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </p>
 		{% endif %}
 
 		<h3>Showing {{images | length}} images out of {{num_images}}</h3>
@@ -234,6 +227,7 @@
 
 
 	// SCRIPT FOR DATE/HOUR BOXES
+	var urlByDate;
 	(function() {
 		function urlByHour(hour, div) {
 			var day = $(this).attr("date")
@@ -243,10 +237,10 @@
 			 console.log(window.location.href)
 			 // document.location.search = "date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00"
 		}
-		function urlByDate(date, div) {
+		urlByDate = function(date, div) {
 			console.log(date)
 			// console.log(hour,"date_min="+day+"T"+hour+":00:00&date_max="+day+"T"+(hour+1)+":00:00")
-			 window.location.href =  "/participant/{{id}}?"+ "date_min="+date+"T00:00:00&date_max="+date+"T23:59:59"
+			 window.location.href =  "/participant/{{id}}?"+ "date_min="+date+"T00:00:00&date_max="+date+"T24:00:00"
 			 console.log(window.location.href)
 			 // document.location.search = "date_min="+date+"T00:00:00&date_max="+date+"T23:59:59"
 		}
@@ -741,7 +735,6 @@
 	        var sticky_switch_height = $(".left-sticky").offset().top;
 	        var sticky = $(".left-sticky")
 	        $(window).on("scroll", function(e) {
-				 console.log($(window).scrollTop())            
 	          if ($(window).scrollTop() > sticky_switch_height) {
 	            sticky.addClass("fix-search");
 	          } else {

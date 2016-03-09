@@ -33,6 +33,10 @@ def get_time(s):
 	else:
 		return s.strftime("%H:%M:%S")
 
+@app.template_filter('verbose_date')
+def verbose_date(date):
+	return date.strftime("%A %d %B %Y %H:%M")
+
 @app.template_filter('verbose_seconds')
 def verbose_seconds(seconds):
 	days, rem = divmod(seconds, 86400)
@@ -40,7 +44,7 @@ def verbose_seconds(seconds):
 	minutes, seconds = divmod(rem, 60)
 	if minutes + hours + days <= 0 and seconds < 1: seconds = 1
 	locals_ = locals()
-	magnitudes_str = ("{n} {magnitude}".format(n=int(locals_[magnitude]), magnitude=magnitude)
+	magnitudes_str = ("{n} {magnitude}".format(n=int(locals_[magnitude]), magnitude=magnitude[0:-1] if int(locals_[magnitude]==1) else magnitude)
 			            for magnitude in ("days", "hours", "minutes", "seconds") if locals_[magnitude])
 	return ", ".join(magnitudes_str)
 
@@ -221,7 +225,8 @@ def render_participant(participant_id, event=None, kwargs={}):
 			if request.args['date_max'].split('T')[1][0:2]=='24':
 				date_max = datetimeformat(request.args['date_max'].replace('T24:', 'T23:'))
 				date_max += datetime.timedelta(hours=1)
-		daterange={'min':date_min,'max':date_max}
+		if date_max is not None and date_min is not None:
+			daterange={'min':date_min,'max':date_max, 'diff':(date_max-date_min).total_seconds()}
 
 
 	print "time_after_date: ".ljust(40), round(time.time()-t0, 4)

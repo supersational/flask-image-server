@@ -17,9 +17,16 @@
     border-collapse: collapse;
  }
 
-.ui-timepicker-hours, .ui-timepicker-minutes { padding: 0.2em;  }
+.ui-timepicker-hours, .ui-timepicker-minutes { 
+    padding: 0.2em;  
+}
 
-.ui-timepicker-table .ui-timepicker-title { /*line-height: 1.8em;*/ text-align: center; font-size:1.4em;          font-family: 'Montserrat', sans-serif; }
+.ui-timepicker-table .ui-timepicker-title { 
+    /*line-height: 1.8em;*/ 
+    text-align: center; 
+    font-size:1.4em;
+    font-family: 'Montserrat', sans-serif; 
+}
 .ui-timepicker-title :hover { text-decoration: underline; }
 /*.ui-timepicker-table td { padding: 0.1em; width: 2.2em; }*/
 .ui-timepicker-table th.periods { padding: 0.1em; width: 2.2em; }
@@ -56,10 +63,11 @@
 }
 .ui-timepicker .ui-timepicker-buttonpane button { 
     margin: .5em .2em .4em;
-     cursor: pointer; 
-     padding: .2em .6em .3em .6em;
-     width:auto;
-      overflow:visible; }
+    cursor: pointer; 
+    padding: .2em .6em .3em .6em;
+    width:auto;
+    overflow:visible; 
+}
 /* The close button */
 .ui-timepicker .ui-timepicker-close { float: right }
 
