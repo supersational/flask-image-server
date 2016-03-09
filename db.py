@@ -345,6 +345,9 @@ class Participant(Base):
     @hybrid_method
     def get_images(self):
         return Image.query.filter(Image.participant_id==self.participant_id)
+    @hybrid_property
+    def num_images(self):
+        return connection.execute(text("SELECT COUNT(*) FROM images WHERE (participant_id=:pid)"), {"pid":self.participant_id}).first()[0];
 
     def get_images_by_hour(self):
         unique_days = {}
@@ -366,6 +369,7 @@ class Participant(Base):
         #   for hour in unique_days[day]:
         #       print day, "- " + str(hour) + ":00 : ", unique_days[day][hour], " images"
         return OrderedDict(sorted(unique_days.items(), key=lambda  d:d[0]))
+
 
 t_useraccess = Table(
     'useraccess', metadata,
