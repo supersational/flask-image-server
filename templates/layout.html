@@ -68,7 +68,7 @@
           <a style="color:inherit; font-family:inherit;" href="/">Home</a>
         </h4>
         {% endif %}
-        <h1 style=" margin:5px 0 0 15px;">{{ self.title() }}</h1>
+        <h1 id="title" style=" margin:5px 0 0 15px;">{{ self.title() }}</h1>
         <span id="login-box">
           {% if current_user.is_authenticated %}
              Currently logged in as {{ current_user.username }} | <a style="padding-left:3px" href="/logout">Logout</a>

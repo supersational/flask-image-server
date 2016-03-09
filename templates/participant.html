@@ -69,7 +69,7 @@
     #calendar-box { 
 		display:inline-block;
 		margin-bottom: 20px;
-		overflow-y:scroll; 
+		overflow-y:auto; 
 		height:170px;
 		width:100%;
     }
@@ -77,13 +77,16 @@
     .left-sticky {
 		position: absolute;
 		padding-left:10px;
-		background: {{bg_color}};
 		overflow-y: hidden; 
 		overflow-x: hidden; 
 		width: 180px;
 		z-index:10;
+		background: {{bg_color}};
 	}
     .left-sticky:hover {
+/*    	border-right: 1px solid rgba(100,100,100,0.5);
+    	-webkit-transition: border-right 0.3s;
+    	transition: border-right 0.3s;*/
     	padding-right: 1px;
     	overflow-y: auto;
     }
@@ -92,14 +95,69 @@
 	    top: 0px;
 	    height: 100%;
 	  }
-
+	 #dropdown-box {
+	 	position:absolute; top:50px;z-index:12;background-color:white;width:100%; border-bottom:1px solid #444;padding:20px;
+	 	visibility: hidden;
+	 }
+	 #dropdown-box:hover {
+	 	visibility: visible;
+	 }
     </style>
 {% endblock %}
 {% block pagename %} Participant: {{name}} {% endblock %}
 {% block title %}
-	<a style="color:black;" href="/participant/{{id}}"> Participant: {{name}} </a>
+	<a style="color:black; padding:50px;margin:-50px;display:inline-block;" href="/participant/{{id}}" id="title-link"> Participant: {{name}} </a>
 {% endblock %}
 {% block content %}
+
+	<div id="dropdown-box" >
+
+		{% if event_id %}
+			<h3> Event ID: {{event_id}} <h3>
+			{% if event_seconds %}
+				<h3> Length: {{event_seconds | verbose_seconds}}</h3>
+			{% endif%}
+			<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
+		{% endif %}
+
+		{% if daterange is defined and daterange is not none %}
+			<h3>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </h3>
+		{% endif %}
+
+		<h4>Showing {{images | length}} images out of {{num_images}}</h4>
+		<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
+			<div style="text-align:left;float:left;margin:5px;">
+				{% if prev_event_id %} 
+					<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
+				{% endif %}
+				{% if prev_image %} 
+					<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
+					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);reload_page();})">Add prev image</button><p id="prev_result"></p>
+				{% endif %}
+			</div> 
+			<div style="text-align:right;float:right;margin:5px;">
+				{% if next_event_id %}  
+					<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event_id}}">next event</a>
+				{% endif %}
+				{% if next_image %} 
+					<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
+					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);reload_page();})">Add next image</button><p id="next_result"></p>
+				{% endif %}
+			</div> 
+		</div>
+		{% if days|length >0 %}
+		<div class="clearfix" id="calendar-box">
+		{% set curr_day = None %}
+		{% for day in days %}
+			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
+			{% if 0 and curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
+				<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
+			{% endif %}
+			{% set curr_day = day.split("-")[2]|int %}
+		{% endfor %}
+		</div>
+		{% endif %}
+	</div>
 	<div class="left-sticky" id="left-bar">
 		{% if schema is not none %}
 		<div id="jstree_box"  style="display:none;">
@@ -124,54 +182,7 @@
 			<p>No root folder</p>
 		{% endif %}
 	</div>
-
 	<div id="right-bar">
-		{% if days|length >0 %}
-		<div class="clearfix" id="calendar-box">
-		{% set curr_day = None %}
-		{% for day in days %}
-			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
-			{% if 0 and curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
-				<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
-			{% endif %}
-			{% set curr_day = day.split("-")[2]|int %}
-		{% endfor %}
-		</div>
-		{% endif %}
-
-		{% if event_id %}
-			<h3> Event ID: {{event_id}} <h3>
-			{% if event_seconds %}
-				<h3> Length: {{event_seconds | verbose_seconds}}</h3>
-			{% endif%}
-			<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
-		{% endif %}
-
-		{% if daterange is defined and daterange is not none %}
-		<p>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </p>
-		{% endif %}
-
-		<h3>Showing {{images | length}} images out of {{num_images}}</h3>
-		<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
-			<div style="text-align:left;float:left;margin:5px;">
-				{% if prev_event_id %} 
-					<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
-				{% endif %}
-				{% if prev_image %} 
-					<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
-					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);reload_page();})">Add prev image</button><p id="prev_result"></p>
-				{% endif %}
-			</div> 
-			<div style="text-align:right;float:right;margin:5px;">
-				{% if next_event_id %}  
-					<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event_id}}">next event</a>
-				{% endif %}
-				{% if next_image %} 
-					<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
-					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);reload_page();})">Add next image</button><p id="next_result"></p>
-				{% endif %}
-			</div> 
-		</div>
 		<div class="shadow-wrapper">
 		{% set fillcol="lightblue" %}
 		{% for image in images %}
@@ -224,7 +235,30 @@
 		location.reload()
 	}
 
-
+	(function() {
+		// show dropdown box but hide after 500ms 
+		var t;
+		var delay = 500;
+		$("#dropdown-box").hover(function() {
+			console.log("on1")
+			clearTimeout(t);
+		}, function () {
+			console.log("off")
+			t = setTimeout(function() {
+				$("#dropdown-box").css("visibility","hidden");
+			}, delay);
+		});
+		$("#title-link").hover(function() {
+			console.log("on2")
+			clearTimeout(t);
+			$("#dropdown-box").css("visibility","visible");
+		}, function () {
+			console.log("off")
+			t = setTimeout(function() {
+				$("#dropdown-box").css("visibility","hidden");
+			}, delay);
+		})
+	})()
 
 	// SCRIPT FOR DATE/HOUR BOXES
 	var urlByDate;
@@ -353,24 +387,23 @@
 	    var left_bar_width = 180;
 		expand_left_col = function() { // on
 		        // var fn = function() { console.log("done")};
-		        var max_width = left_bar_width+left_col_expanded*500;
-		        // console.log(left_col_expanded ? "on" : "off", max_width, $('#left-bar')[0].scrollWidth)
+		        var max_width = Math.min(left_bar_width+left_col_expanded*500, $( window ).width()*0.9);
+		        console.log(left_col_expanded ? "on" : "off", max_width, $('#left-bar')[0].scrollWidth)
 		        $('#left-bar').stop().animate({
 		        	width:Math.min(max_width, Math.max(left_bar_width, $('#left-bar')[0].scrollWidth))
 		        }, {duration: 200, done: null});
 		    }
-		$('#left-bar').hover(undefined,
-		    // function() {
-		    //     if (dragging_annotation===false) {
-			   //      left_col_expanded = true;
-			   //      // $('#left-bar').css({"width":""})
-			   //      expand_left_col();
-			   //  }
-		    // }, 
+		$('#left-bar').hover(
+		    function() { // on
+		        console.log('hover', is_dragging);
+		        if (!is_dragging) {
+			        left_col_expanded = true;
+			        expand_left_col();
+			    }
+		    }, 
 		    function() { // off
-		        // console.log('off');
+		        console.log('hover off');
 		        left_col_expanded = false;
-		        // $('#left-bar').css({"overflow":"hidden", width:200})
 		        expand_left_col();
 		    }
 		);
@@ -409,7 +442,7 @@
 	})();
 
 	// EVENT MANIPULATION
-	var start_img = null;
+	var is_dragging = false;
 	(function() {
 			function reset_all() {
 				console.log("reset_all()")
@@ -419,6 +452,7 @@
 				$(".line").attr("visibility", "visible");
 			}
 
+			var start_img = null;
 			var curr_img = null;
 			var curr_id = null;
 			var start_id = null;
@@ -466,10 +500,12 @@
 			 	event_to_left_is_standalone = null;
 			 	event_to_right_is_standalone = null;
 			 	selection_is_expanding = null;
+			 	is_dragging = false;
 			 })
 
 			$('circle').mousedown(function(e) {
 				e.preventDefault()
+				is_dragging = true;
 				start_img = curr_img = $(this).closest("div.img")[0];
 				start_img_is_standalone = ( $(start_img).attr('is-first')=="True" && $(start_img).attr('is-last')=="True" )
 				start_id  = curr_id  = parseInt(start_img.id)
@@ -679,7 +715,7 @@
 	        		}
 	        	});
 	        }).hover(function(){
-	        	if (start_img!==null) return 0;
+	        	if (is_dragging) return 0;
 	        	var dir = $(this).attr("split-dir");
 	        	var img = $(this).closest("div.img")
 	        	if (dir=="left") {
