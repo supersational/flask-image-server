@@ -70,6 +70,16 @@
     	cursor:col-resize;
     }
     li.jstree-leaf > a .jstree-icon { display: none; }
+    #right-bar {
+    	float:left; margin-left: 200px;
+    }
+    #calendar-box { 
+		display:inline-block;
+		margin-bottom: 20px;
+		overflow-y:scroll; 
+		height:170px;
+		width:100%;
+    }
     /*stick to top after scroll*/
     .left-sticky {
 		position: absolute;
@@ -89,10 +99,12 @@
 	    top: 0px;
 	    height: 100%;
 	  }
+
     </style>
 {% endblock %}
+{% block pagename %} Participant: {{name}} {% endblock %}
 {% block title %}
-	Participant: {{name}} 
+	<a style="color:black;" href="/participant/{{id}}"> Participant: {{name}} </a>
 {% endblock %}
 {% block content %}
 	<div class="left-sticky" id="left-bar">
@@ -120,9 +132,9 @@
 		{% endif %}
 	</div>
 
-	<div id="right-bar" style="float:left; margin-left: 200px;">
+	<div id="right-bar">
 		{% if days|length >0 %}
-		<div class="clearfix" style="display:inline-block; margin-bottom: 20px; overflow-y:scroll; height:140px;width:100%">
+		<div class="clearfix" id="calendar-box">
 		{% set curr_day = None %}
 		{% for day in days %}
 			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>

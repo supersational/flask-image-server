@@ -2,7 +2,12 @@
   <!doctype html>
   <html>
     <head>
-      <title>{% block title %}{% endblock %} - ImageViewer</title>
+      <title>
+        {% if self.pagename() %}
+          {% block pagename %}{% endblock %} - ImageViewer</title>
+        {% else %}
+          {% block title %}{% endblock %} - ImageViewer</title>
+        {% endif %}
       <script src="/static/jquery.min.js"></script>
       <script src="/static/run_prettify.js"></script>
       <script src="/static/lang-sql.js"></script>
@@ -12,7 +17,7 @@
       {% block head %}
       {% endblock %}
       <style>
-        p, a { 
+        p, a, span { 
           font-family: 'Source Sans Pro', sans-serif;
         }
         body {
@@ -47,6 +52,11 @@
             height: 0;
             width:100%;
             }
+        #login-box { 
+          position:absolute;
+          top:20px;
+          right:10px;
+        }
   	</style>
     </head>
     <body>
@@ -58,13 +68,13 @@
         </h4>
         {% endif %}
         <h1 style=" margin:5px 0 0 15px;">{{ self.title() }}</h1>
-        <div style="position:absolute; top:20px; right:10px;">
+        <span id="login-box">
           {% if current_user.is_authenticated %}
              Currently logged in as {{ current_user.username }} | <a style="padding-left:3px" href="/logout">Logout</a>
           {% else %}
             <a href="/login">Login</a>
           {% endif %}
-        </div>
+        </span>
       </div>
     {% endif %}
 {% endif %}
