@@ -227,49 +227,41 @@
 		{% endfor %}
 		</div>
 	</div>
-	{{shiz}}
 	<script>
-	function create_image(props) { 
+	var imgs;
+	$(function() {
+		imgs = {{imgs | safe}}
+		var idx = 0;
+		var html = "";
+		imgs.forEach(function(img) {
+			html += create_image(img, idx);
+			idx++;
+		})
+		$(".shadow-wrapper").html(html)
+		$("div.img").each(function() {})
+		function create_image(i, index) { 
 
-		var image_id, event_id, is_last, is_first, event, full_url, thumbnail_url, image_time;
-		var str = '<div class="img" id="'+loop.index+'" image-id="'+image.image_id+'" event-id="'+image.event.event_id+'" is-last="'+image.is_last+'" is-first="'+image.is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
-	 	if (!(image.event!==undefined)) {			 	
-			if (!image.is_last) {
-				 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
+			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
+			var str = '<div class="img" id="'+index+'" image-id="'+image_id+'" event-id="'+event_id+'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
+		 	if (!(event_id!==undefined)) {			 	
+				if (!is_last) {
+					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
+				}
+				if (!is_first) {
+					str += '<div style="left:0px;" class="split left" split-dir="left"></div>'
+				}
 			}
-			if (!image.is_first) {
-				str += '<div style="left:0px;" class="split left" split-dir="left"></div>'
-			}
+			str += '<svg width="{{im_both}}" height="30">'
+
+			str += '</svg>'
+			str += '<a href="'+full_url+'"><img width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" ></a>'
+			str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
+			console.log(str)
+			return str;
 		}
-		str += '<svg width="{{im_both}}" height="30">'
-
-		 		// {% raw %}	{% if image.event is not none %}			 	
-
-					//  	{% if not (image.is_last and image.is_first) %}
-					// 	 	{% if image.is_last %}
-					// 	 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-					// 	 	{% elif image.is_first %}
-					// 	 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-					// 	 	{% else %}
-					// 	 		<rect class="line" nw="{{im_both}}" width="{{im_both}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-					// 	 	{% endif %} 
-					// 	{% else %}
-					//  		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-					//  	{% endif %} 
-					// {% else %}
-				 // 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-					// {% endif %}
-				 // 	{% if image.is_last or image.is_first %}
-				 // 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
-				 // 	{% else %}
-				 // 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
-					// {% endif %}
-					// {% endraw %}
-
-		str += '</svg>'
-		str += '<a href="'+image.full_url+'"><img width="{{im_width}}" height="{{87}}" src="'+image.thumbnail_url+'" ></a>'
-		str += '<p>' + image.image_time.hour+':'+image.image_time.minute+':'+image.image_time.second+'</p></div>'
-	}
+	});
+	</script>
+	<script>
 	function reload_page() {
 		console.log("reloading page..")
 		location.reload()

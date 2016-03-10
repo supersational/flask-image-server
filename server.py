@@ -279,7 +279,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		sql_text=sql_text,
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
-		shiz=json_dumps([x.jsonify for x in images]),
+		imgs=json_dumps([x.to_array for x in images]),
 		**kwargs
 	)))
 

@@ -318,9 +318,14 @@ class Image(Base):
         return self.image_id == self.event.last_image.image_id
 
     @hybrid_property
-    def jsonify(self):
-        return {x:str(getattr(self,x)) for x in ['image_id', 'image_time', 'participant_id']}
-        
+    def to_array(self):
+        return [self.image_id, \
+            self.event_id,
+            self.participant_id,
+            [self.image_time.year, self.image_time.month, self.image_time.day, self.image_time.hour, self.image_time.minute, self.image_time.second], \
+            [self.thumbnail_url, self.medium_url, self.full_url],
+            [self.is_first, self.is_last]
+        ]
 t_studyparticipants = Table(
     'studyparticipants', metadata,
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),
