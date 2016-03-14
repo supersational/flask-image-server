@@ -204,6 +204,7 @@ def user_page(user_id):
 		user_name=user.username,
 		studies=sorted(user_studies, key=lambda x: natural_keys(x.name)),
 		studies_to_add=studies_to_add,
+		can_remove_studies=current_user.admin,
 		sql_text=db.read_log()[:2000]
 	)
 
@@ -216,10 +217,10 @@ def modify_user_study(user_id):
 	study = Study.query.filter(Study.study_id==study_id).one()
 	print user
 	print study
-	if method=='delete':
-		print 'delete'
+	if method=='remove':
+		print 'remove'
 		if study in user.studies:
-			del user.studies[study] 
+			user.studies.remove(study) 
 			return redirect('/user/'+str(user_id))
 			# return 'success', 200
 		else:
@@ -228,6 +229,7 @@ def modify_user_study(user_id):
 		if user is not None and study is not None:
 			user.studies.append(study)
 			return redirect('/user/'+str(user_id))
+	return 'method failed on user_id:' + str(user_id)+ ", study_id: " + str(study_id) + "<br>".join(user.studies), 406
 @app.route("/participant/<int:participant_id>")
 @login_required
 @login_check()

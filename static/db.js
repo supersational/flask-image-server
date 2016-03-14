@@ -85,5 +85,19 @@ var Study = {
 				if (complete) complete(textStatus)
 			} 
 		});
+	},
+	remove_user: function(user_id, study_id, complete) {
+		_request_pending = true;
+		$.ajax({
+			type: "POST",
+			url: "/user/"+user_id+"/modify_studies",
+			data: {study_id:study_id, method: "remove"},
+			complete : function(jqXHR, textStatus) {
+				_request_pending = false;
+				console.log("/user/"+user_id+"/modify_studies("+user_id+ ","+study_id+") " + textStatus);
+				console.log(jqXHR)
+				if (complete) complete(textStatus)
+			} 
+		});
 	}
 }

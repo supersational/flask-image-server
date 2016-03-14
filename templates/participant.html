@@ -67,11 +67,24 @@
     	fill-opacity:0;
     	z-index:10;
     	/*background-color: yellow;*/
-    	width: {{im_half/3}}px;
     	height:30px;
     	top:0px;
     	position:absolute;
+    }
+    .split.left {
     	cursor:col-resize;
+    	width: {{im_half/3}}px;
+    	left:0px;
+	}
+    .split.right {
+    	cursor:col-resize;
+    	width: {{im_half/3}}px;
+    	left:{{im_half*5/3}}px
+    }
+    .split.between {
+    	cursor:pointer;
+    	left:{{im_half/3}}px;
+    	width: {{im_half*4/3}}px;
     }
     li.jstree-leaf > a .jstree-icon { display: none; }
     #right-bar {
@@ -116,7 +129,7 @@
 {% endblock %}
 {% block pagename %} Participant: {{name}} {% endblock %}
 {% block title %}
-	<a style="color:black; padding:50px;margin:-50px;display:inline-block;" href="/participant/{{id}}" id="title-link"> Participant: {{name}} </a>
+	<a style="color:black; padding:10px;margin:-10px;display:inline-block;" href="/participant/{{id}}" id="title-link"> Participant: {{name}} </a>
 {% endblock %}
 {% block content %}
 
@@ -196,12 +209,15 @@
 {% set fillcol="lightblue" -%}
 {%- for image in images -%}
 	<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="drop(event)" ondragover="allowDrop(event)">
-			{%- if image.event is not none -%}			 	
+		{%- if image.event is not none -%}			 	
+		 	{%- if not image.is_last and not image.is_first -%}
+				 <div class="split between"></div>
+		 	{%- endif -%}
 		 	{%- if not image.is_last -%}
-				 <div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>
+				 <div class="split right" split-dir="right"></div>
 		 	{%- endif -%}
 		 	{%- if not image.is_first -%}
-				 <div style="left:0px;" class="split left" split-dir="left"></div>
+				 <div class="split left" split-dir="left"></div>
 		 	{%- endif -%} 
 	 	{%- endif -%} 
  		<svg width="{{im_both}}" height="30">
@@ -364,7 +380,7 @@
 		if ($.contains($("#jstree")[0],ev.target)) {
 			var label_id =  $(ev.target).closest("li").attr("label-id")
 		    ev.dataTransfer.setData("label-id", label_id);
-		    console.log("drag",label_id,ev.dataTransfer.getData("label-id"))	
+		    console.log("drag labe_id = ",label_id,ev.dataTransfer.getData("label-id"))	
 		    left_col_expanded = false;
 		    expand_left_col();
 		}
@@ -850,7 +866,7 @@
 	            }
 	     
 	        var items = getItems();
-	        console.log(ite)
+	        console.log(items)
 	    });
 
 
