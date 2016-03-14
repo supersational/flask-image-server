@@ -269,17 +269,18 @@ def render_participant(participant_id, event=None, kwargs={}):
 	sql_text = db.read_log()[:6000]
 	print type(participant.images.all())
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
+	print images[0].jsonify
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
-		images=images[:100000], # TODO :  flask.ext.sqlalchemy.Pagination
+		images=images[:1000], # TODO :  flask.ext.sqlalchemy.Pagination
 		days=images_by_hour,
 		daterange=daterange,
 		num_images=participant.num_images,
 		sql_text=sql_text,
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
-		shiz=json_dumps([x.jsonify for x in images]),
+		json_dump=json_dumps([x.jsonify for x in images]),
 		**kwargs
 	)))
 

@@ -227,8 +227,11 @@
 		{% endfor %}
 		</div>
 	</div>
-	{{shiz}}
 	<script>
+	var imgs = {{json_dump|safe}}
+	for(i in imgs) {
+		create_image(i)
+	}
 	function create_image(props) { 
 
 		var image_id, event_id, is_last, is_first, event, full_url, thumbnail_url, image_time;

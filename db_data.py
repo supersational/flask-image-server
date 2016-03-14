@@ -168,11 +168,11 @@ def create_fake_data(session):
     p.studies.append(Study('default'))
     p.studies = []
     # assign studies to different users
-    for s in studies:
-        if (s.study_id % 2 == 0):
-            u1.studies.append(s)
-        else:
-            u2.studies.append(s)
+    # for s in studies:
+    #     if (s.study_id % 2 == 0):
+    #         u1.studies.append(s)
+    #     else:
+    #         u2.studies.append(s)
 
     # t = now + datetime.timedelta(minutes=3)
     # print "\n".join(map(str, Image.query.filter(Image.image_time < t).all()))
