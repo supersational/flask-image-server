@@ -3,32 +3,32 @@
 Study: {{study_name}}
 {% endblock %}
 {% block content %}
-	<p> {{participants|length}} participant{% if participants | length > 1 %}s{% endif %} in this study: </p>
-	<div class="clearfix">
-	{% for participant in participants %}
-		<div style="min-width:150px; padding:5px;">
-			<a href='/participant/{{participant.participant_id}} '>{{participant.name}}</a>
-			<button style="float:right;" onclick="$(this).attr('disabled',true);Study.remove_participant({{participant.participant_id}},{{study_id}}, function() {location.reload();})"> Delete</button>
-		</div>
-	{% endfor %}
-	</div>
-	{% if participants_to_add | length > 0 %}
-	<form action='/add_studyparticipant' method='POST'> 
-		<p>add a participant to this study: </p>
-		<select name='participant_id'>
-			{% for participant in participants_to_add %}
-				<option value='{{participant.participant_id}}'>{{participant.name}}</option>
-			{% endfor %}
-		</select>
-		<input type='hidden' name='study_id' value='{{study_id}}'> 
-		<input type='submit' value='Add'>
-	{% else %}
-	<p>all participants are already in this study</p>
-	{% endif %}
-	</form> 
-	<h4>Users:</h4>
+	<div class="clearfix" style='margin-left:30px; margin-right:30px;'>
+		<h3> {{participants|length}} participant{% if participants | length > 1 %}s{% endif %} in this study: </h3>
+		{% for participant in participants %}
+			<div style="min-width:150px; padding:5px;">
+				<a href='/participant/{{participant.participant_id}} '>{{participant.name}}</a>
+				<button style="float:right;" onclick="$(this).attr('disabled',true);Study.remove_participant({{participant.participant_id}},{{study_id}}, function() {location.reload();})"> Remove from study</button>
+			</div>
+		{% endfor %}
+		{% if participants_to_add | length > 0 %}
+		<form action='/add_studyparticipant' method='POST'> 
+			<p>add a participant to this study: </p>
+			<select name='participant_id'>
+				{% for participant in participants_to_add %}
+					<option value='{{participant.participant_id}}'>{{participant.name}}</option>
+				{% endfor %}
+			</select>
+			<input type='hidden' name='study_id' value='{{study_id}}'> 
+			<input type='submit' value='Add'>
+		</form> 
+		{% else %}
+		<p>all participants are already in this study</p>
+		{% endif %}
+		<h4>Users:</h4>
 
-	{% for user in users %}
-		<p>{{user.username}}</p>
-	{% endfor %}
+		{% for user in users %}
+			<p>{{user.username}}</p>
+		{% endfor %}
+	</div>
 {% endblock %}

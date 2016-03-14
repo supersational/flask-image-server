@@ -8,9 +8,13 @@ Login
 	{% if message %}
 	  <p class="message"><strong>message:</strong> {{ message }}
 	{% endif %}
+	{% if link_href and link_message %}
+		<a href="{{link_href}}">{{link_message}}</a>
+	{% endif %}
 	<form action='/login' method='POST'> 
 		<input type="text" name="username" value="Aiden"><br>
 		<input type="text" name="password" value="Aiden"><br>
+		<input type="hidden" name="url" value="{{request.path}}"><br>
 		<input type='submit' value='Submit'>
 	</form>
 {% endblock %}

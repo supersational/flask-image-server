@@ -1,3 +1,4 @@
+import time # measuring response time
 # date handling
 import datetime
 dateformat = lambda x: datetime.datetime.strptime(x, "%Y-%m-%d")
@@ -58,8 +59,8 @@ def load_user(id):
 def login_check():
 	def true_decorator(f):
 		@wraps(f)
-		def wrapped(*args, **kwargs):
-			# print "wrapped"
+		def wrapper(*args, **kwargs):
+			# print "wrapper"
 			# print args, kwargs
 			# print current_user
 			if not current_user:
@@ -79,21 +80,32 @@ def login_check():
 			if 'user_id' in kwargs:
 				print 'user_id ', kwargs['user_id']
 				if not User.query.filter(User.user_id==kwargs['user_id']).one()==current_user:
-					return render_template('login.html', message="You do not have access to this user")
+					return render_template('login.html', message="You may only view your own user page", link_href="/user/"+str(current_user.user_id), link_message="Click here for your user page")
 			return f(*args, **kwargs)
-		return wrapped
+		return wrapper
 	return true_decorator
 
+def requires_admin(f):
+	@wraps(f)
+	def wrapper(*args, **kwargs):
+		if current_user and current_user.admin is True:
+			return f(*args, **kwargs)
+		return render_template('login.html', message="You must be an administrator view this page")
+	return wrapper
 
 login_manager.login_view = 'login'
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+
 	if request.method == 'GET':
 		return render_template('login.html')
 
 	username = request.form['username']
 	password = request.form['password']
-	print username, password
+	if request.form['url'] and request.form['url']!='/login':
+		url  = request.form['url']
+	else:
+		url = '/' 
 	registered_user = User.query.filter_by(username=username).first()
 	print registered_user
 	print request.endpoint
@@ -102,13 +114,14 @@ def login():
 	elif not registered_user.check_password(password):
 		return render_template('login.html', message="error: incorrect password")
 	elif login_user(registered_user, remember=True):
-		return redirect('/')
+		return redirect(url)
 	else:
 		return render_template('login.html', message="error: in login_user")
 
 @app.route('/logout')
 @login_required
 def logout():
+	print request.url
 	logout_user()
 	return redirect('/')
 
@@ -152,16 +165,6 @@ def images():
 		# res += " : ".join([str.strip(str(x)) for x in image]) + "<br>\n"
 	return res
 
-@app.route("/user/<int:user_id>")
-@login_required
-@login_check()
-def user(user_id):
-	user = User.query.filter(User.user_id==user_id).one()
-	res = "<h2> User: " + user.username + " (" + str(user_id) + ")</h2>\n"
-	res += "<h4> User has access to the following studies: </h4>\n"
-	for study in user.studies:
-		res += "Study: %s, id: %s, has %s participants %s <br>\n" % (study.name, study.study_id, len(study.participants), dir(study))
-	return res
 
 @app.route("/study/<int:study_id>")
 @login_required
@@ -179,7 +182,52 @@ def study(study_id):
 		sql_text=db.read_log()[:2000]
 	)
 
+@app.route("/user")
+def user_self():
+	print current_user
+	if current_user:
+		return user_page(current_user.user_id)
 
+
+@app.route("/user/<int:user_id>")
+@login_required
+@login_check()
+def user_page(user_id):
+	user = User.query.filter(User.user_id==user_id).one()
+	user_studies = user.studies
+	if current_user.admin is True:
+		studies_to_add = [x for x in Study.query.all() if not x in user_studies]
+	else:
+		studies_to_add = None
+	return render_template('user.html', 
+		user_id=user_id,
+		user_name=user.username,
+		studies=sorted(user_studies, key=lambda x: natural_keys(x.name)),
+		studies_to_add=studies_to_add,
+		sql_text=db.read_log()[:2000]
+	)
+
+@app.route("/user/<int:user_id>/modify_studies", methods=['POST'])
+@login_required
+@requires_admin
+def modify_user_study(user_id):
+	study_id, method = request.form['study_id'], request.form['method']
+	user = User.query.filter(User.user_id==user_id).one()
+	study = Study.query.filter(Study.study_id==study_id).one()
+	print user
+	print study
+	if method=='delete':
+		print 'delete'
+		if study in user.studies:
+			del user.studies[study] 
+			return redirect('/user/'+str(user_id))
+			# return 'success', 200
+		else:
+			return 'study not in users current studies' + "<br>".join(user.studies), 406
+	if method=='add':
+		if user is not None and study is not None:
+			user.studies.append(study)
+			return redirect('/user/'+str(user_id))
 @app.route("/participant/<int:participant_id>")
 @login_required
 @login_check()
@@ -381,7 +429,6 @@ def annotate(participant_id, event_id):
 def internal_server_error(error):
 	return "Error 500: " + str(error)
 
-import time
 @app.before_request
 def start_timer():
 	pass

@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block title %}
+User: {{user_name}}
+{% endblock %}
+{% block content %}
+	{% if user_id == current_user.id %}
+		<h3> This user has access to {{studies|length}} studies{% if studies | length > 1 %}s{% endif %}: </h3>
+	{% else %}
+		<h3> You have access to {{studies|length}} studies{% if studies | length > 1 %}s{% endif %}: </h3>
+	{% endif %}
+	<div class="clearfix" style='margin-left:30px'>
+	{% for study in studies %}
+		<a href='/study/{{study.study_id}}' style='display:block'>{{study.name}} - {{study.participants | length}} participants</a>
+	{% endfor %}
+	</div>
+
+
+	{% if studies_to_add and studies_to_add | length > 0 %}
+	<form action='/user/{{user_id}}/modify_studies' method='POST'> 
+		<p>add a study to this user: </p>
+		<select name='study_id'>
+			{% for study in studies_to_add %}
+				<option value='{{study.study_id}}'>{{study.name}}</option>
+			{% endfor %}
+		</select>
+		<input type='hidden' name='method' value='add'> 
+		<input type='submit' value='Add'>
+	</form> 
+	{% endif %}
+{% endblock %}

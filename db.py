@@ -20,13 +20,17 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 # to support Folder:
 from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
+# jsonifying objects
+from json import dumps as json_dumps
+# for generating commands for executing raw SQL
+from sqlalchemy.sql import text
 # custom data creation class
 
 
 Base = declarative_base()
 metadata = Base.metadata
 
-engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine remove_to_reenable_logging")
+engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine")
 connection = engine.connect()
 
 # logging
@@ -282,7 +286,6 @@ class Event(Base):
 
 
 
-from json import dumps as json_dumps
 class Image(Base):
     __tablename__ = 'images'
 
@@ -327,7 +330,6 @@ t_studyparticipants = Table(
     Column('participant_id', Integer, ForeignKey(u'participants.participant_id')),
     UniqueConstraint('study_id', 'participant_id')
 ) 
-from sqlalchemy.sql import text
 
 class Participant(Base):
     __tablename__ = 'participants'

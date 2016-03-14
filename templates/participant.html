@@ -13,6 +13,17 @@
     <link rel="stylesheet" href="/static/jquery-ui-1.10.0.custom.min.css" />
     <link rel="stylesheet" href="/static/jquery.ui.timepicker.css" />
     <script src="/static/jquery.ui.timepicker.js"></script>
+
+    <!-- Photoswipe -->
+    <!-- Core CSS file -->
+    <link rel="stylesheet" href="/static/photoswipe/photoswipe.css"> 
+    <!-- Skin CSS file -->
+    <link rel="stylesheet" href="/static/photoswipe/default-skin/default-skin.css"> 
+    <!-- Core JS file -->
+    <script src="/static/photoswipe/photoswipe.min.js"></script>
+    <!-- UI JS file -->
+    <script src="/static/photoswipe/photoswipe-ui-default.min.js"></script> 
+
     <style>
     .img {
     	margin: 0px;
@@ -33,7 +44,7 @@
     	transition: background-color 0.3s;
     }
 
-    .shadow-wrapper:after {
+    .gallery:after {
         clear:both;
         content:" ";
         display:block;
@@ -124,7 +135,7 @@
 		{% endif %}
 
 		<h4>Showing {{images | length}} images out of {{num_images}}</h4>
-		<div style=" padding-left:30px; padding-right:30px;" class="shadow-wrapper">
+		<div style=" padding-left:30px; padding-right:30px;" class="gallery">
 			<div style="text-align:left;float:left;margin:5px;">
 				{% if prev_event_id %} 
 					<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
@@ -158,84 +169,81 @@
 		{% endif %}
 	</div>
 	<div class="left-sticky" id="left-bar">
-		{% if schema is not none %}
-		<div id="jstree_box"  style="display:none;">
-			<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;">
-			<div id="jstree">
-				<ul>
-					{% set root = schema.root_folders %}
-					{% for folder in root recursive  %} 
-
-						<li>{{ folder.name }}
-							<ul>{{ loop(folder.folders) }}
-							{% for label in folder.labels %}
-							<li  draggable="true" ondragstart="drag(event)" label-id="{{ label.label_id }}" {%if label.color%} label-color="{{label.color}}" {%endif%}> {{ label.name }} </li>
-							{% endfor %}
-							</ul>
-						</li>
-					{% endfor %}
-				</ul>
-			</div>
-		</div>
-		{% else %}
-			<p>No root folder</p>
-		{% endif %}
+{% if schema is not none -%}
+<div id="jstree_box"  style="display:none;">
+	<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;">
+	<div id="jstree">
+		<ul>
+			{% set root = schema.root_folders -%}
+			{% for folder in root recursive  -%} 
+				<li>{{ folder.name }}
+					<ul>{{ loop(folder.folders) }}
+					{% for label in folder.labels -%}
+					<li  draggable="true" ondragstart="drag(event)" label-id="{{ label.label_id }}" {%if label.color%} label-color="{{label.color}}" {%endif%}> {{ label.name }} </li>
+					{% endfor -%}
+					</ul>
+				</li>
+			{% endfor -%}
+		</ul>
+	</div>
+</div>
+{% else -%}
+	<p>No root folder</p>
+{% endif -%}
 	</div>
 	<div id="right-bar">
-		<div class="shadow-wrapper">
-		{% set fillcol="lightblue" %}
-		{% for image in images %}
-			<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="drop(event)" ondragover="allowDrop(event)">
-	 			{% if image.event is not none %}			 	
-				 	{% if not image.is_last %}
-						 <div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>
-				 	{% endif %}
-				 	{% if not image.is_first %}
-						 <div style="left:0px;" class="split left" split-dir="left"></div>
-				 	{% endif %} 
-			 	{% endif %} 
-		 		<svg width="{{im_both}}" height="30">
+<div class="gallery">
+{% set fillcol="lightblue" -%}
+{%- for image in images -%}
+	<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="drop(event)" ondragover="allowDrop(event)">
+			{%- if image.event is not none -%}			 	
+		 	{%- if not image.is_last -%}
+				 <div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>
+		 	{%- endif -%}
+		 	{%- if not image.is_first -%}
+				 <div style="left:0px;" class="split left" split-dir="left"></div>
+		 	{%- endif -%} 
+	 	{%- endif -%} 
+ 		<svg width="{{im_both}}" height="30">
+ 			{%- if image.event is not none -%}			 	
+			 	{%- if not (image.is_last and image.is_first) -%}
+				 	{%- if image.is_last -%}
+				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+				 	{%- elif image.is_first -%}
+				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+				 	{%- else -%}
+				 		<rect class="line" nw="{{im_both}}" width="{{im_both}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
+				 	{%- endif -%} 
+				{%- else -%}
+			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
+			 	{%- endif -%} 
+			{%- else -%}
+		 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
+			{%- endif -%}
+		 	{%- if image.is_last or image.is_first -%}
+		 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
+		 	{%- else -%}
+		 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
+			{%- endif -%}
 
-		 			{% if image.event is not none %}			 	
-
-					 	{% if not (image.is_last and image.is_first) %}
-						 	{% if image.is_last %}
-						 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-						 	{% elif image.is_first %}
-						 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-						 	{% else %}
-						 		<rect class="line" nw="{{im_both}}" width="{{im_both}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-						 	{% endif %} 
-						{% else %}
-					 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-					 	{% endif %} 
-					{% else %}
-				 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-					{% endif %}
-				 	{% if image.is_last or image.is_first %}
-				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
-				 	{% else %}
-				 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
-					{% endif %}
-
-				</svg>
-			 	<a href='{{image.full_url}}'><img width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}' ></a>
-			 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
-			 </div>
-		{% else %}
-			<p>No images</p>
-		{% endfor %}
-		</div>
+		</svg>
+	 	<a href='{{image.full_url}}'><img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}' ></a>
+	 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
+	 </div>
+{%- else -%}
+	<p>No images</p>
+{%- endfor -%}
+</div>
 	</div>
 	<script>
-	var imgs = {{json_dump|safe}}
+	var imgs = {% if 0 %} {{json_dump|safe}} {% else %} [] {% endif %}
 	for(i in imgs) {
 		create_image(i)
 	}
 	function create_image(props) { 
 
 		var image_id, event_id, is_last, is_first, event, full_url, thumbnail_url, image_time;
-		var str = '<div class="img" id="'+loop.index+'" image-id="'+image.image_id+'" event-id="'+image.event.event_id+'" is-last="'+image.is_last+'" is-first="'+image.is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
+		var str = '<div class="img" id="'+1 || loop.index+'" image-id="'+image.image_id+'" event-id="'+image.event.event_id+'" is-last="'+image.is_last+'" is-first="'+image.is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
 	 	if (!(image.event!==undefined)) {			 	
 			if (!image.is_last) {
 				 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -281,7 +289,7 @@
 	(function() {
 		// show dropdown box but hide after 500ms 
 		var t;
-		var delay = 500;
+		var delay = 150;
 		$("#dropdown-box").hover(function() {
 			clearTimeout(t);
 		}, function () {
@@ -295,7 +303,7 @@
 		}, function () {
 			t = setTimeout(function() {
 				$("#dropdown-box").css("visibility","hidden");
-			}, delay/4);
+			}, delay);
 		})
 	})()
 
@@ -475,7 +483,7 @@
 		})
 
 		$("#right-bar").click(function() {
-			console.log("shadow-wrapper")
+			console.log("gallery")
 			 $("div.img").removeClass("selected")
 		})
 	})();
@@ -818,6 +826,33 @@
 	        });
 	        // TODO : resize sidebar height when not sticky 
 	    })();
+
+
+	    $('.gallery').each( function() {
+	        var $pic     = $(this),
+	            getItems = function() {
+	                var items = [];
+	                $pic.find('a').each(function() {
+	                    var $href   = $(this).attr('href'),
+	                        $size   = $(this).data('size').split('x'),
+	                        $width  = $size[0],
+	                        $height = $size[1];
+	     
+	                    var item = {
+	                        src : $href,
+	                        w   : $width,
+	                        h   : $height
+	                    }
+	     
+	                    items.push(item);
+	                });
+	                return items;
+	            }
+	     
+	        var items = getItems();
+	        console.log(ite)
+	    });
+
 
 	</script>
 {% endblock %}
