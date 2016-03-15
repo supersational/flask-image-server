@@ -319,7 +319,8 @@ def render_participant(participant_id, event=None, kwargs={}):
 	sql_text = db.read_log()[:6000]
 	print type(participant.images.all())
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
-	print images[0].jsonify
+	img_array = json_dumps([x.to_array() for x in images])
+	print img_array[0]
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
@@ -330,7 +331,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		sql_text=sql_text,
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
-		json_dump=json_dumps([x.jsonify for x in images]),
+		json_dump=img_array,
 		**kwargs
 	)))
 
