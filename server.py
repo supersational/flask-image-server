@@ -262,7 +262,45 @@ def stream_template(template_name, **context):
 	yield render_template(template_name, skip_head=True, **context)
 	# return "hi"
 
+from flask import after_this_request, request
+from cStringIO import StringIO as IO
+import gzip
+import functools 
 
+def gzipped(f):
+    @functools.wraps(f)
+    def view_func(*args, **kwargs):
+        @after_this_request
+        def zipper(response):
+            accept_encoding = request.headers.get('Accept-Encoding', '')
+
+            if 'gzip' not in accept_encoding.lower():
+                return response
+
+            response.direct_passthrough = False
+
+            if (response.status_code < 200 or
+                response.status_code >= 300 or
+                'Content-Encoding' in response.headers):
+                return response
+            gzip_buffer = IO()
+            gzip_file = gzip.GzipFile(mode='wb', 
+                                      fileobj=gzip_buffer)
+            gzip_file.write(response.data)
+            gzip_file.close()
+
+            response.data = gzip_buffer.getvalue()
+            response.headers['Content-Encoding'] = 'gzip'
+            response.headers['Vary'] = 'Accept-Encoding'
+            response.headers['Content-Length'] = len(response.data)
+
+            return response
+
+        return f(*args, **kwargs)
+
+    return view_func
+
+# @gzipped
 def render_participant(participant_id, event=None, kwargs={}):
 	daterange = None
 
@@ -299,11 +337,11 @@ def render_participant(participant_id, event=None, kwargs={}):
 		if daterange is not None:
 			print daterange
 			images = participant.images.filter((Image.image_time>=daterange['min']) & \
-				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(100000)
+				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(1000)
 		else:
 			# this is 0.3s faster.. but takes longer to render template when used
 			# images = participant.get_images()
-			images = participant.images.order_by(Image.image_time).limit(100000)
+			images = participant.images.order_by(Image.image_time).limit(1000)
 
 	print "time_before_get_image_in_range: ".ljust(40), round(time.time()-t0, 4)
 		
@@ -316,11 +354,12 @@ def render_participant(participant_id, event=None, kwargs={}):
 	print "time_before get by hour: ".ljust(40), round(time.time()-t0, 4)
 	images_by_hour = participant.get_images_by_hour()
 	print "time_before get SQL text: ".ljust(40), round(time.time()-t0, 4)
-	sql_text = db.read_log()[:6000]
+	sql_text = ""#db.read_log()[:6000]
 	print type(participant.images.all())
-	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
+	print ("time_before_json_dumps ("+str(len(images))+" images) : ").ljust(40), round(time.time()-t0, 4)
 	img_array = json_dumps([x.to_array() for x in images])
-	print img_array[0]
+	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
+	print img_array[:160]
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
@@ -438,12 +477,18 @@ def start_timer():
 
 @app.after_request
 def end_timer(response):
+	response.calculate_content_length()
+	print "size:",(str(response.content_length/1024) + "KB") if response.content_length else "N/A"
 	if 't0' in globals():# and str(response._status)!="304 NOT MODIFIED":
 		print ("time : "+str(response._status)+"").ljust(40),  str(round(time.time()-t0, 4)).ljust(10), response.mimetype
 	return response
+# @app.teardown_request
+# def teardown_request(exception=None):
+# 	print 'this runs after request'
 
 if __name__ == "__main__":
 	print "running on port 5000"
 	app.config["SECRET_KEY"] = "secret? what's that?"
+	app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
 	app.run(port=5000, debug=True)
 	# app = ProfilerMiddleware(app)

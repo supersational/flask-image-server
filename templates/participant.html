@@ -7,22 +7,22 @@
 {% set im_half=im_both/2 %}
 
 {% block head %}
-    <script src="/static/jquery-ui.js"></script>
-    <script src="/static/jstree.min.js"></script>
-    <link rel="stylesheet" href="/static/style.min.css" />
-    <link rel="stylesheet" href="/static/jquery-ui-1.10.0.custom.min.css" />
-    <link rel="stylesheet" href="/static/jquery.ui.timepicker.css" />
-    <script src="/static/jquery.ui.timepicker.js"></script>
+    <script src="http://127.0.0.1:5001/static/jquery-ui.js"></script>
+    <script src="http://127.0.0.1:5001/static/jstree.min.js"></script>
+    <link rel="stylesheet" href="http://127.0.0.1:5001/static/style.min.css" />
+    <link rel="stylesheet" href="http://127.0.0.1:5001/static/jquery-ui-1.10.0.custom.min.css" />
+    <link rel="stylesheet" href="http://127.0.0.1:5001/static/jquery.ui.timepicker.css" />
+    <script src="http://127.0.0.1:5001/static/jquery.ui.timepicker.js"></script>
 
     <!-- Photoswipe -->
     <!-- Core CSS file -->
-    <link rel="stylesheet" href="/static/photoswipe/photoswipe.css"> 
+    <link rel="stylesheet" href="http://127.0.0.1:5001/static/photoswipe/photoswipe.css"> 
     <!-- Skin CSS file -->
-    <link rel="stylesheet" href="/static/photoswipe/default-skin/default-skin.css"> 
+    <link rel="stylesheet" href="http://127.0.0.1:5001/static/photoswipe/default-skin/default-skin.css"> 
     <!-- Core JS file -->
-    <script src="/static/photoswipe/photoswipe.min.js"></script>
+    <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe.min.js"></script>
     <!-- UI JS file -->
-    <script src="/static/photoswipe/photoswipe-ui-default.min.js"></script> 
+    <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe-ui-default.min.js"></script> 
 
     <style>
     .img {
@@ -243,7 +243,7 @@
 			{%- endif -%}
 
 		</svg>
-	 	<a href='{{image.full_url}}'><img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}' ></a>
+	 	<a href='{{image.full_url}}'><img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}{#image.gen_url()#}' ></a>
 	 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 	 </div>
 {%- else -%}
@@ -262,7 +262,7 @@
 			html += create_image(img, idx);
 			idx++;
 		})
-		$(".shadow-wrapper").html(html)
+		// $(".gallery").html(html)
 		$("div.img").each(function() {})
 		function create_image(i, index) { 
 
@@ -282,6 +282,17 @@
 			str += '<a href="'+full_url+'"><img width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" ></a>'
 			str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
 			return str;
+		}
+		$("div.img").each(function(i, el) {
+			// svg_ize(el, i);
+		})
+		function svg_ize(el, i) {
+			var new_svg= document.createElementNS('http://www.w3.org/2000/svg', tag);
+			var img = imgs[i];
+			// for (var k in attrs)
+			if (img[5][0]) {} // is-first
+		    new_svg.setAttribute(k, attrs[k]);
+			el.append(new_svg)
 		}
 	});
 	</script>
@@ -379,13 +390,13 @@
 	    ev.preventDefault();
 	    var label_id = ev.dataTransfer.getData("label-id");
 	    console.log(label_id)
+	    console.log("drop data:", label_id,"target: ", ev.target, $(ev.target).closest("div.img")[0])
 	    if (!isNaN(parseInt(label_id))) {
 	    	var event_id = $(ev.target).closest("div.img").attr("event-id")
 	    	if (event_id!==undefined) {
 	    		$("div.img[event-id="+event_id+"]").css("background-color", getRandomColor())
 	    		Event.annotate({{id}}, event_id, label_id, function(e) {alert("done" + e);})
 	    	}
-		    console.log("drop data:", label_id,"target: ", ev.target, $(ev.target).closest("div.img")[0])
 		}
 	}
 

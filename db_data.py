@@ -137,9 +137,10 @@ def create_fake_data(session):
         full_url = 'http://lorempixel.com/1000/870/animals/'
         med_url = 'http://lorempixel.com/500/435/animals/'
         thum_url = 'http://lorempixel.com/100/87/animals/'
+        thum_url = 'http://127.0.0.1:5001/t/'
         # make the first participant have 500 times as many images
         for j in range(1,20*(500 if (i == 1) else 1)):
-            idx = str((j % 9)+1)
+            idx = str((j % 9)+1) + ".jpg"
             img = Image(p.participant_id, now + datetime.timedelta(seconds=30*j), full_url+idx, med_url+idx, thum_url+idx)
             session.add(img)
         session.flush()

@@ -326,9 +326,14 @@ class Image(Base):
             self.participant_id,
             [self.image_time.year, self.image_time.month, self.image_time.day, self.image_time.hour, self.image_time.minute, self.image_time.second], \
             [self.thumbnail_url, self.medium_url, self.full_url],
-            [self.is_first, self.is_last]
+            [1 if self.is_first else 0, 1 if self.is_last else 0]
         ]
-
+    @hybrid_method
+    def gen_url(self): 
+        t = int(time.time())
+        password = 'secret_key'+str(t)
+        return "t="+str(t)+"&k="+hashlib.sha512('secret_key').update(str(t)).hexdigest()+"&ans="+password
+# print hashlib.new('sha512')('sven').update('hi').hexdigest()
 t_studyparticipants = Table(
     'studyparticipants', metadata,
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),
