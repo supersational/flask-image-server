@@ -21,7 +21,8 @@ sizes = collections.OrderedDict(sorted(sizes.items(), key=lambda x: x)) # order 
 verbose = False
 overwrite = True
 output_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'images')
-participant_dir = 'C:\\Users\\shollowell\\Documents\\wearable-webapp\\test_data'
+participant_dir = 'C:\\Users\\shollowell\\Documents\\wearable_image_data'
+# participant_dir = 'T:\\Data\\Main'
 allsubdirs = [x for x in os.listdir(participant_dir) if os.path.isdir(os.path.join(participant_dir,x))]
 create_folder(participant_dir)
 
@@ -29,10 +30,11 @@ print output_folder
 
 for folder in allsubdirs:
 	print folder
+	# copy participant folder 
 	output_subfolder = create_folder(os.path.join(output_folder, folder))
-	folder = os.path.join(participant_dir,folder)
-	print("getting all images from " + folder)
-	allfiles = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder) for f in filenames if not os.path.isdir(f)]
+	input_folder = os.path.join(participant_dir,folder)
+	print("getting all images from " + input_folder)
+	allfiles = [os.path.join(dp, f) for dp, dn, filenames in os.walk(input_folder) for f in filenames if not os.path.isdir(f)]
 	imgfiles = [x for x in allfiles if (os.path.splitext(x)[-1].lower() in [".jpg",".jpeg"])] # filter from allfiles if extension matches
 	print ("found " + str(len(imgfiles)) + " imgfiles")
 
@@ -40,7 +42,7 @@ for folder in allsubdirs:
 		continue
 	print str(imgfiles[0])
 	for imgfile in imgfiles:
-		fullpath = os.path.join(folder, imgfile)
+		fullpath = os.path.join(input_folder, imgfile)
 		if verbose: print("-found jpg: " + imgfile)
 		try:
 			im = Image.open(fullpath)

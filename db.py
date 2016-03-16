@@ -328,12 +328,20 @@ class Image(Base):
             [self.thumbnail_url, self.medium_url, self.full_url],
             [1 if self.is_first else 0, 1 if self.is_last else 0]
         ]
+
     @hybrid_method
-    def gen_url(self): 
+    def gen_url(self, url): 
+        url = url.replace('\\','/')
         t = int(time.time())
-        password = 'secret_key'+str(t)
-        return "t="+str(t)+"&k="+hashlib.sha512('secret_key').update(str(t)).hexdigest()+"&ans="+password
-# print hashlib.new('sha512')('sven').update('hi').hexdigest()
+        return 'http://127.0.0.1:5001'+url+"?t="+str(t)+"&k="+gen_hash(t, url)
+
+def gen_hash(t, url):
+    s = str(t)+url+'secret_key'
+    print s
+    sha512_hash = hashlib.sha512()
+    sha512_hash.update(s)
+    return sha512_hash.hexdigest()
+
 t_studyparticipants = Table(
     'studyparticipants', metadata,
     Column('study_id', Integer, ForeignKey(u'studies.study_id')),

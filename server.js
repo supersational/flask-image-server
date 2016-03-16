@@ -4,30 +4,35 @@ var crypto = require('crypto');
 var querystring =  require('querystring')
 var url =  require('url')
 
-console.log(crypto.createHmac('sha512', 'sven').digest('hex'))
-var q = url.parse("http://127.0.0.1:5001/t/5.jpg?t=1458063101&k=db3c8279029cd3bce9fc5d3252b2e47305c5fa5a168651c6bba38b0b394a65d2da86d3d823c8bc27a47a0c7ea4bf7b8e7d047a9879f93a4262eafb1af73b2c52",true).query
-console.log(q)
 var secret = 'secret_key'
+function verify_hash(t, url, hash) {
+    var s = t+url+secret
+    console.log("hash="+crypto.createHash('sha512').update(s).digest('hex'),"\ns="+ s)
+    return hash == crypto.createHash('sha512').update(s).digest('hex')
+}
+// console.log(verify_hash(10,'hello', 'e5fb4297f5cba1b68f4aaa1c99e646dca554e6ba113998f7553338036a01450cf6e3c113ccb2ee93c0afee6ed5fde76aa69c48e105a04524fbb71d02101342a4'))
+
+
+// process.exit()
+
+
+
+
 app.use('/static/', express.static(__dirname + '/static/'));
 
-if (false) app.use(function(req, res, next) {
-	var query = url.parse(req.url,true).query;
+app.use(function(req, res, next) {
+    var url_dict = url.parse(req.url,true)
+    var query = url_dict.query;
+    var dir = url_dict.pathname;
     var t = parseInt(query.t) 
-    var s = secret+t
-    console.log("\n"+req.url, "\n"+t, "\n"+query.ans+"\n"+s)
-    if (isNaN(t)===false && query.k) {
-    	var hash = crypto.createHmac('sha512', secret)
-    	hash.update(t+'')
-    	var value = hash.digest('hex')
-    	var hash2 = crypto.createHmac('sha512', query.ans)
-    	var ans_value = hash2.digest('hex')
-    	console.log("k: "+query.k +"\nv: "+value+"\na: "+ans_value)
-    	if (value===query.k) {
-    		console.log("VALID")
-		}
+    console.log("\n"+req.url, "\nt="+t, "\ndir="+dir+"\nk="+query.k)
+    if (isNaN(t)===false && query.k.length>0) {
+        if (verify_hash(t, dir, query.k)) {
+            console.log("VALID")
+            return next(); 
+        }
     }
-    return next(); 
-	res.status(404)        // HTTP status 404: NotFound
+	return res.status(404)        // HTTP status 404: NotFound
 	   .send('Not found');
 });
 app.use('/images/', express.static(__dirname + '/images/'));

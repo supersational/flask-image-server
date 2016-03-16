@@ -14,7 +14,7 @@ def create_data(session, engine, fake=False):
     s = Schema("from file")
     session.add(s)
     s.from_file(open(os.path.join(script_folder, "annotation/annotation.csv"),"r"))
-    print s.dump()
+    # print s.dump()
     if fake:
         create_fake_data(session)
     else: 
@@ -31,7 +31,7 @@ def create_data(session, engine, fake=False):
         segment_images_into_events()
 
     print "\n".join(map(str, Schema.query.all()))
-    print "\n".join(map(str, Label.query.all()))
+    # print "\n".join(map(str, Label.query.all()))
     print "\n".join(map(str, User.query.all()))
     print "\n".join(map(str, Participant.query.all()))
     print "\n".join(map(str, Study.query.all()))
@@ -47,10 +47,11 @@ def add_participant_images(participants, session, engine):
         session.flush() # required for participant_id to be updates
         print p, p.participant_id
 
-        engine.execute(
-                Image.__table__.insert(),
-                [{"image_time": i[0], "participant_id": p.participant_id, "full_url": "/"+i[1], "medium_url": "/"+i[2], "thumbnail_url": "/"+i[3]} for i in image_array]
-            )
+        if len(image_array) > 0:
+            engine.execute(
+                    Image.__table__.insert(),
+                    [{"image_time": i[0], "participant_id": p.participant_id, "full_url": "/"+i[1], "medium_url": "/"+i[2], "thumbnail_url": "/"+i[3]} for i in image_array]
+                )
         session.flush()
     print "\n".join(map(str, Participant.query.all()))
 
@@ -58,9 +59,14 @@ def load_participant_images():
     image_folder = os.path.join(script_folder,'images')
     participants = {p:[] for p in os.listdir(image_folder)}
     print participants
-    for p in participants:
-        participants[p] = []
+    for p in participants.keys():
         p_dir = os.path.join(image_folder,p)
+        if not all(map(lambda x: os.path.isdir(os.path.join(p_dir,x)), ('full', 'medium', 'thumbnail'))):
+            print "folder ", p_dir, " does not contain full, medium & thumbnail directories"
+            del participants[p]
+            continue
+        # if ok create an array to hold the images
+        participants[p] = []
         for img in os.listdir(os.path.join(p_dir,"full")): # only where we have full resolution
             img_time = parse_img_date(img)
             if img_time is None or not img.endswith('.jpg'):

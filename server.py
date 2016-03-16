@@ -481,14 +481,19 @@ def end_timer(response):
 	print "size:",(str(response.content_length/1024) + "KB") if response.content_length else "N/A"
 	if 't0' in globals():# and str(response._status)!="304 NOT MODIFIED":
 		print ("time : "+str(response._status)+"").ljust(40),  str(round(time.time()-t0, 4)).ljust(10), response.mimetype
-	return response
+	return response 
 # @app.teardown_request
 # def teardown_request(exception=None):
 # 	print 'this runs after request'
 
 if __name__ == "__main__":
+	import subprocess, os
 	print "running on port 5000"
 	app.config["SECRET_KEY"] = "secret? what's that?"
 	app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+	print os.environ.get('WERKZEUG_RUN_MAIN')
+	if os.environ.get('WERKZEUG_RUN_MAIN')!= 'true':
+		print "opening node"
+		subprocess.Popen(['nodemon', 'server.js'])
 	app.run(port=5000, debug=True)
 	# app = ProfilerMiddleware(app)
