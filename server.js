@@ -30,9 +30,9 @@ if (false) app.use(function(req, res, next) {
 	res.status(404)        // HTTP status 404: NotFound
 	   .send('Not found');
 });
-app.use('/t/', express.static(__dirname + '/images/thumbnail'));
-app.use('/m/', express.static(__dirname + '/images/medium'));
-app.use('/f/', express.static(__dirname + '/images/full'));
+app.use('/images/', express.static(__dirname + '/images/'));
+// app.use('/m/', express.static(__dirname + '/images/medium'));
+// app.use('/f/', express.static(__dirname + '/images/full'));
 
 app.listen(5001, function () {
   console.log('listening on 5001..');

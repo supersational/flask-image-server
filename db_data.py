@@ -19,15 +19,15 @@ def create_data(session, engine, fake=False):
         create_fake_data(session)
     else: 
 
-        # import images from /images
-        participants = load_participant_images()
-        add_participant_images(participants, session, engine)        
-        print "now dividing images into hour long segments"
         s = Study("Main Study")
         session.add(s)
         create_fake_users(session)
         for p in Participant.query.all():
             p.studies = [s]
+        # import images from /images
+        participants = load_participant_images()
+        add_participant_images(participants, session, engine)        
+        print "now dividing images into hour long segments"
         segment_images_into_events()
 
     print "\n".join(map(str, Schema.query.all()))
@@ -63,6 +63,8 @@ def load_participant_images():
         p_dir = os.path.join(image_folder,p)
         for img in os.listdir(os.path.join(p_dir,"full")): # only where we have full resolution
             img_time = parse_img_date(img)
+            if img_time is None or not img.endswith('.jpg'):
+                continue
             (full_img, med_img, thumb_img) = map(lambda x: os.path.join('images',p,x,img), ('full', 'medium', 'thumbnail'))
             # print "\n".join([full_img, med_img, thumb_img])
             if os.path.isfile(os.path.join(script_folder, full_img)):
@@ -73,16 +75,18 @@ def load_participant_images():
     return participants
 
 def parse_img_date(n):
-    return "".join([
-        n[17:21]+"-", # year
-        n[21:23]+"-", # month
-        n[23:25]+" ", # day
-        n[26:28]+":", # hour
-        n[28:30]+":", # minutes
-        n[30:32]+".", # seconds
-        n[6:9] # this is the photo's sequence number, used as a tiebreaker millisecond value for photos with the same timestamp 
-       ])
-
+    try:
+        return "".join([
+            str(int(n[17:21]))+"-", # year
+            str(int(n[21:23]))+"-", # month
+            str(int(n[23:25]))+" ", # day
+            str(int(n[26:28]))+":", # hour
+            str(int(n[28:30]))+":", # minutes
+            str(int(n[30:32]))+".", # seconds
+            str(int(n[6:9])) # this is the photo's sequence number, used as a tiebreaker millisecond value for photos with the same timestamp 
+           ])
+    except ValueError:
+        return None
     
 
 def segment_images_into_events(t=datetime.timedelta(hours=1)):

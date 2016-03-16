@@ -243,7 +243,7 @@
 			{%- endif -%}
 
 		</svg>
-	 	<a href='{{image.full_url}}'><img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.thumbnail_url}}{#image.gen_url()#}' ></a>
+	 	<a href='{{image.full_url}}'><img class="thumbnail" width="{{im_width}}" height="{{87}}" src='http://127.0.0.1:5001{{image.thumbnail_url}}{#image.gen_url()#}' ></a>
 	 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 	 </div>
 {%- else -%}
