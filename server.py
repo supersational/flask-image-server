@@ -15,16 +15,16 @@ from flask import render_template, Response, stream_with_context
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
 # profiling
 from werkzeug.contrib.profiler import ProfilerMiddleware
-
+# for running node server
+import subprocess
 # flask setup
 app = Flask(__name__, static_folder='static', template_folder='templates')
 login_manager = LoginManager()
 login_manager.init_app(app)
-# import our custom db interfact
+# import our custom db interface
 import db
 from db import Event, Image, Participant, User, Study, Schema, Label, Folder
 db_session = db.get_session()
-
 # Add Jinja2 filters
 @app.template_filter('time')
 def get_time(s):
@@ -139,7 +139,7 @@ def index():
 		sql_create=open('create_db.txt','r').read(),
 		sql_text=db.read_log()[:2000]
 	)
-
+  
 # Custom static data
 @app.route('/images/<path:filename>')
 def serve_images(filename):
@@ -485,15 +485,18 @@ def end_timer(response):
 # @app.teardown_request
 # def teardown_request(exception=None):
 # 	print 'this runs after request'
+@app.before_first_request
+def before_first_request():
+	print '########### Restarted, first request @ {} ############'.format(datetime.datetime.utcnow())
+	server = subprocess.Popen(['nodemon', 'server.js'], shell=True)
 
+	# run_node_server()
+    
 if __name__ == "__main__":
-	import subprocess, os
+	# import subprocess, os
 	print "running on port 5000"
 	app.config["SECRET_KEY"] = "secret? what's that?"
 	app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
-	print os.environ.get('WERKZEUG_RUN_MAIN')
-	if os.environ.get('WERKZEUG_RUN_MAIN')!= 'true':
-		print "opening node"
-		subprocess.Popen(['nodemon', 'server.js'])
+  
 	app.run(port=5000, debug=True)
 	# app = ProfilerMiddleware(app)

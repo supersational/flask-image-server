@@ -7,7 +7,7 @@ var url =  require('url')
 var secret = 'secret_key'
 function verify_hash(t, url, hash) {
     var s = t+url+secret
-    console.log("hash="+crypto.createHash('sha512').update(s).digest('hex'),"\ns="+ s)
+    // console.log("hash="+crypto.createHash('sha512').update(s).digest('hex'),"\ns="+ s)
     return hash == crypto.createHash('sha512').update(s).digest('hex')
 }
 // console.log(verify_hash(10,'hello', 'e5fb4297f5cba1b68f4aaa1c99e646dca554e6ba113998f7553338036a01450cf6e3c113ccb2ee93c0afee6ed5fde76aa69c48e105a04524fbb71d02101342a4'))
@@ -17,7 +17,7 @@ function verify_hash(t, url, hash) {
 
 
 
-
+app.use('/alive', function(req, res) {res.send('alive')})
 app.use('/static/', express.static(__dirname + '/static/'));
 
 app.use(function(req, res, next) {
@@ -25,14 +25,14 @@ app.use(function(req, res, next) {
     var query = url_dict.query;
     var dir = url_dict.pathname;
     var t = parseInt(query.t) 
-    console.log("\n"+req.url, "\nt="+t, "\ndir="+dir+"\nk="+query.k)
+    // console.log("\n"+req.url, "\nt="+t, "\ndir="+dir+"\nk="+query.k)
     if (isNaN(t)===false && query.k.length>0) {
         if (verify_hash(t, dir, query.k)) {
-            console.log("VALID")
             return next(); 
         }
     }
-	return res.status(404)        // HTTP status 404: NotFound
+    console.log("INVALID HASH t=", t," dir=", dir)
+    return res.status(404)        // HTTP status 404: NotFound
 	   .send('Not found');
 });
 app.use('/images/', express.static(__dirname + '/images/'));

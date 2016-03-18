@@ -337,7 +337,7 @@ class Image(Base):
 
 def gen_hash(t, url):
     s = str(t)+url+'secret_key'
-    print s
+    # print s
     sha512_hash = hashlib.sha512()
     sha512_hash.update(s)
     return sha512_hash.hexdigest()
