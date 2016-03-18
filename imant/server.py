@@ -25,7 +25,7 @@ from imant.login import login_check, requires_admin # our login wrappers
 import imant.db as db
 # print dir(db)
 from imant.db import Event, Image, Participant, User, Study, Schema, Label, Folder
-db_session = db.get_session()
+db_session = db.get_session(node_secret=app.config['NODE_SECRET_KEY'])
 
 
 @app.route("/")

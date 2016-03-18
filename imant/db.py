@@ -33,6 +33,7 @@ metadata = Base.metadata
 engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine")
 connection = engine.connect()
 
+NODE_SECRET_KEY = "needs to be set in get_session (and at least 10 characters)"
 # logging
 import loghandler, time
 from sqlalchemy import event
@@ -336,7 +337,7 @@ class Image(Base):
         return 'http://127.0.0.1:5001'+url+"?t="+str(t)+"&k="+gen_hash(t, url)
 
 def gen_hash(t, url):
-    s = str(t)+url+'secret_key'
+    s = str(t)+url+NODE_SECRET_KEY
     # print s
     sha512_hash = hashlib.sha512()
     sha512_hash.update(s)
@@ -594,8 +595,10 @@ def create_db(drop=False):
     Base.metadata.create_all(engine)
     return session
 
-def get_session(create_data=False, run_tests=False):
-
+def get_session(node_secret=None, create_data=False, run_tests=False):
+    if node_secret:
+        global NODE_SECRET_KEY
+        NODE_SECRET_KEY = node_secret 
     if run_tests:
         # running tests requires an empty database
         drop_db()

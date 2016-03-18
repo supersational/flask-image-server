@@ -24,7 +24,7 @@ CSRF_ENABLED     = True
 CSRF_SESSION_KEY = "secret"
 
 # Node server secret key for hashing image URLs 
-NODE_SESSION_KEY = "secret"
+NODE_SECRET_KEY = "secret_key_at_least_10_characters"
 
 # Secret key for signing cookies
 SECRET_KEY = "secret"
