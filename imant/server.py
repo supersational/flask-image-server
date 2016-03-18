@@ -19,11 +19,13 @@ from flask.ext.login import LoginManager, login_required, login_user, logout_use
 # profiling
 from werkzeug.contrib.profiler import ProfilerMiddleware
 # for running node server
-import subprocess
-# flask setup
-# app = Flask(__name__, static_folder='static', template_folder='templates')
-login_manager = LoginManager()
-login_manager.init_app(app)
+import run_node
+
+import imant.login
+from imant.login import login_check, requires_admin # our login wrappers
+import imant.post
+# login_manager = LoginManager()
+# login_manager.init_app(app)
 # import our custom db interface
 import imant.db as db
 # print dir(db)
@@ -55,85 +57,6 @@ def verbose_seconds(seconds):
 			            for magnitude in ("days", "hours", "minutes", "seconds") if locals_[magnitude])
 	return ", ".join(magnitudes_str)
 
-# Login handling
-@login_manager.user_loader
-def load_user(id):
-	return User.query.get(int(id))
-
-# automatically checks for user access to study_id, participant_id, or user_id (all specified by <int:study_id> etc. in kwargs)
-def login_check():
-	def true_decorator(f):
-		@wraps(f)
-		def wrapper(*args, **kwargs):
-			# print "wrapper"
-			# print args, kwargs
-			# print current_user
-			if not current_user:
-				return render_template('login.html', message="You must be logged in to view this page")
-			if current_user.admin is True:
-				return f(*args, **kwargs)
-
-			if 'study_id' in kwargs:
-				print 'study_id ', kwargs['study_id']
-				if not Study.query.filter(Study.study_id==kwargs['study_id']).one() in current_user.studies:
-					return render_template('login.html', message="You do not have access to this study")
-			if 'participant_id' in kwargs:
-				print 'participant_id ', kwargs['participant_id']
-				if not Participant.query.filter(Participant.participant_id==kwargs['participant_id']).one() in \
-					[study.participants for study in current_user.studies]:
-					return render_template('login.html', message="You do not have access to this participant")
-			if 'user_id' in kwargs:
-				print 'user_id ', kwargs['user_id']
-				if not User.query.filter(User.user_id==kwargs['user_id']).one()==current_user:
-					return render_template('login.html', message="You may only view your own user page", link_href="/user/"+str(current_user.user_id), link_message="Click here for your user page")
-			return f(*args, **kwargs)
-		return wrapper
-	return true_decorator
-
-def requires_admin(f):
-	@wraps(f)
-	def wrapper(*args, **kwargs):
-		if current_user and current_user.admin is True:
-			return f(*args, **kwargs)
-		return render_template('login.html', message="You must be an administrator view this page")
-	return wrapper
-
-login_manager.login_view = 'login'
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-
-	if request.method == 'GET':
-		return render_template('login.html')
-
-	username = request.form['username']
-	password = request.form['password']
-	if request.form['url'] and request.form['url']!='/login':
-		url  = request.form['url']
-	else:
-		url = '/' 
-	registered_user = User.query.filter_by(username=username).first()
-	print registered_user
-	print request.endpoint
-	if registered_user is None:
-		return render_template('login.html', message="error: incorrect username")
-	elif not registered_user.check_password(password):
-		return render_template('login.html', message="error: incorrect password")
-	elif login_user(registered_user, remember=True):
-		return redirect(url)
-	else:
-		return render_template('login.html', message="error: in login_user")
-
-@app.route('/logout')
-@login_required
-def logout():
-	print request.url
-	logout_user()
-	return redirect('/')
-
-@login_manager.unauthorized_handler
-def unauthorized():
-	return render_template('login.html', message="This page requires login!")
-
 @app.route("/")
 def index():
 	return render_template('index.html',
@@ -157,7 +80,7 @@ def create():
 	drop_sql = db.read_log()
 	db_session = db.create_db()
 	sql = db.read_log()
-	with open('create_db.txt','w') as f:
+	with open('imant/create_db.txt','w') as f:
 			f.write(sql)
 	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+sql+"</pre>"
 
@@ -379,99 +302,6 @@ def render_participant(participant_id, event=None, kwargs={}):
 		**kwargs
 	)))
 
-
-@app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
-@login_required
-@login_check()
-def event_check_valid(participant_id, event_id):
-	evt = Event.query.filter(
-		(Event.participant_id==participant_id) &
-		(Event.event_id==event_id) 
-		).one()
-	if evt:
-		if evt.check_valid():
-			return redirect("/participant/%s/%s" % (participant_id, event_id))
-		else:
-			return redirect("/participant/%s" % (participant_id))
-	return "error, no event : %s" % event_id
-		
-@app.route("/participant/<int:participant_id>/<int:event_id>/<int:image_id>/<code>", methods=["POST"])
-@login_required
-@login_check()
-def event_modify(participant_id, event_id, image_id, code):
-
-	evt = Event.query.filter((Event.participant_id==participant_id) &
-							 (Event.event_id==event_id)).one()
-
-	img = Image.query.filter((Image.image_id==image_id) &
-							 (Image.participant_id==participant_id)).one()
-	if not img: return "no matching image"
-	if not evt: return "no matching event"
-	if code=="add_image":
-		if evt.add_image(img):
-			return "success"
-		return "add_image failed"
-	if code=="split_left":
-		if evt.split_left(img):
-			return "success"
-		return "split_left failed"
-	if code=="split_right":
-		if evt.split_right(img):
-			return "success"
-		return "split_right failed"
-	if code=="remove":
-		direction = request.form['direction']
-		include_target =  request.form['include_target'].lower()=="true"
-		print direction, include_target
-		cmd = evt.remove_left if direction=="left" else evt.remove_right
-		if cmd(img, include_target=include_target):
-			return "success"
-		return "remove_"+direction+" failed"
-	# if code=="remove_right":
-	# 	if evt.remove_right(img):
-	# 		return "success"
-	# 	return "remove_right failed"
-
-@app.route("/add_studyparticipant", methods=["POST"])
-def add_studyparticipant():
-	study_id, participant_id = request.form['study_id'], request.form['participant_id']
-	study = Study.query.filter(Study.study_id==study_id).one()
-	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
-	if study and participant:
-		participant.studies.append(study)		
-		return redirect("/study/" + study_id)
-	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
-
-@app.route("/remove_studyparticipant", methods=["POST"])
-def remove_studyparticipant():
-	study_id, participant_id = request.form['study_id'], request.form['participant_id']
-	study = Study.query.filter(Study.study_id==study_id).one()
-	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
-	if study and participant:
-		if study in participant.studies:
-			participant.studies.remove(study)	
-			return redirect("/study/" + study_id)
-		else:
-			return "participant not in that study"
-	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
-
-@app.route("/participant/<int:participant_id>/<int:event_id>/annotate", methods=["POST"])
-@login_required
-@login_check()
-def annotate(participant_id, event_id):
-	label_id = request.form['label_id']
-	label = Label.query.filter(Label.label_id==label_id).one()
-	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
-	event = Event.query.filter(Event.event_id==event_id).one()
-	return str(label) + str(participant) + str(event)
-	if study and participant:
-		if study in participant.studies:
-			participant.studies.remove(study)	
-			return redirect("/study/" + study_id)
-		else:
-			return "participant not in that study"
-	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
-
 @app.errorhandler(500)
 def internal_server_error(error):
 	return "Error 500: " + str(error)
@@ -483,12 +313,3 @@ def end_timer(response):
 	if 't0' in globals():# and str(response._status)!="304 NOT MODIFIED":
 		print ("time : "+str(response._status)+"").ljust(40),  str(round(time.time()-t0, 4)).ljust(10), response.mimetype
 	return response 
-# @app.teardown_request
-# def teardown_request(exception=None):
-# 	print 'this runs after request'
-@app.before_first_request
-def before_first_request():
-	print '########### Restarted, first request @ {} ############'.format(datetime.datetime.utcnow())
-	server = subprocess.Popen(['nodemon', 'imant/server.js'], shell=True)
-
-
