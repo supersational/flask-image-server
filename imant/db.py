@@ -1,4 +1,5 @@
 # coding: utf-8
+# https://www.python.org/dev/peps/pep-0249/
 from config import NODE_SECRET_KEY, SQLALCHEMY_DATABASE_URI
 import datetime, sys
 from collections import OrderedDict
@@ -34,23 +35,8 @@ connection = engine.connect()
 
 # logging
 import loghandler, time
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 
 logger = loghandler.init("sqlalchemy.engine")
-
-@event.listens_for(Engine, "before_cursor_execute")
-def before_cursor_execute(conn, cursor, statement,
-                        parameters, context, executemany):
-    conn.info.setdefault('query_start_time', []).append(time.time())
-    logger.info("Start Query: %s", statement)
-
-@event.listens_for(Engine, "after_cursor_execute")
-def after_cursor_execute(conn, cursor, statement,
-                        parameters, context, executemany):
-    total = time.time() - conn.info['query_start_time'].pop(-1)
-    logger.info("Query Complete!")
-    logger.info("Total Time: %f", total)
 
 def read_log():
     return loghandler.read()
@@ -615,4 +601,8 @@ def get_session(create_data=False, run_tests=False):
 import db_data
 if __name__ == "__main__":
     drop_db()
-    get_session(create_data=True, run_tests=True)
+    global session
+    session = get_session(create_data=True, run_tests=True)
+else:
+    global session
+    session = get_session()
