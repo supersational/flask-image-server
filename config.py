@@ -1,21 +1,16 @@
 # Statement for enabling the development environment
 DEBUG = True
-
+SESSION_COOKIE_SECURE = True
 # Define the application directory
 import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  
 
 # Define the database - we are working with
 # SQLite for this example
-POSTGRES_DATABASE_URI = 'postgres://postgres:testing@localhost:5432/linker'
+SQLALCHEMY_DATABASE_URI = 'postgres://postgres:testing@localhost:5432/linker'
 DATABASE_CONNECT_OPTIONS = {}
 
-# Application threads. A common general assumption is
-# using 2 per available processor cores - to handle
-# incoming requests using one and performing background
-# operations using the other.
-THREADS_PER_PAGE = 2
-
+# TODO:
 # Enable protection agains *Cross-site Request Forgery (CSRF)*
 CSRF_ENABLED     = True
 

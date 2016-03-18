@@ -1,6 +1,5 @@
 # coding: utf-8
-# from:
-# C:\Users\shollowell\Documents\wearable-webapp\python-flask>sqlacodegen postgres://postgres:testing@localhost:3145/linker
+from config import NODE_SECRET_KEY, SQLALCHEMY_DATABASE_URI
 import datetime, sys
 from collections import OrderedDict
 # security
@@ -30,10 +29,9 @@ from json import dumps as json_dumps
 Base = declarative_base()
 metadata = Base.metadata
 
-engine = create_engine('postgres://postgres:testing@localhost:5432/linker', convert_unicode=True, logging_name="sqlalchemy.engine")
+engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, logging_name="sqlalchemy.engine")
 connection = engine.connect()
 
-NODE_SECRET_KEY = "needs to be set in get_session (and at least 10 characters)"
 # logging
 import loghandler, time
 from sqlalchemy import event
@@ -595,10 +593,7 @@ def create_db(drop=False):
     Base.metadata.create_all(engine)
     return session
 
-def get_session(node_secret=None, create_data=False, run_tests=False):
-    if node_secret:
-        global NODE_SECRET_KEY
-        NODE_SECRET_KEY = node_secret 
+def get_session(create_data=False, run_tests=False):
     if run_tests:
         # running tests requires an empty database
         drop_db()
