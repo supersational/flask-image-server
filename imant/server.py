@@ -1,6 +1,5 @@
 from imant import app
 
-
 import time # measuring response time
 # date handling
 import datetime
@@ -15,13 +14,10 @@ from imant.natsort import natural_sort, natural_keys
 # import flask
 from flask import Flask, request, redirect, send_from_directory, url_for
 from flask import render_template, Response, stream_with_context
-from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
-# profiling
-from werkzeug.contrib.profiler import ProfilerMiddleware
-# for running node server
-import run_node
+from flask.ext.login import login_required, logout_user, current_user
 
-import imant.login
+
+
 from imant.login import login_check, requires_admin # our login wrappers
 import imant.post
 # login_manager = LoginManager()
@@ -190,43 +186,6 @@ def stream_template(template_name, **context):
 	yield render_template(template_name, skip_head=True, **context)
 	# return "hi"
 
-from flask import after_this_request, request
-from cStringIO import StringIO as IO
-import gzip
-import functools 
-
-def gzipped(f):
-    @functools.wraps(f)
-    def view_func(*args, **kwargs):
-        @after_this_request
-        def zipper(response):
-            accept_encoding = request.headers.get('Accept-Encoding', '')
-
-            if 'gzip' not in accept_encoding.lower():
-                return response
-
-            response.direct_passthrough = False
-
-            if (response.status_code < 200 or
-                response.status_code >= 300 or
-                'Content-Encoding' in response.headers):
-                return response
-            gzip_buffer = IO()
-            gzip_file = gzip.GzipFile(mode='wb', 
-                                      fileobj=gzip_buffer)
-            gzip_file.write(response.data)
-            gzip_file.close()
-
-            response.data = gzip_buffer.getvalue()
-            response.headers['Content-Encoding'] = 'gzip'
-            response.headers['Vary'] = 'Accept-Encoding'
-            response.headers['Content-Length'] = len(response.data)
-
-            return response
-
-        return f(*args, **kwargs)
-
-    return view_func
 
 # @gzipped
 def render_participant(participant_id, event=None, kwargs={}):
