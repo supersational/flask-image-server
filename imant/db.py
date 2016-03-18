@@ -20,10 +20,10 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 # to support Folder:
 from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
-# jsonifying objects
-from json import dumps as json_dumps
 # for generating commands for executing raw SQL
 from sqlalchemy.sql import text
+# jsonifying objects
+from json import dumps as json_dumps
 # custom data creation class
 
 

@@ -1,3 +1,6 @@
+from imant import app
+
+
 import time # measuring response time
 # date handling
 import datetime
@@ -8,7 +11,7 @@ timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 from functools import wraps
 from json import dumps as json_dumps
 # custom sorting e.g. ['hi10', 'hi1', 'hi2', 'hi3'] -> ['hi1', 'hi2', 'hi3', 'hi10'] 
-from natsort import natural_sort, natural_keys
+from imant.natsort import natural_sort, natural_keys
 # import flask
 from flask import Flask, request, redirect, send_from_directory, url_for
 from flask import render_template, Response, stream_with_context
@@ -18,13 +21,15 @@ from werkzeug.contrib.profiler import ProfilerMiddleware
 # for running node server
 import subprocess
 # flask setup
-app = Flask(__name__, static_folder='static', template_folder='templates')
+# app = Flask(__name__, static_folder='static', template_folder='templates')
 login_manager = LoginManager()
 login_manager.init_app(app)
 # import our custom db interface
-import db
-from db import Event, Image, Participant, User, Study, Schema, Label, Folder
+import imant.db as db
+# print dir(db)
+from imant.db import Event, Image, Participant, User, Study, Schema, Label, Folder
 db_session = db.get_session()
+
 # Add Jinja2 filters
 @app.template_filter('time')
 def get_time(s):
@@ -136,7 +141,7 @@ def index():
 		participants=Participant.query.all(),
 		users=User.query.all(),
 		num_images=len(Image.query.all()),
-		sql_create=open('create_db.txt','r').read(),
+		sql_create=open('imant/create_db.txt','r').read(),
 		sql_text=db.read_log()[:2000]
 	)
   
@@ -471,10 +476,6 @@ def annotate(participant_id, event_id):
 def internal_server_error(error):
 	return "Error 500: " + str(error)
 
-@app.before_request
-def start_timer():
-	pass
-
 @app.after_request
 def end_timer(response):
 	response.calculate_content_length()
@@ -488,15 +489,6 @@ def end_timer(response):
 @app.before_first_request
 def before_first_request():
 	print '########### Restarted, first request @ {} ############'.format(datetime.datetime.utcnow())
-	server = subprocess.Popen(['nodemon', 'server.js'], shell=True)
+	server = subprocess.Popen(['nodemon', 'imant/server.js'], shell=True)
 
-	# run_node_server()
-    
-if __name__ == "__main__":
-	# import subprocess, os
-	print "running on port 5000"
-	app.config["SECRET_KEY"] = "secret? what's that?"
-	app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
-  
-	app.run(port=5000, debug=True)
-	# app = ProfilerMiddleware(app)
+
