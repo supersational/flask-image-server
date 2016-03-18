@@ -30,3 +30,5 @@ NODE_SESSION_KEY = "secret"
 SECRET_KEY = "secret"
 
 JSONIFY_PRETTYPRINT_REGULAR = False
+
+SERVER_NAME = 'localhost:5000'
