@@ -46,12 +46,11 @@ else:
         if not is_node_running():
             server = None
             try:
-                server = subprocess.Popen(['nodemon', 'server.js'], shell=True)
+                server = subprocess.Popen(['node', 'server.js'], shell=True)
             except WindowsError:
                 print os.environ['COMSPEC']
                 subprocess.call('dir', shell=True)
-            except KeyboardInterrupt:
-                server.kill()
+
 
     def run_node_server():
         t = threading.Timer(0, run_node_server_if_not_already_running)

@@ -148,7 +148,7 @@
 		{% endif %}
 
 		<h4>Showing {{images | length}} images out of {{num_images}}</h4>
-		<div style=" padding-left:30px; padding-right:30px;" class="gallery">
+		<div style=" padding-left:30px; padding-right:30px;" class="event-gallery">
 			<div style="text-align:left;float:left;margin:5px;">
 				{% if prev_event_id %} 
 					<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
@@ -254,16 +254,34 @@
 	<script>
 
 	var imgs;
+	var evts;
 	$(function() {
-		imgs = {{json_dump | safe}}
+		evts = {{evts_json | safe}};
+		imgs = {{imgs_json | safe}}
 		var idx = 0;
 		var html = "";
 		imgs.forEach(function(img) {
-			html += create_image(img, idx);
+			// html += create_image(img, idx);
 			idx++;
 		})
-		$(".gallery").html(html)
+		// $(".gallery").html(html)
+		// eventize_images()
 		$("div.img").each(function() {})
+		// image = {
+		// 	image_id: function()
+		// }
+		function date_compare(a, b) {
+			// equivalent python function is:
+			// def serialize_datetime(d):
+			//     return [d.year, d.month, d.day, d.hour, d.minute, d.second]
+
+			for (var i = 0; i <= 6; i++) {
+				if (a<b) return -1; // b<a
+				if (a>b) return 1;  // a>b
+			}
+			return 0; // equal
+		}
+
 		function create_image(i, index) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
@@ -282,6 +300,25 @@
 			str += '<a href="'+full_url+'"><img width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" ></a>'
 			str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
 			return str;
+		}
+		function eventize_images(){
+			imgs_i = 0;
+			imgs_len = imgs.length;
+			evts_i = 0;
+			evts_len = evts.length;
+			// evts.forEach(function(e){
+			console.log(evts[evts_i], imgs_i)
+			console.log(imgs[imgs_i][3])
+
+			console.log(date_compare(evts[evts_i][3], imgs[imgs_i][3]))
+			while(evts_i<evts_len && imgs_i<imgs_len) {
+				console.log(evts[evts_i][3][0].join(","), imgs[imgs_i][3].join(","), date_compare(evts[evts_i], imgs[imgs_i][3])) 
+				imgs_i++;
+			}
+			while(date_compare(evts[evts_i][3], imgs[imgs_i][3])===-1) {
+				console.log(evts[evts_i][3][0].join(","), imgs[imgs_i][3].join(","), date_compare(evts[evts_i], imgs[imgs_i][3]))
+				imgs_i++;
+			}
 		}
 		$("div.img").each(function(i, el) {
 			// svg_ize(el, i);
@@ -535,6 +572,7 @@
 					console.log("mouseup on ", this);
 					image_id = $(curr_img).attr("image-id");
 					if (image_id===undefined) return false;
+
 					if (selection_is_expanding==true) {
 						console.log("db.add_image("+{{id}}+","+start_event_id+","+image_id+")")
 						Event.add_image({{id}}, start_event_id, image_id, reload_page)
@@ -549,8 +587,9 @@
 						// need to make sure don't remove the last image in the event!
 						Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_page)
 					}
+					fix_appearance()	        	
 				}
-			 	if (start_img!==null) reset_all()
+			 	if (start_img!==null && image_id===undefined) reset_all()
 			 	curr_img = null;
 			 	curr_id = null;
 			 	start_img = null;
@@ -759,7 +798,14 @@
 
 
 
-
+        function fix_appearance() {
+        	$(".fake.seperator").attr("class", "seperator")
+        	$(".line").attr("nw", function () { return this.getBBox().width})
+        	$(".line").attr("nx", function () {return this.getBBox().x})
+        	$(".split").unbind("click mouseenter mouseleave")
+        	$(".circle").unbind("mousedown")
+        	$('div.img').unbind("mousemove")
+        }
 
 
         // SPLIT IMAGES CODE
@@ -770,6 +816,8 @@
 	        	var image_id = me.closest("div.img").attr("image-id");
 	        	var event_id = me.closest("div.img").attr("event-id");
 	        	var dir = me.attr("split-dir");
+				fix_appearance()	        	
+	        	// return 0
 	        	Event.split(dir, {{id}},event_id, image_id, function(status) {
 	        		if (status=="success") reload_page();
 	        		else {
@@ -777,7 +825,7 @@
 	        			me.attr("fill", "red")
 	        		}
 	        	});
-	        }).hover(function(){
+	        }).hover(function(){ 
 	        	if (is_dragging) return 0;
 	        	var dir = $(this).attr("split-dir");
 	        	var img = $(this).closest("div.img")
@@ -789,7 +837,7 @@
 	        		makeSeperator(img, {'x':{{im_both}}-10})
 	        		makeSeperator(img.next("div.img"), {'x':10})
 	        	}
-	        }, function() {
+	        }, function() { // hover off
 	        	var img = $(this).closest("div.img")
 	        	$(".fake.seperator").remove()
 	        	$(".line").each(function(){

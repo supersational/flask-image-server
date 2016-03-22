@@ -1,4 +1,5 @@
 from imant import app
+from config import  __file__ as imant_file
 
 import time # measuring response time
 # date handling
@@ -39,6 +40,15 @@ def index():
 		sql_text=db.read_log()[:2000]
 	)
   
+# import os, sys
+# @app.route('/reboot')
+# def reboot():
+# 	exefile = os.path.join(os.path.dirname(imant_file),'runserver.py')
+# 	sys.argv.insert(0,exefile)
+# 	print sys.executable, sys.argv, os.environ
+# 	os.execvpe(sys.executable, sys.argv, os.environ)
+# 	return "hi"
+
 # Custom static data
 # @app.route('/images/<path:filename>')
 # def serve_images(filename):
@@ -222,9 +232,10 @@ def render_participant(participant_id, event=None, kwargs={}):
 	sql_text = ""#db.read_log()[:6000]
 	print type(participant.images.all())
 	print ("time_before_json_dumps ("+str(len(images))+" images) : ").ljust(40), round(time.time()-t0, 4)
-	img_array = json_dumps([x.to_array() for x in images])
+	imgs_array = json_dumps([x.to_array() for x in images])
+	evts_array = json_dumps([x.to_array() for x in sorted(participant.events, key=lambda x: x.start_time)])
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
-	print img_array[:160]
+	print imgs_array[:160]
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
@@ -235,7 +246,8 @@ def render_participant(participant_id, event=None, kwargs={}):
 		sql_text=sql_text,
 		schema=Schema.query.first(),
 		schema_list=Schema.query.filter(),
-		json_dump=img_array,
+		imgs_json=imgs_array,
+		evts_json=evts_array,
 		**kwargs
 	)))
 

@@ -269,7 +269,14 @@ class Event(Base):
     def __repr__(self):
         return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time)+i.full_url for i in self.images]))
 
+    def to_array(self):
+        return [self.event_id,
+                self.label_id,
+                self.comment,
+                map(serialize_datetime, [self.start_time, self.end_time])]
 
+def serialize_datetime(d):
+    return [d.year, d.month, d.day, d.hour, d.minute, d.second]
 
 class Image(Base):
     __tablename__ = 'images'
@@ -306,10 +313,10 @@ class Image(Base):
         return self.image_id == self.event.last_image.image_id if self.event is not None else False
 
     def to_array(self):
-        return [self.image_id, \
+        return [self.image_id, 
             self.event_id,
             self.participant_id,
-            [self.image_time.year, self.image_time.month, self.image_time.day, self.image_time.hour, self.image_time.minute, self.image_time.second], \
+            serialize_datetime(self.image_time), 
             map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
             [1 if self.is_first else 0, 1 if self.is_last else 0]
         ]
