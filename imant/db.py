@@ -310,7 +310,7 @@ class Image(Base):
             self.event_id,
             self.participant_id,
             [self.image_time.year, self.image_time.month, self.image_time.day, self.image_time.hour, self.image_time.minute, self.image_time.second], \
-            [self.thumbnail_url, self.medium_url, self.full_url],
+            map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
             [1 if self.is_first else 0, 1 if self.is_last else 0]
         ]
 
@@ -568,28 +568,27 @@ class Folder(Base):
 def drop_db():
     Base.metadata.drop_all(engine)
 
+def create_db():
+    Base.metadata.create_all(engine)
+
 def create_session(autoflush=True, autocommit=True):
     return scoped_session(sessionmaker(autocommit=autocommit,
                                              autoflush=autoflush,
                                              bind=engine))  
-
-def create_db(drop=False):
-    global session
-    session = create_session()
-    Base.metadata.create_all(engine)
-    return session
 
 def get_session(create_data=False, run_tests=False):
     if run_tests:
         # running tests requires an empty database
         drop_db()
         # will throw error if test fails
-        session = create_db()
+        create_db()
         db_data.test_db(session, create_session)
         drop_db()
 
     # does not actually connect until work is done
-    session = create_db()
+    print "creating db"
+    create_db()
+    session = create_session()
     Base.query = session.query_property()
     if create_data:
         if "--real" in sys.argv:
@@ -603,6 +602,5 @@ if __name__ == "__main__":
     drop_db()
     global session
     session = get_session(create_data=True, run_tests=True)
-else:
-    global session
-    session = get_session()
+# else:
+#     session = get_session()

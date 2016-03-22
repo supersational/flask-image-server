@@ -26,7 +26,7 @@ import imant.db as db
 # print dir(db)
 from imant.db import Event, Image, Participant, User, Study, Schema, Label, Folder
 db_session = db.get_session()
-
+print db_session, "hi"
 
 @app.route("/")
 def index():
@@ -40,9 +40,9 @@ def index():
 	)
   
 # Custom static data
-@app.route('/images/<path:filename>')
-def serve_images(filename):
-    return send_from_directory('images', filename, cache_timeout=60*60)
+# @app.route('/images/<path:filename>')
+# def serve_images(filename):
+#     return send_from_directory('images', filename, cache_timeout=60*60)
 
 @app.route("/reboot_db")
 def create():
@@ -82,6 +82,7 @@ def study(study_id):
 	)
 
 @app.route("/user")
+@login_required
 def user_self():
 	print current_user
 	if current_user:
@@ -129,12 +130,14 @@ def modify_user_study(user_id):
 			user.studies.append(study)
 			return redirect('/user/'+str(user_id))
 	return 'method failed on user_id:' + str(user_id)+ ", study_id: " + str(study_id) + "<br>".join(user.studies), 406
+
 @app.route("/participant/<int:participant_id>")
 @login_required
 @login_check()
 def oneparticipant(participant_id):
 	global t0
 	t0 = time.time()
+	print "participant"
 	return render_participant(participant_id)
 
 
@@ -247,3 +250,5 @@ def end_timer(response):
 	if 't0' in globals():# and str(response._status)!="304 NOT MODIFIED":
 		print ("time : "+str(response._status)+"").ljust(40),  str(round(time.time()-t0, 4)).ljust(10), response.mimetype
 	return response 
+
+print app.view_functions.viewvalues()

@@ -1,3 +1,4 @@
 from imant import app
-
-app.run(debug=True)
+print "started"
+print "started"
+app.run(debug=False)
