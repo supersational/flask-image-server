@@ -427,7 +427,7 @@ class User(Base):
     def __init__(self, username, password, admin=False):
         self.username = username
         self.salt = uuid.uuid4().hex
-        self.password = hashlib.sha512(password + self.salt).hexdigest()
+        set_password(password)
         self.admin = admin
         
     # authentication methods    
@@ -445,6 +445,9 @@ class User(Base):
     def get_id(self):
         print "get_id"
         return unicode(self.user_id)
+
+    def set_password(self, new_password):
+        self.password = hashlib.sha512(new_password + self.salt).hexdigest()
 
     def check_password(self, password):
         return self.password == hashlib.sha512(password + self.salt).hexdigest()

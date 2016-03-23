@@ -44,3 +44,8 @@ var Study = {
 		create_query("/user/"+user_id+"/modify_studies",{study_id:study_id, method: "remove"}, complete)
 	}
 }
+var User = {
+	change_password: function(user_id, old_password, new_password, complete) {
+		create_query("/user/"+user_id+"/change_password",{original_password: original_password, new_password:new_password}, complete)
+	}
+}

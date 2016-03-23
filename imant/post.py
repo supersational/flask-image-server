@@ -3,6 +3,22 @@ from flask import request, redirect
 from imant.db import Event, Image, Participant, Study, Label
 from imant.login import login_required, login_check
 
+
+@app.route("/user/<int:user_id>/change_password", methods=["POST"])
+@login_required
+@login_check()
+def user_change_password(user_id):
+	user = User.query(User.user_id==user_id).one() 
+	if user and request.form['old_password']:
+		if user.check_password(request.form['old_password']):
+			if request.form['new_password']:
+				user.set_password(request.form['new_password'])
+				return "success", 200
+			return "error with new password for user %s" % user_id
+		return "error wrong password for user %s" % user_id
+	return "error changing user %s password" % user_id
+
+
 @app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
 @login_required
 @login_check()
