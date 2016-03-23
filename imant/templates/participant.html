@@ -537,7 +537,6 @@
 			$('#jstree').on('loaded.jstree', function() {
 				$('#jstree_box').show()
 			}).jstree({
-
 				"core" : {
 					"multiple" : false,
 					"animation" : 0,
@@ -550,6 +549,8 @@
 				}
 			}).bind("select_node.jstree", function(e, node) {
 				$("#jstree").jstree(true).toggle_node(node.node);
+			}).bind("dblclick.jstree", function(e, node){
+				$("#jstree").jstree(true).toggle_node(e.target);
 			}); 
 			var to = false;
 			$('#jstree_searchbox').keyup(function () {
