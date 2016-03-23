@@ -306,19 +306,19 @@
 			// idx++;
 		})
 		$(".gallery").html(html)
-		// eventize_images()
+		eventize_images()
 		$("div.img").each(function() {})
 		// image = {
 		// 	image_id: function()
 		// }
 		function date_compare(a, b) {
-			// equivalent python function is:
+			// python function for generating these dates is:
 			// def serialize_datetime(d):
 			//     return [d.year, d.month, d.day, d.hour, d.minute, d.second]
 
 			for (var i = 0; i <= 6; i++) {
-				if (a<b) return -1; // b<a
-				if (a>b) return 1;  // a>b
+				if (a[i]<b[i]) return -(i+1); // b<a
+				if (a[i]>b[i]) return (i+1);  // a>b
 			}
 			return 0; // equal
 		}
@@ -354,12 +354,23 @@
 
 			console.log(date_compare(evts[evts_i][3], imgs[imgs_i][3]))
 			while(evts_i<evts_len && imgs_i<imgs_len) {
-				console.log(evts[evts_i][3][0].join(","), imgs[imgs_i][3].join(","), date_compare(evts[evts_i], imgs[imgs_i][3])) 
-				imgs_i++;
-			}
-			while(date_compare(evts[evts_i][3], imgs[imgs_i][3])===-1) {
-				console.log(evts[evts_i][3][0].join(","), imgs[imgs_i][3].join(","), date_compare(evts[evts_i], imgs[imgs_i][3]))
-				imgs_i++;
+				var cmp = date_compare(evts[evts_i][3][0], imgs[imgs_i][3])
+				console.log("cmp: ", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][0].join(",") + "  " , imgs[imgs_i][3].join(",")) 
+				if (cmp==-1) {
+					evts_i--;
+					console.log('evts_i++ THIS SHOULDNT HAPPEN IF EVENTS NOT OVERLAPPING')
+
+				} else {
+					cmp = date_compare(evts[evts_i][3][1], imgs[imgs_i][3])
+					console.log("cmp2:", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][1].join(",") + "  " , imgs[imgs_i][3].join(",")) 
+					if (cmp>0) {
+						console.log(evts_i, imgs_i)
+						imgs_i++;
+					} else {
+						// console.log(evts_i, imgs_i)
+						evts_i++;
+					}
+				}
 			}
 		}
 		$("div.img").each(function(i, el) {
@@ -382,53 +393,37 @@
 		})
 	});
 	</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	<script>
 	function reload_page() {
 		console.log("reloading page..")
 		location.reload()
 	}
 
+	// show dropdown box but hide after 500ms 
 	(function() {
-		// show dropdown box but hide after 500ms 
 		var t;
 		var delay = 150;
-		var isDown = false;
 		$("#dropdown-box").slideUp(0);
 		$("#dropdown-box").css("visibility","visible");
-		
-		$("#dropdown-box").hover(function() {
-			console.log("hover ddb, isDown:", isDown)
-			// if (!isDown) $("#dropdown-box").stop(true, false);
-			$("#dropdown-box").stop().slideDown("slow");
-			isDown = false;
-			clearTimeout(t);
-		}, function () {
-			console.log("HVOFF ddb, isDown:", isDown)
-			t = setTimeout(function() {
-				console.log("HVOFF ddb timeout!, isDown:", isDown)
-				// $("#dropdown-box").css("visibility","hidden");
-				// if (isDown) $("#dropdown-box").stop(true, false);
-				$("#dropdown-box").slideUp("medium");
-				isDown = false;
-			}, delay);
+		$("#dropdown-box, #title-link").hover(function() {
+			$("#dropdown-box").clearQueue().delay(delay).slideDown("slow")
+		},function() {
+			$("#dropdown-box").clearQueue().delay(delay).slideUp("slow")
 		});
-		$("#title-link").hover(function() {
-			console.log("hover ttl, isDown:", isDown)
-			clearTimeout(t);
-			// $("#dropdown-box").css("visibility","visible");
-			// if (!isDown) $("#dropdown-box").stop(true, false);
-			$("#dropdown-box").stop().slideDown("slow");
-			isDown = true;
-		}, function () {
-			console.log("HVOFF ttl, isDown:", isDown)
-			t = setTimeout(function() {
-				console.log("HVOFF ttl timeout!, isDown:", isDown)
-				// $("#dropdown-box").css("visibility","hidden");
-				// if (isDown) $("#dropdown-box").stop(true, false);
-				$("#dropdown-box").slideUp("medium");
-				isDown = false;
-			}, delay);
-		})
 	})()
 
 	// SCRIPT FOR DATE/HOUR BOXES
@@ -853,21 +848,21 @@
 				}
 			}
 
-			function makeCircle(el) {
-				el.append(makeSVG("circle", {"cx":{{im_half}}, "cy":15, "r":10, "class":"circle fake"}));
-			}
-			function makeLine(el, attrs) {
-				attrs['class'] = 'line fake'
-				attrs['height'] = 5
-				attrs['fill'] = "{{fillcol}}"
-				attrs['y'] = 12.5
-				attrs['z-index'] = 5
-				// console.log(attrs)
-				el.prepend(makeSVG("rect",attrs));
-			}
 		})();
 
-
+		// SVG's must have their attributes set in a special way (not just insert raw html) which these methods facilitate
+		function makeCircle(el, real) {
+			el.append(makeSVG("circle", {"cx":{{im_half}}, "cy":15, "r":10, "class":"circle" + (real===true ? "": " fake")}));
+		}
+		function makeLine(el, attrs) {
+			attrs['class'] = 'line fake'
+			attrs['height'] = 5
+			attrs['fill'] = "{{fillcol}}"
+			attrs['y'] = 12.5
+			attrs['z-index'] = 5
+			// console.log(attrs)
+			el.prepend(makeSVG("rect",attrs));
+		}
 		function makeSVG(tag, attrs) {
             var el= document.createElementNS('http://www.w3.org/2000/svg', tag);
             for (var k in attrs)
