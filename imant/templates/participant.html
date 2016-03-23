@@ -135,14 +135,6 @@
 
 	<div id="dropdown-box" >
 
-		{% if event_id %}
-			<h3> Event ID: {{event_id}} <h3>
-			{% if event_seconds %}
-				<h3> Length: {{event_seconds | verbose_seconds}}</h3>
-			{% endif%}
-			<button onclick="Event.check_valid({{id}}, {{event_id}}, function(result) {$('#valid_result').html(result);})">Check valid</button><p id="valid_result"></p>
-		{% endif %}
-
 		{% if daterange is defined and daterange is not none %}
 			<h3>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </h3>
 		{% endif %}
@@ -172,7 +164,7 @@
 				<li>{{ folder.name }}
 					<ul>{{ loop(folder.folders) }}
 					{% for label in folder.labels -%}
-					<li  draggable="true" ondragstart="drag(event)" label-id="{{ label.label_id }}" {%if label.color%} label-color="{{label.color}}" {%endif%}> {{ label.name }} </li>
+					<li  draggable="true" ondragstart="jstree_drag(event)" label-id="{{ label.label_id }}" {%if label.color%} label-color="{{label.color}}" {%endif%}> {{ label.name }} </li>
 					{% endfor -%}
 					</ul>
 				</li>
@@ -189,7 +181,7 @@
 
 {% set fillcol="lightblue" -%}
 {%- for image in images -%}
-	<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="drop(event)" ondragover="allowDrop(event)">
+	<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="img_drop(event)" ondragover="img_hover(event)">
 		{%- if image.event is not none -%}			 	
 		 	{%- if not image.is_last and not image.is_first -%}
 				 <div class="split between"></div>
@@ -334,7 +326,7 @@
 		function create_image(i, idx) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
-			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+event_id+'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
+			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+event_id+'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
 		 	if (!(event_id!==undefined)) {			 	
 				if (!is_last) {
 					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -478,44 +470,56 @@
 
 
 	// DRAG DROP FOR ANNOTATIONS
-	function allowDrop(ev) {
-	    var label_id = ev.dataTransfer.getData("label-id");
-	    console.log("allowDrop", label_id, ".")
-	    if (!isNaN(parseInt(label_id))) {
+	// these are assigned in html attribute callbacks
+	// see https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer
+	var jstree_drag, img_drop, img_hover;
+	(function() {
+		var label_id = null;
+		var event_id = null;
+		jstree_drag = function(ev) {
+			console.log("drag",$("#jstree")[0], $.contains($("#jstree")[0],ev.target))
+			if ($.contains($("#jstree")[0],ev.target)) {
+				label_id =  $(ev.target).closest("li").attr("label-id")
+			    ev.dataTransfer.setData("label-id", label_id);
+			    console.log("drag labe_id = ",label_id,ev.dataTransfer.getData("label-id"))	
+			    left_col_expanded = false;
+			    expand_left_col();
+			}
+		}
+		img_hover = function(ev) {
+		    // var label_id = ev.dataTransfer.getData("label-id");
+		    // if (!isNaN(parseInt(label_id))) {
+		    if (label_id!==null) {
+			    console.log("allowDrop", label_id, ".")
+			    ev.preventDefault();
+			    var new_event_id = $(ev.target).closest("div.img").attr("event-id");
+			    // if changed..
+		    	if (new_event_id!==event_id) {
+			    	event_id = new_event_id;
+		    		$("div.img").removeClass("selected");
+		    		if (new_event_id!==undefined) {
+			    		$("div.img[event-id="+event_id+"]").addClass("selected")
+			    	}
+		    	}
+			}
+		    else console.log("don'tallowDrop", label_id, ".", ev)
+		}
+
+		img_drop = function(ev) {
 		    ev.preventDefault();
-	    	var event_id = $(ev.target).closest("div.img").attr("event-id")
-	    	if (event_id!==undefined) {
-	    		$("div.img[event-id="+event_id+"]").addClass("selected")
-				console.log("addClass")
-	    	}
+		    console.log("drop data:", label_id,"target: ", ev.target, $(ev.target).closest("div.img")[0])
+		    if (label_id!==null) {
+		    	event_id = $(ev.target).closest("div.img").attr("event-id")
+		    	if (event_id!==undefined) {
+		    		$("div.img[event-id="+event_id+"]").css("background-color", getRandomColor())
+		    		Event.annotate({{id}}, event_id, label_id, function(e) {alert("done" + e);})
+		    	}
+			}
 		}
-	}
-
-	function drag(ev) {
-		console.log("drag",$("#jstree")[0], $.contains($("#jstree")[0],ev.target))
-		if ($.contains($("#jstree")[0],ev.target)) {
-			var label_id =  $(ev.target).closest("li").attr("label-id")
-		    ev.dataTransfer.setData("label-id", label_id);
-		    console.log("drag labe_id = ",label_id,ev.dataTransfer.getData("label-id"))	
-		    left_col_expanded = false;
-		    expand_left_col();
-		}
-	}
-
-	function drop(ev) {
-	    ev.preventDefault();
-	    var label_id = ev.dataTransfer.getData("label-id");
-	    console.log(label_id)
-	    console.log("drop data:", label_id,"target: ", ev.target, $(ev.target).closest("div.img")[0])
-	    if (!isNaN(parseInt(label_id))) {
-	    	var event_id = $(ev.target).closest("div.img").attr("event-id")
-	    	if (event_id!==undefined) {
-	    		$("div.img[event-id="+event_id+"]").css("background-color", getRandomColor())
-	    		Event.annotate({{id}}, event_id, label_id, function(e) {alert("done" + e);})
-	    	}
-		}
-	}
-
+		$(document).mouseup(function() {
+			label_id = null;
+		})
+	})();
 
 	function getRandomColor() {
 	    var letters = '0123456789ABCDEF'.split('');
@@ -551,7 +555,7 @@
 				$("#jstree").jstree(true).toggle_node(node.node);
 			}).bind("dblclick.jstree", function(e, node){
 				$("#jstree").jstree(true).toggle_node(e.target);
-			}); 
+			}).bind("move_node.jstree", function (e, data) {console.log("move_node",e, data)}); 
 			var to = false;
 			$('#jstree_searchbox').keyup(function () {
 				if(to) { clearTimeout(to); }
