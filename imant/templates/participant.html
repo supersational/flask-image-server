@@ -148,28 +148,8 @@
 		{% endif %}
 
 		<h4>Showing {{images | length}} images out of {{num_images}}</h4>
-		<div style=" padding-left:30px; padding-right:30px;" class="event-gallery">
-			<div style="text-align:left;float:left;margin:5px;">
-				{% if prev_event_id %} 
-					<a style="float:left;clear:left;" href="/participant/{{id}}/{{prev_event_id}}">prev event</a>
-				{% endif %}
-				{% if prev_image %} 
-					<a style="float:left;clear:left;" href="{{prev_image.full_url}}"><img width="100" height="74" src='{{prev_image.thumbnail_url}}' ></a>
-					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{prev_image.image_id}}, function(result) {$('#prev_result').html(result);reload_page();})">Add prev image</button><p id="prev_result"></p>
-				{% endif %}
-			</div> 
-			<div style="text-align:right;float:right;margin:5px;">
-				{% if next_event_id %}  
-					<a style="float:left;clear:left;" href="/participant/{{id}}/{{next_event_id}}">next event</a>
-				{% endif %}
-				{% if next_image %} 
-					<a style="float:left;clear:left;" href="{{next_image.full_url}}"><img width="100" height="74" src='{{next_image.thumbnail_url}}' ></a>
-					<button style="float:left;clear:left;" onclick="Event.add_image({{id}}, {{event_id}}, {{next_image.image_id}}, function(result) {$('#next_result').html(result);reload_page();})">Add next image</button><p id="next_result"></p>
-				{% endif %}
-			</div> 
-		</div>
-		{% if days|length >0 %}
 		<div class="clearfix" id="calendar-box">
+		{% if days|length >0 %}
 		{% set curr_day = None %}
 		{% for day in days %}
 			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
@@ -178,8 +158,8 @@
 			{% endif %}
 			{% set curr_day = day.split("-")[2]|int %}
 		{% endfor %}
-		</div>
 		{% endif %}
+		</div>
 	</div>
 	<div class="left-sticky" id="left-bar">
 {% if schema is not none -%}
@@ -244,7 +224,9 @@
 			{%- endif -%}
 
 		</svg>
-	 	<a href='{{image.gen_url(image.full_url)}}'><img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.gen_url(image.thumbnail_url)}}' ></a>
+	 	<!-- <a href='{{image.gen_url(image.full_url)}}'> -->
+	 		<img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.gen_url(image.thumbnail_url)}}' >
+	 	<!-- </a> -->
 	 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 	 </div>
 {%- else -%}
@@ -325,13 +307,13 @@
 	$(function() {
 		evts = {{evts_json | safe}};
 		imgs = {{imgs_json | safe}}
-		var idx = 0;
+		// var idx = 0;
 		var html = "";
-		imgs.forEach(function(img) {
-			// html += create_image(img, idx);
-			idx++;
+		imgs.forEach(function(img, idx) {
+			html += create_image(img, idx);
+			// idx++;
 		})
-		// $(".gallery").html(html)
+		$(".gallery").html(html)
 		// eventize_images()
 		$("div.img").each(function() {})
 		// image = {
@@ -349,10 +331,10 @@
 			return 0; // equal
 		}
 
-		function create_image(i, index) { 
+		function create_image(i, idx) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
-			var str = '<div class="img" id="'+index+'" image-id="'+image_id+'" event-id="'+event_id+'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
+			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+event_id+'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="drop(event)" ondragover="allowDrop(event)">'
 		 	if (!(event_id!==undefined)) {			 	
 				if (!is_last) {
 					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -364,13 +346,14 @@
 			str += '<svg width="{{im_both}}" height="30">'
 
 			str += '</svg>'
-			str += '<a href="'+full_url+'"><img width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" ></a>'
+			str += '<img class="thumbnail" width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" >'
 			str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
 			return str;
 		}
-		function eventize_images(){
-			imgs_i = 0;
-			imgs_len = imgs.length;
+		function eventize_images(idx_start, idx_end){
+			imgs_i = idx_start || 0;
+			imgs_len = idx_end!==undefined ? idx_end+1 : imgs.length;
+			// imgs_len = imgs.length;
 			evts_i = 0;
 			evts_len = evts.length;
 			// evts.forEach(function(e){
@@ -398,6 +381,13 @@
 		    new_svg.setAttribute(k, attrs[k]);
 			el.append(new_svg)
 		}
+		$("img.thumbnail").click(function() { 
+			// console.log($(this).closest(".img").attr("id"));
+			// console.log(this);
+			var idx = parseInt($(this).closest(".img").attr("id"))
+			console.log(idx);
+			openPhotoSwipe(idx)
+		})
 	});
 	</script>
 	<script>
@@ -981,11 +971,29 @@
 	    })();
 
 	    var slides = []
-		$(function() {
+		function openPhotoSwipe(index) {
+			console.log(index)
 			var pswpElement = document.querySelectorAll('.pswp')[0];
 			var options = {
 				shareEl: false,
-				tapToClose: false
+				tapToClose: false,
+				index: index,
+				getThumbBoundsFn: function(index) {
+
+				    // find thumbnail element
+				    var thumbnail = document.querySelectorAll('img.thumbnail')[index];
+
+				    // get window scroll Y
+				    var pageYScroll = window.pageYOffset || document.documentElement.scrollTop; 
+				    // optionally get horizontal scroll
+
+				    // get position of element relative to viewport
+				    var rect = thumbnail.getBoundingClientRect(); 
+
+				    // w = width
+				    return {x:rect.left, y:rect.top + pageYScroll, w:rect.width};
+
+				}
 			}
 			var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, slides, options);
 			// create variable that will store real size of viewport
@@ -996,12 +1004,6 @@
 
 			// beforeResize event fires each time size of gallery viewport updates
 			gallery.listen('beforeResize', function() {
-			    // gallery.viewportSize.x - width of PhotoSwipe viewport
-			    // gallery.viewportSize.y - height of PhotoSwipe viewport
-			    // window.devicePixelRatio - ratio between physical pixels and device independent pixels (Number)
-			    //                          1 (regular display), 2 (@2x, retina) ...
-
-
 			    // calculate real pixels when size changes
 			    realViewportWidth = gallery.viewportSize.x * window.devicePixelRatio;
 
@@ -1069,6 +1071,7 @@
 		    }
 
 		    gallery.init();
-		})
+		}
+
 	</script>
 {% endblock %}
