@@ -537,6 +537,7 @@
 			$('#jstree').on('loaded.jstree', function() {
 				$('#jstree_box').show()
 			}).jstree({
+
 				"core" : {
 					"multiple" : false,
 					"animation" : 0,
@@ -547,6 +548,8 @@
 					"case_insensitive" : true,
 					"show_only_matches":true
 				}
+			}).bind("select_node.jstree", function(e, node) {
+				$("#jstree").jstree(true).toggle_node(node.node);
 			}); 
 			var to = false;
 			$('#jstree_searchbox').keyup(function () {
