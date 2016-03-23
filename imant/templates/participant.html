@@ -293,7 +293,7 @@
 
 	</div>
 	<script>
-
+	var time_start = new Date()
 	var imgs;
 	var evts;
 	$(function() {
@@ -349,29 +349,34 @@
 			evts_i = 0;
 			evts_len = evts.length;
 			// evts.forEach(function(e){
-			console.log(evts[evts_i], imgs_i)
-			console.log(imgs[imgs_i][3])
+			// console.log(evts[evts_i], imgs_i)
+			// console.log(imgs[imgs_i][3])
 
-			console.log(date_compare(evts[evts_i][3], imgs[imgs_i][3]))
+			// console.log(date_compare(evts[evts_i][3], imgs[imgs_i][3]))
+			var already_checked_start = false;
 			while(evts_i<evts_len && imgs_i<imgs_len) {
-				var cmp = date_compare(evts[evts_i][3][0], imgs[imgs_i][3])
-				console.log("cmp: ", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][0].join(",") + "  " , imgs[imgs_i][3].join(",")) 
+				var cmp = already_checked_start || date_compare(evts[evts_i][3][0], imgs[imgs_i][3])
+				// console.log("cmp: ", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][0].join(",") + "  " , imgs[imgs_i][3].join(",")) 
 				if (cmp==-1) {
 					evts_i--;
 					console.log('evts_i++ THIS SHOULDNT HAPPEN IF EVENTS NOT OVERLAPPING')
 
 				} else {
+					already_checked_start = true;
 					cmp = date_compare(evts[evts_i][3][1], imgs[imgs_i][3])
-					console.log("cmp2:", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][1].join(",") + "  " , imgs[imgs_i][3].join(",")) 
+					// console.log("cmp2:", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][1].join(",") + "  " , imgs[imgs_i][3].join(",")) 
 					if (cmp>0) {
-						console.log(evts_i, imgs_i)
+						// console.log(evts_i, imgs_i)
 						imgs_i++;
 					} else {
 						// console.log(evts_i, imgs_i)
 						evts_i++;
+						already_checked_start = false;
 					}
 				}
 			}
+			console.log("eventize done", (new Date() - time_start)/1000+"s")
+
 		}
 		$("div.img").each(function(i, el) {
 			// svg_ize(el, i);
