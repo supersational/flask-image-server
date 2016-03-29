@@ -137,6 +137,12 @@
 	 #dropdown-box:hover {
 	 	/*visibility: visible;*/
 	 }
+	 .load-next {
+	 	float:right;
+	 	margin-right: 20px;
+
+	 }
+
     </style>
 {% endblock %}
 {% block pagename %} Participant: {{name}} {% endblock %}
@@ -166,7 +172,47 @@
 		</div>
 	</div>
 	<div class="left-sticky" id="left-bar">
-{% if schema is not none -%}
+
+
+
+	<!-- new jsonified jstree: -->
+	<div id="jstree_box"  style="display:none;">
+		<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;">
+		<div id="jstree">
+		</div>
+	</div>
+	<script>
+	schema_json = [{{schema | safe}}];
+	function find_label(label_id) {
+		return findNode(label_id, schema_json[0])
+	}
+	function findNode(id, currentNode) {
+	    var i,
+	        result;
+
+	    if (id == currentNode.id) {
+	        return currentNode;
+	    } else {
+	    	console.log(currentNode.type, currentNode.text, currentNode.children ? currentNode.children.length : 0)
+	        // Use a for loop instead of forEach to avoid nested functions
+	        // Otherwise "return" will not work properly
+	        if (currentNode.children) for (i = 0; i < currentNode.children.length; i += 1) {
+
+	            // Search in the current child
+	            result = findNode(id,  currentNode.children[i]);
+
+	            // Return the result if the node has been found
+	            if (result !== false) {
+	                return result;
+	            }
+	        }
+
+	        // The node has not been found and we have no more options
+	        return false;
+	    }
+	}
+	</script>
+{#% if schema is not none -%}
 <div id="jstree_box"  style="display:none;">
 	<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;">
 	<div id="jstree">
@@ -186,15 +232,15 @@
 </div>
 {% else -%}
 	<p>No root folder</p>
-{% endif -%}
+{% endif -%#}
 	</div>
 
 	<div id="right-bar">
 		{% set fillcol="lightblue" -%}
 		<div class="gallery">
 		</div>
+		<!-- <a class="load-next" href="#">Load more</a> -->
 	</div>
-
 	<!-- Root element of PhotoSwipe. Must have class pswp. -->
 	<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
 
@@ -270,11 +316,12 @@
 		original: [2592,1936]
 	}
 	var evts;
-	$(function() {
+	var time_load = new Date()
+	evts = {{evts_json | safe}};
+	imgs = {{imgs_json | safe}}
+	$(function() {generate_images(imgs, evts)})
+	function generate_images() {
 
-		var time_load = new Date()
-		evts = {{evts_json | safe}};
-		imgs = {{imgs_json | safe}}
 		console.log("imgs & evts done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		// var idx = 0;
 		var html = "";
@@ -340,16 +387,16 @@
 			while(evts_i<evts_len && imgs_i<imgs_len) {
 				var cmp = already_checked_start || date_compare(evts[evts_i][3][0], imgs[imgs_i][3])
 				// console.log("cmp: ", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][0].join(",") + "  " , imgs[imgs_i][3].join(",")) 
-				if (cmp==-1) {
+				if (cmp==-1) { // if start is less than img time
 					evts_i--;
-					console.log('evts_i++ THIS SHOULDNT HAPPEN IF EVENTS NOT OVERLAPPING')
+					console.log('evts_i++ THIS SHOULDNT HAPPEN IF EVENTS NOT OVERLAPPING AND ORDERED')
 
 				} else {
 					already_checked_start = true;
 					cmp = date_compare(evts[evts_i][3][1], imgs[imgs_i][3])
 					// console.log("cmp2:", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][1].join(",") + "  " , imgs[imgs_i][3].join(",")) 
 					if (cmp>0) {
-						// console.log(evts_i, imgs_i)
+						console.log(evts_i, imgs_i)
 						imgs_i++;
 					} else {
 						// console.log(evts_i, imgs_i)
@@ -418,8 +465,29 @@
 			var idx = parseInt($(this).closest(".img").attr("id"))
 			// console.log(idx);
 			openPhotoSwipe(idx)
+		}).hover(function() { 
+			var idx = parseInt($(this).closest(".img").attr("id"))
+			var text = "image-id:" + idx;
+			var event_id = parseInt($(this).closest(".img").attr("event-id"))
+			text += "\nevent_id:"+event_id
+			if (!isNaN(event_id)) {
+				for (var i=0; i<evts.length; i++) {
+					if (evts[i][0] === event_id) {
+						var label_id = evts[i][1]
+						break
+					}
+				}
+				text += "\nlabel-id:"+label_id;
+				if (!isNaN(parseInt(label_id))) {
+					var label_el = $("[label-id="+label_id+"]")
+					console.log("li[label-id="+label_id+"]",label_el)
+					if (label_el.length==1)
+						text+=label_el.innerHTML
+				}
+			}
+			console.log(text)
 		})
-	});
+	}
 	</script>
 
 
@@ -572,11 +640,18 @@
 				$('#jstree_box').show()
 			}).jstree({
 				"core" : {
+					'data': schema_json[0].children,
 					"multiple" : false,
 					"animation" : 0,
-					"check_callback" : true
+					"check_callback" : true,
+					"icons": true
 				},
-				"plugins" : [ "search" /*,  "contextmenu"*/  ],
+				"types": {
+		            "leaf": {
+		                // "icon": "leaf"
+		            }
+		        },
+				"plugins" : [ "search", "types" /*,  "contextmenu"*/  ],
 				"search" :  {
 					"case_insensitive" : true,
 					"show_only_matches":true

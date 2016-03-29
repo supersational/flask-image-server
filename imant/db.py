@@ -22,8 +22,6 @@ from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 # for generating commands for executing raw SQL
 from sqlalchemy.sql import text
-# jsonifying objects
-from json import dumps as json_dumps
 # custom data creation class
 
 
@@ -118,6 +116,7 @@ class Event(Base):
         return None
 
     def add_image(self, image):
+        """adds a new image to the event (including all in-between images)"""
         print self.images
         if type(image) is int:
             print "assume " + str(image) + " is an image ID"
@@ -139,6 +138,11 @@ class Event(Base):
             self.start_time = image.image_time
         else:
             print "image must already be within event boundary! (wierd)"
+            print "start_time:", self.start_time
+            print "end_time:", self.end_time
+            print "image_time:", image.image_time
+            print "image in self.images", (image in self.images)
+            print "self.contains(image)", (self.contains(image))
             raise ValueError("image must already be within event boundary! (wierd)")
         print "my images:", len(self.images)
         print "images between: ", len(images_between)
@@ -484,6 +488,15 @@ class Schema(Base):
                         for c in [f for f in self.folders if f.parent is None]]
                     )
 
+    def to_json(self):
+        return {
+            "id":-1,
+            "text":self.name,
+            "type":"root",
+            "children": [c.to_json() for c in [f for f in self.folders if f.parent is None]]
+        }
+
+
     def from_file(self, annotation_file):
         for line in annotation_file:
             if len(line)<=1: continue
@@ -527,6 +540,13 @@ class Label(Base):
     def __repr__(self):
         return "Label: %s, (id=%s)" % (self.name, self.label_id)
  
+    def to_json(self):
+        return {
+            "id":self.label_id,
+            "text":self.name,
+            "type":"label",
+            "color":self.color
+        }
 
 class Folder(Base):
     # http://docs.sqlalchemy.org/en/latest/_modules/examples/adjacency_list/adjacency_list.html
@@ -574,6 +594,14 @@ class Folder(Base):
                         c.dump(_indent + 1)
                         for c in self.folders]
                     )
+
+    def to_json(self):
+        return {
+            "id":self.id,
+            "text":self.name,
+            "type":"folder",
+            "children": [c.to_json() for c in self.folders] + [l.to_json() for l in self.labels]
+        }
 
 def drop_db():
     Base.metadata.drop_all(engine)

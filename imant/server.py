@@ -217,11 +217,11 @@ def render_participant(participant_id, event=None, kwargs={}):
 		if daterange is not None:
 			print daterange
 			images = participant.images.filter((Image.image_time>=daterange['min']) & \
-				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(1000)
+				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(100)
 		else:
 			# this is 0.3s faster.. but takes longer to render template when used
 			# images = participant.get_images()
-			images = participant.images.order_by(Image.image_time).limit(1000)
+			images = participant.images.order_by(Image.image_time).limit(100)
 
 	print "time_before_get_image_in_range: ".ljust(40), round(time.time()-t0, 4)
 		
@@ -235,12 +235,11 @@ def render_participant(participant_id, event=None, kwargs={}):
 	images_by_hour = participant.get_images_by_hour()
 	print "time_before get SQL text: ".ljust(40), round(time.time()-t0, 4)
 	sql_text = ""#db.read_log()[:6000]
-	print type(participant.images.all())
 	print ("time_before_json_dumps ("+str(len(images))+" images) : ").ljust(40), round(time.time()-t0, 4)
-	imgs_array = json_dumps([x.to_array() for x in images])
+	# render with the first 100 images only
+	imgs_array = json_dumps([x.to_array() for x in images[:100]])
 	evts_array = json_dumps([x.to_array() for x in sorted(participant.events, key=lambda x: x.start_time)])
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
-	print imgs_array[:160]
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
@@ -249,8 +248,8 @@ def render_participant(participant_id, event=None, kwargs={}):
 		daterange=daterange,
 		num_images=participant.num_images,
 		sql_text=sql_text,
-		schema=Schema.query.first(),
-		schema_list=Schema.query.filter(),
+		schema=json_dumps(Schema.query.first().to_json()),
+		schema_list=Schema.query.all(),
 		imgs_json=imgs_array,
 		evts_json=evts_array,
 		**kwargs
