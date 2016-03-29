@@ -45,6 +45,14 @@ def event_modify(participant_id, event_id, image_id, code):
 
 	img = Image.query.filter((Image.image_id==image_id) &
 							 (Image.participant_id==participant_id)).one()
+	# print evt
+	print "".join(map(lambda x: ('\n'+str(evt.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.images))
+	if  evt.prev_event is not None:
+		# print evt.prev_event
+		print "".join(map(lambda x: ('\n'+str(evt.prev_event.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.prev_event.images))
+	if  evt.next_event is not None:
+		# print evt.next_event
+		print "".join(map(lambda x: ('\n'+str(evt.next_event.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.next_event.images))
 	if not img: return "no matching image"
 	if not evt: return "no matching event"
 	if code=="add_image":
@@ -103,6 +111,7 @@ def annotate(participant_id, event_id):
 	label = Label.query.filter(Label.label_id==label_id).one()
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	event = Event.query.filter(Event.event_id==event_id).one()
+	event.label = label
 	return str(label) + str(participant) + str(event)
 	if study and participant:
 		if study in participant.studies:

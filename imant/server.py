@@ -244,7 +244,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
-		images=images[:1000], # TODO :  flask.ext.sqlalchemy.Pagination
+		images=images[:0], # TODO :  flask.ext.sqlalchemy.Pagination
 		days=images_by_hour,
 		daterange=daterange,
 		num_images=participant.num_images,
