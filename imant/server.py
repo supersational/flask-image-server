@@ -169,9 +169,14 @@ def render_event(participant_id, event_id):
 
 
 def stream_template(template_name, **context):
+	print "time_before_render_head: ".ljust(40), round(time.time()-t0, 4)
+
 	yield render_template(template_name, only_head=True, **context)
 	# print context
+	print "time_before_render_tail: ".ljust(40), round(time.time()-t0, 4)
+
 	yield render_template(template_name, skip_head=True, **context)
+	print "time_after_render_tail: ".ljust(40), round(time.time()-t0, 4)
 	# return "hi"
 
 
