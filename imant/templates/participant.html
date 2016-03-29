@@ -43,7 +43,9 @@
     	-webkit-transition: background-color 0.3s;
     	transition: background-color 0.3s;
     }
-
+    img.thumbnail {
+    	cursor:pointer;
+    }
     .gallery:after {
         clear:both;
         content:" ";
@@ -186,54 +188,13 @@
 	<p>No root folder</p>
 {% endif -%}
 	</div>
+
 	<div id="right-bar">
-<div class="gallery">
-
-{% set fillcol="lightblue" -%}
-{#%- for image in images -%}
-	<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="img_drop(event)" ondragover="img_hover(event)">
-		{%- if image.event is not none -%}			 	
-		 	{%- if not image.is_last and not image.is_first -%}
-				 <div class="split between"></div>
-		 	{%- endif -%}
-		 	{%- if not image.is_last -%}
-				 <div class="split right" split-dir="right"></div>
-		 	{%- endif -%}
-		 	{%- if not image.is_first -%}
-				 <div class="split left" split-dir="left"></div>
-		 	{%- endif -%} 
-	 	{%- endif -%} 
- 		<svg width="{{im_both}}" height="30">
- 			{%- if image.event is not none -%}			 	
-			 	{%- if not (image.is_last and image.is_first) -%}
-				 	{%- if image.is_last -%}
-				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-				 	{%- elif image.is_first -%}
-				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
-				 	{%- else -%}
-				 		<rect class="line" nw="{{im_both}}" width="{{im_both}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-				 	{%- endif -%} 
-				{%- else -%}
-			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-			 	{%- endif -%} 
-			{%- else -%}
-		 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
-			{%- endif -%}
-		 	{%- if image.is_last or image.is_first -%}
-		 		<circle cx="{{im_half}}" cy="15" r="10" class="circle" id="{{image.image_id}}"/>
-		 	{%- else -%}
-		 		<circle cx="{{im_half}}" cy="15" r="10" class="circle hidden" id="{{image.image_id}}" visibility="hidden"/>
-			{%- endif -%}
-
-		</svg>
-	 		<img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.gen_url(image.thumbnail_url)}}' >
-	 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
-	 </div>
-{%- else -%}
-	<p>No images</p>
-{%- endfor -%#}
-</div>
+		{% set fillcol="lightblue" -%}
+		<div class="gallery">
+		</div>
 	</div>
+
 	<!-- Root element of PhotoSwipe. Must have class pswp. -->
 	<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
 
@@ -303,6 +264,11 @@
 	<script>
 	var time_start = new Date()
 	var imgs;
+	var img_sizes = {
+		thumbnail: [{{im_width}}, {{im_height}}],
+		medium: [864,645],
+		original: [2592,1936]
+	}
 	var evts;
 	$(function() {
 
@@ -343,7 +309,7 @@
 		function create_image(i, idx) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
-			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+event_id+'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
+			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
 		 	if (!(event_id!==undefined)) {			 	
 				if (!is_last) {
 					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -414,33 +380,33 @@
 			// console.log(el,i, img[0],img[5])
 				if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
 					console.log("neither or no event")
-					makeLine(container, {width:0, x:{{im_half}} }, true)
+					makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
 					//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
 				}
 				else if (img[5][0] && img[5][1]) {
 					// console.log("both")
 					makeCircle(container,true)
-					makeLine(container, {width:0, x:{{im_half}} }, true)
+					makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
 					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
 				}
 				else if (img[5][1]) { // is-last
 					// console.log("last")
 					makeCircle(container,true)
-					makeLine(container, {width:{{im_half}}, x:0 }, true)
+					makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:0, nx:0, id:img[0] }, true)
 					el.prepend('<div class="split left" split-dir="left"></div>')
 					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
 				}
 				else if (img[5][0]) { // is-first
 					// console.log("first")
 					makeCircle(container,true)
-					makeLine(container, {width:{{im_half}}, x:{{im_half}} }, true)
+					makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
 					el.prepend(' <div class="split right" split-dir="right"></div>')
 					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
 				}
 				else if (!img[5][0] && !img[5][1]) { // connector
 					// console.log("connector")
 					el.prepend(' <div class="split right" split-dir="right"></div><div class="split left" split-dir="left"></div>')
-					makeLine(container, {width:{{im_both}}, x:0 }, true)
+					makeLine(container, {width:{{im_both}}, nw:{{im_both}}, x:0, nx:0, id:img[0] }, true)
 
 					
 				} else console.log("something went wrong")
@@ -450,7 +416,7 @@
 			// console.log($(this).closest(".img").attr("id"));
 			// console.log(this);
 			var idx = parseInt($(this).closest(".img").attr("id"))
-			console.log(idx);
+			// console.log(idx);
 			openPhotoSwipe(idx)
 		})
 	});
@@ -646,7 +612,7 @@
 		    }
 		$('#left-bar').hover(
 		    function() { // on
-		        console.log('hover', is_dragging);
+		        // console.log('hover', is_dragging);
 		        if (!is_dragging) {
 			        left_col_expanded = true;
 			        expand_left_col();
@@ -659,7 +625,7 @@
 		    }
 		);
 		$("#jstree").on('click', function() {
-			console.log("click");
+			// console.log("click");
 			left_col_expanded = true;
 			expand_left_col();
 		});
@@ -748,8 +714,10 @@
 			 	start_event_id = null;
 			 	event_pair_img = null;
 			 	event_pair_id = null;
+			 	// event id's of starting neighbouring events
 			 	event_to_left = null;
 			 	event_to_right = null;
+			 	// used to make sure standalones 'drag' into the current event properly
 			 	event_to_left_is_standalone = null;
 			 	event_to_right_is_standalone = null;
 			 	selection_is_expanding = null;
@@ -760,11 +728,11 @@
 				e.preventDefault()
 				is_dragging = true;
 				start_img = curr_img = $(this).closest("div.img")[0];
-				start_img_is_standalone = ( $(start_img).attr('is-first')=="True" && $(start_img).attr('is-last')=="True" )
+				start_img_is_standalone = ( $(start_img).attr('is-first')=="1" && $(start_img).attr('is-last')=="1" )
 				start_id  = curr_id  = parseInt(start_img.id)
 				start_event_id = parseInt($(start_img).attr('event-id'));
 				// find other 'end' of event (if none set to null)
-				event_pair_img = $("[event-id="+start_event_id+"]").filter( "[is-first='True'],[is-last='True']" ).not(start_img);
+				event_pair_img = $("[event-id="+start_event_id+"]").filter( "[is-first='1'],[is-last='1']" ).not(start_img);
 				event_pair_img = (event_pair_img.length==0) ? null : event_pair_img[0];
 				event_pair_id = (event_pair_img == null) ? null : parseInt($(event_pair_img).attr('id'));
 				// check sides for another event
@@ -772,14 +740,14 @@
 				var right = $("div#"+(start_id+1)+".img")
 				if (left.length == 1 && left.attr("event-id").length != 0) {
 					event_to_left = parseInt(left.attr("id"))
-					event_to_left_is_standalone = (left.attr("is-first")=="True" && left.attr("event-id") != start_event_id)
+					event_to_left_is_standalone = (left.attr("is-first")=="1" && left.attr("event-id") != start_event_id)
 				} else event_to_left = false;
 				if (right.length == 1 && right.attr("event-id").length != 0) {
 					event_to_right = parseInt(right.attr("id"))
-					event_to_right_is_standalone = (right.attr("is-last")=="True" && right.attr("event-id") != start_event_id)
+					event_to_right_is_standalone = (right.attr("is-last")=="1" && right.attr("event-id") != start_event_id)
 				} else event_to_right = false;
-				console.log(event_to_left, event_to_right, left, right)
-				console.log(this, curr_img, event_pair_img)
+				console.log('event_to_left:',event_to_left, 'event_to_right:',event_to_right, 'left:',left, 'right:',right)
+				console.log('this:',this, 'curr_img:',curr_img, 'event_pair_img:',event_pair_img)
 			});
 
 			$('div.img').mousemove(function(e) {
@@ -857,7 +825,7 @@
 								var img_on_right = $("div#"+(curr_id+1)+".img");
 								if (img_on_right.length==1) {
 									if (img_on_right.attr("event-id")!=="") {
-										if (img_on_right.attr("is-last")=="True") modify[curr_id+1] = "standalone"
+										if (img_on_right.attr("is-last")=="1") modify[curr_id+1] = "standalone"
 										else modify[curr_id+1] = "from-right"
 									}
 								}
@@ -874,7 +842,7 @@
 								var img_on_left = $("div#"+(curr_id-1)+".img");
 								if (img_on_left.length==1) {
 									if (img_on_left.attr("event-id")!=="") {
-										if (img_on_left.attr("is-first")=="True") modify[curr_id-1] = "standalone"
+										if (img_on_left.attr("is-first")=="1") modify[curr_id-1] = "standalone"
 										else modify[curr_id-1] = "from-left"
 									}
 								}
@@ -960,7 +928,7 @@
 
 
         // SPLIT IMAGES CODE
-		(function() {
+		$(function() {
 
 	        $('.split').click(function() {
 	        	me = $(this)
@@ -1001,7 +969,7 @@
 	        	attrs['fill'] = "{{fillcol}}"
 	        	attrs['width'] = 5
 	        	makeSeperatorLine(el, attrs);
-	        	curr_line = $(el).find(".line");
+	        	var curr_line = $(el).find(".line");
 	        	// console.log( curr_line.attr("width"),  curr_line.attr("x"))
 	    		curr_line.attr("width", curr_line.attr("nw")-10)
 	        	if (attrs['x']<{{im_half}}) {
@@ -1023,13 +991,13 @@
 	        	attrs['y'] = 5
 	        	$(el).find("svg").append(makeSVG("rect",attrs));
 	        }
-	    })();
+	    })
 
 
 
 	    // STICKY ANNOTATION BAR
 
-	    (function() {
+	    $(function() {
 	        var sticky_switch_height = $(".left-sticky").offset().top;
 	        var sticky = $(".left-sticky")
 	        $(window).on("scroll", function(e) {
@@ -1040,9 +1008,10 @@
 	          }
 	        });
 	        // TODO : resize sidebar height when not sticky 
-	    })();
+	    })
 
 	    var slides = []
+	    $(function() {slides = new Array(imgs.length)})
 		function openPhotoSwipe(index) {
 			console.log(index)
 			var pswpElement = document.querySelectorAll('.pswp')[0];
@@ -1108,16 +1077,16 @@
 
 			// gettingData event fires each time PhotoSwipe retrieves image source & size
 			gallery.listen('gettingData', function(index, item) {
-
+				console.log(index, item, imgs[index])
 			    // Set image source & size based on real viewport width
 			    if( useLargeImages ) {
-			        item.src = item.originalImage.src;
-			        item.w = item.originalImage.w;
-			        item.h = item.originalImage.h;
+			        item.src = imgs[index][4][2];
+			        item.w = img_sizes.original[0],
+			        item.h = img_sizes.original[1]
 			    } else {
-			        item.src = item.mediumImage.src;
-			        item.w = item.mediumImage.w;
-			        item.h = item.mediumImage.h;
+			        item.src = imgs[index][4][1];
+			        item.w = img_sizes.medium[0],
+			        item.h = img_sizes.medium[1]
 			    }
 
 			    // It doesn't really matter what will you do here, 
@@ -1128,19 +1097,20 @@
 			});
 
 		    for(var i = 0; i < imgs.length; i++) {
-		    	slides[i] = {
-		    		mediumImage: {
-		    		    src: imgs[i][4][1],
-		    		    w:864,
-		    		    h:645
-		    		},
-		    		originalImage: {
-		    		    src: imgs[i][4][2],
-		    		    w: 2592,
-		    		    h: 1936
-		    		}
-		    	}
+		    	slides[i] = {}
 		    }
+		    // 		mediumImage: {
+		    // 		    src: imgs[i][4][1],
+		    // 		    w:864,
+		    // 		    h:645
+		    // 		},
+		    // 		originalImage: {
+		    // 		    src: imgs[i][4][2],
+		    // 		    w: 2592,
+		    // 		    h: 1936
+		    // 		}
+		    // 	}
+		    // }
 
 		    gallery.init();
 		}
