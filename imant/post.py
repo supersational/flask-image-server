@@ -2,6 +2,7 @@ from imant import app
 from flask import request, redirect
 from imant.db import Event, Image, Participant, Study, Label
 from imant.login import login_required, login_check
+from json import dumps as json_dumps
 
 
 @app.route("/user/<int:user_id>/change_password", methods=["POST"])
@@ -110,3 +111,31 @@ def annotate(participant_id, event_id):
 		else:
 			return "participant not in that study"
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
+
+@app.route("/participant/<int:participant_id>/load_images", methods=["POST"])
+@login_required
+@login_check()
+def load_images(participant_id):
+	query = Image.query.filter(Image.participant_id==participant_id)
+	try:
+		start_id = int(request.form['start_id'])
+		query.filter(Image.image_id>=start_id)
+	except ValueError:
+		start_id = float("inf")
+	try:
+		end_id = int(request.form['end_id'])
+	except ValueError:
+		end_id = -float("inf")
+	try:
+		number = int(request.form['number'])
+	except ValueError:
+		number = None
+
+	if number is not None:
+		images = query.limit(number)
+	else:
+		images = query.all()
+	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id)).limit(number)
+	# else:
+	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id))
+	return json_dumps([x.to_array() for x in images])

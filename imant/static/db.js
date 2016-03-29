@@ -49,3 +49,8 @@ var User = {
 		create_query("/user/"+user_id+"/change_password",{original_password: original_password, new_password:new_password}, complete)
 	}
 }
+var Image = {
+	load_json: function(participant_id, start, end, num, complete) {
+		create_query("/participant/"+participant_id+"/load_images", {start_id:start, end_id:end, number:num}, complete)
+	}
+}
