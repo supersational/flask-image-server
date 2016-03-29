@@ -190,7 +190,7 @@
 <div class="gallery">
 
 {% set fillcol="lightblue" -%}
-{%- for image in images -%}
+{#%- for image in images -%}
 	<div class="img" id="{{loop.index}}" image-id="{{image.image_id}}" event-id="{{image.event.event_id}}" is-last="{{image.is_last}}" is-first="{{image.is_first}}"  ondrop="img_drop(event)" ondragover="img_hover(event)">
 		{%- if image.event is not none -%}			 	
 		 	{%- if not image.is_last and not image.is_first -%}
@@ -226,14 +226,12 @@
 			{%- endif -%}
 
 		</svg>
-	 	<!-- <a href='{{image.gen_url(image.full_url)}}'> -->
 	 		<img class="thumbnail" width="{{im_width}}" height="{{87}}" src='{{image.gen_url(image.thumbnail_url)}}' >
-	 	<!-- </a> -->
 	 	 <a id="{{image.image_time}}" href="{% if image.event_id %}/participant/{{id}}/{{image.event_id}}{% endif %}">{{image.event_id}} - {{image.image_id}}</a> <p>{{ '%02d:%02d:%02d' % (image.image_time.hour, image.image_time.minute, image.image_time.second) }}</p> 
 	 </div>
 {%- else -%}
 	<p>No images</p>
-{%- endfor -%}
+{%- endfor -%#}
 </div>
 	</div>
 	<!-- Root element of PhotoSwipe. Must have class pswp. -->
@@ -307,9 +305,11 @@
 	var imgs;
 	var evts;
 	$(function() {
+
 		var time_load = new Date()
 		evts = {{evts_json | safe}};
 		imgs = {{imgs_json | safe}}
+		console.log("imgs & evts done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		// var idx = 0;
 		var html = "";
 		imgs.forEach(function(img, idx) {
@@ -317,9 +317,14 @@
 			// idx++;
 		})
 		$(".gallery").html(html)
-		console.log("gallery done", (new Date() - time_load)/1000+"s",(new Date() - time_start)/1000+"s")
+		console.log("gallery done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		eventize_images()
-		$("div.img").each(function() {})
+		console.log("eventize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
+		$("div.img").each(function(i, el) {
+			svg_ize($(el), i);
+		})
+		console.log("svg_ize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
+		// $("div.img").each(function() {})
 		// image = {
 		// 	image_id: function()
 		// }
@@ -387,35 +392,59 @@
 					}
 				}
 			}
-			console.log("eventize done", (new Date() - time_load)/1000+"s",(new Date() - time_start)/1000+"s")
-
 		}
-		$("div.img").each(function(i, el) {
-			// svg_ize(el, i);
-		})
+		// EVENT python
 		/*[self.event_id,
                 self.label_id,
                 self.comment,
                 map(serialize_datetime, [self.start_time, self.end_time])]*/
+        // IMAGE python
+        /* [self.image_id, 
+            self.event_id,
+            self.participant_id,
+            serialize_datetime(self.image_time), 
+            map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
+            [1 if self.is_first else 0, 1 if self.is_last else 0]
+        ] */
 		function svg_ize(el, i) {
-			var new_svg= document.createElementNS('http://www.w3.org/2000/svg', tag);
+			// var new_svg= makeSVG("svg", {width:{{im_both}}, height:30});
+			// el.append(new_svg)
+			var container = el.find("svg")
 			var img = imgs[i];
-			// for (var k in attrs)
-				if (!img[0] || img[5][0] || img[5][1]) { // neither or no event
-					//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}"/> 
+			// console.log(el,i, img[0],img[5])
+				if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
+					console.log("neither or no event")
+					makeLine(container, {width:0, x:{{im_half}} }, true)
+					//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
 				}
 				else if (img[5][0] && img[5][1]) {
-					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+					// console.log("both")
+					makeCircle(container,true)
+					makeLine(container, {width:0, x:{{im_half}} }, true)
+					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
 				}
 				else if (img[5][1]) { // is-last
-					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+					// console.log("last")
+					makeCircle(container,true)
+					makeLine(container, {width:{{im_half}}, x:0 }, true)
+					el.prepend('<div class="split left" split-dir="left"></div>')
+					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
 				}
 				else if (img[5][0]) { // is-first
-					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{{image.image_id}}" /> 
+					// console.log("first")
+					makeCircle(container,true)
+					makeLine(container, {width:{{im_half}}, x:{{im_half}} }, true)
+					el.prepend(' <div class="split right" split-dir="right"></div>')
+					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
+				}
+				else if (!img[5][0] && !img[5][1]) { // connector
+					// console.log("connector")
+					el.prepend(' <div class="split right" split-dir="right"></div><div class="split left" split-dir="left"></div>')
+					makeLine(container, {width:{{im_both}}, x:0 }, true)
+
+					
 				} else console.log("something went wrong")
 
-		    new_svg.setAttribute(k, attrs[k]);
-			el.append(new_svg)
 		}
 		$("img.thumbnail").click(function() { 
 			// console.log($(this).closest(".img").attr("id"));
@@ -647,7 +676,7 @@
 
 
 	// IMAGE SELECTION
-	(function() {
+	$(function() {
 		$("div.img").click(function(e) {
 			console.log("div.img")
 			$("div.img").not(this).removeClass("selected")
@@ -661,11 +690,11 @@
 			console.log("gallery")
 			 $("div.img").removeClass("selected")
 		})
-	})();
+	});
 
 	// EVENT MANIPULATION
 	var is_dragging = false;
-	(function() {
+	$(function() {
 			function reset_all() {
 				console.log("reset_all()")
 				$(".circle.hidden").attr("visibility", "hidden");
@@ -692,7 +721,7 @@
 			 	// modify event boundaries
 				if (start_img!=null && start_id != curr_id) {
 					console.log("mouseup on ", this);
-					image_id = $(curr_img).attr("image-id");
+					var image_id = $(curr_img).attr("image-id");
 					if (image_id===undefined) return false;
 
 					if (selection_is_expanding==true) {
@@ -711,7 +740,7 @@
 					}
 					fix_appearance()	        	
 				}
-			 	if (start_img!==null && image_id===undefined) reset_all()
+			 	else if (start_img!==null ) reset_all()
 			 	curr_img = null;
 			 	curr_id = null;
 			 	start_img = null;
@@ -888,14 +917,14 @@
 				}
 			}
 
-		})();
+		})
 
 		// SVG's must have their attributes set in a special way (not just insert raw html) which these methods facilitate
 		function makeCircle(el, real) {
 			el.append(makeSVG("circle", {"cx":{{im_half}}, "cy":15, "r":10, "class":"circle" + (real===true ? "": " fake")}));
 		}
-		function makeLine(el, attrs) {
-			attrs['class'] = 'line fake'
+		function makeLine(el, attrs, real) {
+			attrs['class'] = 'line' + (real===true ? "": " fake")
 			attrs['height'] = 5
 			attrs['fill'] = "{{fillcol}}"
 			attrs['y'] = 12.5
