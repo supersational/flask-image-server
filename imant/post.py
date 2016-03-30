@@ -1,10 +1,12 @@
 from imant import app
-from flask import request, redirect
+from flask import request, redirect, make_response
 from imant.db import Event, Image, Participant, Study, Label
 from imant.login import login_required, login_check
 from json import dumps as json_dumps
 
-
+#csv stuff
+import csv
+from io import BytesIO
 @app.route("/user/<int:user_id>/change_password", methods=["POST"])
 @login_required
 @login_check()
@@ -150,3 +152,27 @@ def load_images(participant_id):
 	# else:
 	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id))
 	return json_dumps([x.to_array() for x in images])
+
+#  note: not technically a post request, but still belongs here for now..
+@app.route("/participant/<int:participant_id>/download_annotation", methods=["GET"])
+@login_required
+@login_check()
+def generate_annotation(participant_id):
+	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+	participant_name = participant.name
+	images = participant.images
+	events = participant.events
+
+	output = BytesIO()
+	writer = csv.writer(output)
+	writer.writerow(["name","image_time","annotation"])
+	for img in sorted(images, key=lambda x: x.image_time):
+		annotation = ""
+		if img.event:
+			if img.event.label:
+				annotation = img.event.label.name
+		writer.writerow([participant_name,img.image_time,annotation])
+
+	response = make_response(output.getvalue())
+	response.headers["Content-Disposition"] = "attachment; filename=annotation.csv"
+	return response

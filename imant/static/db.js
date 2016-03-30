@@ -45,6 +45,9 @@ var Study = {
 	},
 	remove_user: function(user_id, study_id, complete) {
 		create_query("/user/"+user_id+"/modify_studies",{study_id:study_id, method: "remove"}, complete)
+	},
+	get_annotation_csv: function(participant_id, complte) {
+		window.location = "/participant/"+participant_id+"/download_annotation"
 	}
 }
 var User = {
