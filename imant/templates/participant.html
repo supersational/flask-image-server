@@ -130,7 +130,7 @@
 	 	border-bottom:1px solid #444;
 	 	padding-left:20px;
 	 	padding-right:20px;
-	 	overflow: hidden;
+	 	overflow-y: scroll;
 	 	display: block;
 	 	/*visibility: hidden;*/
 	 }
@@ -162,16 +162,19 @@
 
 		<h4>Showing {{images | length}} images out of {{num_images}}</h4>
 		<div class="clearfix" id="calendar-box">
-		{% if days|length >0 %}
-		{% set curr_day = None %}
-		{% for day in days %}
-			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
-			{% if 0 and curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
-				<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
+			{% if days|length >0 %}
+			{% set curr_day = None %}
+			{% for day in days %}
+				<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
+				{% if 0 and curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
+					<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
+				{% endif %}
+				{% set curr_day = day.split("-")[2]|int %}
+			{% endfor %}
 			{% endif %}
-			{% set curr_day = day.split("-")[2]|int %}
-		{% endfor %}
-		{% endif %}
+		</div>
+		<div class="clearfix">
+			<button  onClick="Study.get_annotation_csv({{id}})">Download .csv</button>
 		</div>
 	</div>
 	<div class="left-sticky" id="left-bar">
@@ -513,7 +516,7 @@
 		$("#dropdown-box, #title-link").hover(function() {
 
 			$("#dropdown-box").clearQueue().delay(delay).animate({
-				    "height": 255
+				    "height": 285
 				});
 		},function() {
 			$("#dropdown-box").clearQueue().delay(delay).animate({
