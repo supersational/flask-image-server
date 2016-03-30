@@ -142,6 +142,9 @@
 	 	margin-right: 20px;
 
 	 }
+	 .date-seperator{
+	 	clear:left;
+	 }
 
     </style>
 {% endblock %}
@@ -325,9 +328,15 @@
 		console.log("imgs & evts done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		// var idx = 0;
 		var html = "";
+		var prev_date =[-1,-1,-1]
 		imgs.forEach(function(img, idx) {
+			// check if day has changed
+			var date = img[3].slice(0,3)
+			if (date[2]!=prev_date[2] || date[1]!=prev_date[1] || date[0]!=prev_date[0]) {
+				html += create_day_seperator(date);
+			}
 			html += create_image(img, idx);
-			// idx++;
+			prev_date = date;
 		})
 		$(".gallery").html(html)
 		console.log("gallery done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
@@ -353,6 +362,11 @@
 			return 0; // equal
 		}
 
+		function create_day_seperator(date) { 
+			var newDate = new Date(date[0], date[1], date[2])
+			console.log(date, newDate.toDateString())
+			return "<h2 class='date-seperator'>"+newDate.toDateString()+"</h2>";
+		}
 		function create_image(i, idx) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
