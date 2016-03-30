@@ -490,7 +490,7 @@ class Schema(Base):
 
     def to_json(self):
         return {
-            "id":-1,
+            "id":0,
             "text":self.name,
             "type":"root",
             "children": [c.to_json() for c in [f for f in self.folders if f.parent is None]]
@@ -597,7 +597,7 @@ class Folder(Base):
 
     def to_json(self):
         return {
-            "id":self.id,
+            "id":-self.id,
             "text":self.name,
             "type":"folder",
             "children": [c.to_json() for c in self.folders] + [l.to_json() for l in self.labels]
