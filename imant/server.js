@@ -18,11 +18,12 @@ function verify_hash(t, url, hash) {
 // console.log(verify_hash(10,'hello', 'e5fb4297f5cba1b68f4aaa1c99e646dca554e6ba113998f7553338036a01450cf6e3c113ccb2ee93c0afee6ed5fde76aa69c48e105a04524fbb71d02101342a4'))
 
 
-
-
+// set cache times
+var cache_expiry_static = 30*24*60*60*1000; // 1 month
+var cache_expiry_images = 24*60*60*1000; // 1 day
 
 app.use('/alive', function(req, res) {res.send('alive')})
-app.use('/static/', express.static(__dirname + '/static/', {maxAge:24*60*60*1000}));
+app.use('/static/', express.static(__dirname + '/static/', {maxAge:cache_expiry_static}));
 
 app.use(function(req, res, next) {
     var url_dict = url.parse(req.url,true)
@@ -39,9 +40,7 @@ app.use(function(req, res, next) {
     return res.status(404)        // HTTP status 404: NotFound
 	   .send('Not found');
 });
-app.use('/images/', express.static(__dirname + '/images/'));
-// app.use('/m/', express.static(__dirname + '/images/medium'));
-// app.use('/f/', express.static(__dirname + '/images/full'));
+app.use('/images/', express.static(__dirname + '/images/', {maxAge:cache_expiry_images}));
 
 app.listen(5001, function () {
   console.log('listening on 5001..');
