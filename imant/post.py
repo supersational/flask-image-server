@@ -103,6 +103,8 @@ def remove_studyparticipant():
 			return "participant not in that study"
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
+
+
 @app.route("/participant/<int:participant_id>/<int:event_id>/annotate", methods=["POST"])
 @login_required
 @login_check()

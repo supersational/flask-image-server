@@ -431,7 +431,7 @@ class User(Base):
     def __init__(self, username, password, admin=False):
         self.username = username
         self.salt = uuid.uuid4().hex
-        set_password(password)
+        self.set_password(password)
         self.admin = admin
         
     # authentication methods    
@@ -614,7 +614,7 @@ def create_session(autoflush=True, autocommit=True):
                                              autoflush=autoflush,
                                              bind=engine))  
 
-def get_session(create_data=False, run_tests=False):
+def get_session(create_data=False, run_tests=False, fake=True):
     if run_tests:
         # running tests requires an empty database
         drop_db()
@@ -629,16 +629,16 @@ def get_session(create_data=False, run_tests=False):
     session = create_session()
     Base.query = session.query_property()
     if create_data:
-        if "--real" in sys.argv:
-            db_data.create_data(session, engine, fake=False)
-        else:
-            db_data.create_data(session, engine, fake=True)
+        db_data.create_data(session, engine, fake=fake)
     return session
 
 import db_data
 if __name__ == "__main__":
     drop_db()
     global session
-    session = get_session(create_data=True, run_tests=True)
+    fake = True # create fake data by default
+    if "--real" in sys.argv:
+        fake = False
+    session = get_session(create_data=True, run_tests=True, fake=fake)
 # else:
 #     session = get_session()

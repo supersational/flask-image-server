@@ -27,7 +27,6 @@ import imant.db as db
 # print dir(db)
 from imant.db import Event, Image, Participant, User, Study, Schema, Label, Folder
 db_session = db.get_session()
-print db_session, "hi"
 
 @app.route("/")
 def index():
@@ -40,22 +39,40 @@ def index():
 		sql_text=db.read_log()[:2000]
 	)
   
-# import os, sys
-# @app.route('/reboot')
-# def reboot():
-# 	exefile = os.path.join(os.path.dirname(imant_file),'runserver.py')
-# 	sys.argv.insert(0,exefile)
-# 	print sys.executable, sys.argv, os.environ
-# 	os.execvpe(sys.executable, sys.argv, os.environ)
-# 	return "hi"
+@app.route("/reboot_db", methods=["GET"])
+@login_required
+@requires_admin
+def reboot_db_page():
+	return """<h2>reboot DB options:</h2>
+		<form action='/reboot_db' method='POST'> 
+			<select name='option'>
+					<option value='drop_db'>drop all tables</option>
+					<option value='recreate_fake'>Initialize with fake data</option>
+					<option value='recreate_real'>Initialize with real data</option>
+			</select><br><br>
+			<input type="checkbox" name="i_am_sure" value="yes">This will delete all data, are you sure?<br><br>
+			<input type='submit' value='Submit'>
+		</form>"""
+	
+@app.route("/reboot_db", methods=["POST"])
+@login_required
+@requires_admin
+def reboot_db_action():
+	print "reboot_db_action"
+	option = request.form['option']
+	print option
+	if 'i_am_sure' in request.form and request.form['i_am_sure']=="yes":
+		if option=='recreate_fake':
+			db_session = db.get_session(create_data=True, fake=True)
+		elif option=='recreate_real':
+			db_session = db.get_session(create_data=True, fake=False)
+		elif option=='drop_db':
+			db.drop_db()
+		return """<p>attempted to %s on the DB</p>""" % (option,), 200
+	else:
+		return """<p>you must tick the "sure" checkbox (if you are sure)</p>""", 200
 
-# Custom static data
-# @app.route('/images/<path:filename>')
-# def serve_images(filename):
-#     return send_from_directory('images', filename, cache_timeout=60*60)
-
-@app.route("/reboot_db")
-def create():
+def drop_db():
 	db.read_log() # clear the log
 	db.drop_db()
 	drop_sql = db.read_log()
@@ -64,6 +81,9 @@ def create():
 	with open('imant/create_db.txt','w') as f:
 			f.write(sql)
 	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+sql+"</pre>"
+
+
+
 
 @app.route("/images")
 @login_required
@@ -267,4 +287,3 @@ def end_timer(response):
 		print ("time : "+str(response._status)+"").ljust(40),  str(round(time.time()-t0, 4)).ljust(10), response.mimetype
 	return response 
 
-print app.view_functions.viewvalues()
