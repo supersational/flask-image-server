@@ -1114,12 +1114,19 @@
         var sticky = $(".left-sticky")
         $(window).on("scroll", function(e) {
           if ($(window).scrollTop() > sticky_switch_height) {
+	        $(window).resize(resize_sticky)
             sticky.addClass("fix-search");
           } else {
             sticky.removeClass("fix-search");
+	        $(window).unbind(resize_sticky)
           }
         });
-        // TODO : resize sidebar height when not sticky 
+        // resize sidebar height when not sticky 
+        resize_sticky();
+        $(window).resize(resize_sticky)
+        function resize_sticky() {
+        	sticky.height($(window).height()-sticky_switch_height);
+        }
     })
 
     var slides = []
