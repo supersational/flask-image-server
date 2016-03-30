@@ -1163,10 +1163,10 @@
 		    // Code below is needed if you want image to switch dynamically on window.resize
 
 		    // Find out if current images need to be changed
-		    if(useLargeImages && realViewportWidth < 1000) {
+		    if(useLargeImages && realViewportWidth < img_sizes.medium[0]) {
 		        useLargeImages = false;
 		        imageSrcWillChange = true;
-		    } else if(!useLargeImages && realViewportWidth >= 1000) {
+		    } else if(!useLargeImages && realViewportWidth >= img_sizes.medium[0]) {
 		        useLargeImages = true;
 		        imageSrcWillChange = true;
 		    }
@@ -1201,28 +1201,11 @@
 		        item.h = img_sizes.medium[1]
 		    }
 
-		    // It doesn't really matter what will you do here, 
-		    // as long as item.src, item.w and item.h have valid values.
-		    // 
-		    // Just avoid http requests in this listener, as it fires quite often
-
 		});
 
 	    for(var i = 0; i < imgs.length; i++) {
 	    	slides[i] = {}
 	    }
-	    // 		mediumImage: {
-	    // 		    src: imgs[i][4][1],
-	    // 		    w:864,
-	    // 		    h:645
-	    // 		},
-	    // 		originalImage: {
-	    // 		    src: imgs[i][4][2],
-	    // 		    w: 2592,
-	    // 		    h: 1936
-	    // 		}
-	    // 	}
-	    // }
 
 	    gallery.init();
 	}
