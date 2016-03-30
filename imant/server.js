@@ -22,7 +22,7 @@ function verify_hash(t, url, hash) {
 
 
 app.use('/alive', function(req, res) {res.send('alive')})
-app.use('/static/', express.static(__dirname + '/static/'));
+app.use('/static/', express.static(__dirname + '/static/', {maxAge:24*60*60*1000}));
 
 app.use(function(req, res, next) {
     var url_dict = url.parse(req.url,true)
