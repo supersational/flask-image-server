@@ -306,6 +306,9 @@
 	var evts;
 	var time_load = new Date()
 	evts = {{evts_json | safe}};
+	function find_event(event_id) {
+		return $.grep(evts, function(e) {return e.id==event_id});
+	}
 	imgs = {{imgs_json | safe}}
 	$(function() {generate_images(imgs, evts)})
 	function generate_images() {
@@ -355,7 +358,12 @@
 		function create_image(i, idx) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
-			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
+			var label_id=null;
+			if (event_id!==undefined) {
+				evt = find_event(event_id);
+				if (evt) label_id = evt[1];
+			}
+			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : "label-id='"+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
 		 	if (!(event_id!==undefined)) {			 	
 				if (!is_last) {
 					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
