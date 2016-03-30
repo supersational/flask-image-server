@@ -34,7 +34,7 @@ def init(name, log_level=logging.DEBUG):
     ch.setLevel(log_level)
     logger.addHandler(ch)
     ### Add a log-file for good measure
-    logger.addHandler(logging.FileHandler('logfile'+datetime.now().strftime('%Y-%m-%d-%H-%M')+'.txt'))
+    logger.addHandler(logging.FileHandler('logs/logfile'+datetime.now().strftime('%Y-%m-%d-%H-%M')+'.txt'))
     ### For disabling HTTP stdout messages from flask
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)

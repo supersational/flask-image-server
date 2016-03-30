@@ -2,3 +2,5 @@ images
 *.pyc
 logfile*.txt
 node_modules
+logs
+logs/
