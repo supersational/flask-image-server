@@ -290,6 +290,8 @@
     </div>
 
 </div>
+<div class="thumbnail-hover" style="position:absolute; background-color:rgba(255,255,255,0.8);text-align:center;"></div>
+
 	<script>
 	var time_start = new Date()
 	var imgs;
@@ -453,7 +455,8 @@
 				} else console.log("something went wrong")
 
 		}
-		$("img.thumbnail").click(function() { 
+		var idx_prev = -1;
+		$("img.thumbnail").unbind().click(function() { 
 			// console.log($(this).closest(".img").attr("id"));
 			// console.log(this);
 			var idx = parseInt($(this).closest(".img").attr("id"))
@@ -461,9 +464,10 @@
 			openPhotoSwipe(idx)
 		}).hover(function() { 
 			var idx = parseInt($(this).closest(".img").attr("id"))
-			var text = "image-id:" + idx;
+			if (idx==idx_prev) return;
+			var text = "<p>image-id:" + idx;
 			var event_id = parseInt($(this).closest(".img").attr("event-id"))
-			text += "\nevent_id:"+event_id
+			text += "<br>event_id:"+event_id
 			if (!isNaN(event_id)) {
 				for (var i=0; i<evts.length; i++) {
 					if (evts[i][0] === event_id) {
@@ -471,7 +475,7 @@
 						break
 					}
 				}
-				text += "\nlabel-id:"+label_id;
+				text += "<br>label-id:"+label_id;
 				if (!isNaN(parseInt(label_id))) {
 					var label_el = $("[label-id="+label_id+"]")
 					console.log("li[label-id="+label_id+"]",label_el)
@@ -479,9 +483,21 @@
 						text+=label_el.innerHTML
 				}
 			}
+			text+="</p>"
 			console.log(text)
+			idx_prev = idx;
+			$(".thumbnail-hover").html(text)
+			$(".thumbnail-hover").show().hover(null, function() {
+				$(this).hide();
+				idx_prev = -1;
+			})
+			var img_pos = $(this).offset()
+			$('.thumbnail-hover').css({'top':img_pos.top,'left':img_pos.left}).fadeIn('slow');
+
 		})
 	}
+
+
 	</script>
 
 	<script>
@@ -605,7 +621,7 @@
 			    		Event.annotate({{id}}, event_id, label_id, callback);
 		    		} else {
 		    			// need to generate color for the first time, and persist to backend
-			    		color = getRandomColor();
+			    		label.color = getRandomColor();
 			    		Event.annotate_and_set_color({{id}}, event_id, label_id, label.color, callback);
 		    		}
 		    		// add background color to show action has been performed (instant)
@@ -1083,22 +1099,25 @@
     $(function() {
         var sticky_switch_height = $(".left-sticky").offset().top;
         var sticky = $(".left-sticky")
+        console.log('sticky_switch_height', sticky_switch_height)
         // resize sidebar height when not sticky 
-        resize_sticky();
-        $(window).resize(resize_sticky)
+        adjust_sticky();
         function resize_sticky() {
-        	sticky.height($(window).height()-sticky_switch_height);
+        	sticky.height($(window).height()-sticky_switch_height+$(window).scrollTop());
         }
         // add sticky class when scrolled beyond header
-        $(window).on("scroll", function(e) {
+        $(window).on("scroll", adjust_sticky);
+        function adjust_sticky() {
           if ($(window).scrollTop() > sticky_switch_height) {
 	        $(window).resize(resize_sticky)
             sticky.addClass("fix-search");
+            sticky.height($(window).height())
           } else {
             sticky.removeClass("fix-search");
+	        resize_sticky()
 	        $(window).unbind("resize",resize_sticky)
           }
-        });
+        }
     })
 
     var slides = []
