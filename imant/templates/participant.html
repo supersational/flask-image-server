@@ -197,7 +197,7 @@
 	    if (id == currentNode.id) {
 	        return currentNode;
 	    } else {
-	    	console.log(currentNode.type, currentNode.text, currentNode.children ? currentNode.children.length : 0)
+	    	// console.log(currentNode.type, currentNode.text, currentNode.children ? currentNode.children.length : 0)
 	        // Use a for loop instead of forEach to avoid nested functions
 	        // Otherwise "return" will not work properly
 	        if (currentNode.children) for (i = 0; i < currentNode.children.length; i += 1) {
@@ -216,101 +216,80 @@
 	    }
 	}
 	</script>
-{#% if schema is not none -%}
-<div id="jstree_box"  style="display:none;">
-	<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;">
-	<div id="jstree">
-		<ul>
-			{% set root = schema.root_folders -%}
-			{% for folder in root recursive  -%} 
-				<li>{{ name.folder }}
-					<ul>{{ loop(folder.folders) }}
-					{% for label in folder.labels -%}
-					<li  draggable="true" ondragstart="jstree_drag(event)" label-id="{{ label.label_id }}" {%if label.color%} label-color="{{label.color}}" {%endif%}> {{ label.name }} </li>
-					{% endfor -%}
-					</ul>
-				</li>
-			{% endfor -%}
-		</ul>
-	</div>
+
 </div>
-{% else -%}
-	<p>No root folder</p>
-{% endif -%#}
+<div id="right-bar">
+	{% set fillcol="lightblue" -%}
+	<div class="gallery">
 	</div>
+	<!-- <a class="load-next" href="#">Load more</a> -->
+</div>
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
 
-	<div id="right-bar">
-		{% set fillcol="lightblue" -%}
-		<div class="gallery">
-		</div>
-		<!-- <a class="load-next" href="#">Load more</a> -->
-	</div>
-	<!-- Root element of PhotoSwipe. Must have class pswp. -->
-	<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <!-- Background of PhotoSwipe. 
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
 
-	    <!-- Background of PhotoSwipe. 
-	         It's a separate element as animating opacity is faster than rgba(). -->
-	    <div class="pswp__bg"></div>
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
 
-	    <!-- Slides wrapper with overflow:hidden. -->
-	    <div class="pswp__scroll-wrap">
+        <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
 
-	        <!-- Container that holds slides. 
-	            PhotoSwipe keeps only 3 of them in the DOM to save memory.
-	            Don't modify these 3 pswp__item elements, data is added later on. -->
-	        <div class="pswp__container">
-	            <div class="pswp__item"></div>
-	            <div class="pswp__item"></div>
-	            <div class="pswp__item"></div>
-	        </div>
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
 
-	        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
-	        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
 
-	            <div class="pswp__top-bar">
+                <!--  Controls are self-explanatory. Order can be changed. -->
 
-	                <!--  Controls are self-explanatory. Order can be changed. -->
+                <div class="pswp__counter"></div>
 
-	                <div class="pswp__counter"></div>
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
 
-	                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
 
-	                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
 
-	                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
 
-	                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                      <div class="pswp__preloader__cut">
+                        <div class="pswp__preloader__donut"></div>
+                      </div>
+                    </div>
+                </div>
+            </div>
 
-	                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
-	                <!-- element will get class pswp__preloader--active when preloader is running -->
-	                <div class="pswp__preloader">
-	                    <div class="pswp__preloader__icn">
-	                      <div class="pswp__preloader__cut">
-	                        <div class="pswp__preloader__donut"></div>
-	                      </div>
-	                    </div>
-	                </div>
-	            </div>
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div> 
+            </div>
 
-	            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
-	                <div class="pswp__share-tooltip"></div> 
-	            </div>
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
 
-	            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
-	            </button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
 
-	            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
-	            </button>
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
 
-	            <div class="pswp__caption">
-	                <div class="pswp__caption__center"></div>
-	            </div>
+        </div>
 
-	        </div>
+    </div>
 
-	    </div>
-
-	</div>
+</div>
 	<script>
 	var time_start = new Date()
 	var imgs;
@@ -411,7 +390,7 @@
 					cmp = date_compare(evts[evts_i][3][1], imgs[imgs_i][3])
 					// console.log("cmp2:", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][1].join(",") + "  " , imgs[imgs_i][3].join(",")) 
 					if (cmp>0) {
-						console.log(evts_i, imgs_i)
+						// console.log(evts_i, imgs_i)
 						imgs_i++;
 					} else {
 						// console.log(evts_i, imgs_i)
@@ -505,19 +484,6 @@
 	}
 	</script>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 	<script>
 	function reload_page() {
 		console.log("reloading page..")
@@ -528,19 +494,15 @@
 	(function() {
 		var t;
 		var delay = 150;
-		// $("#dropdown-box").slideUp(0);
-		// $("#dropdown-box").css("visibility","visible");
 		$("#dropdown-box, #title-link").hover(function() {
-			// $("#dropdown-box").clearQueue().delay(delay).slideDown("slow")
-			// display: block; visibility: visible; height: 6.87412px; margin-top: 0px; margin-bottom: 0px; padding-top: 0.539146px; padding-bottom: 0.539146px; overflow: hidden;
-			// display: block; visibility: visible; height: 229.958px; padding-top: 18.0282px; margin-top: 0px; padding-bottom: 18.0282px; margin-bottom: 0px; overflow: hidden;
+
 			$("#dropdown-box").clearQueue().delay(delay).animate({
 				    "height": 255
 				});
 		},function() {
 			$("#dropdown-box").clearQueue().delay(delay).animate({
 				    "height": 0,
-				});//.slideUp("slow")
+				});
 		});
 	})()
 
@@ -590,16 +552,16 @@
 		var label_id = null;
 		var event_id = null;
 		jstree_drag = function(ev) {
-			console.log("drag",$("#jstree")[0], $.contains($("#jstree")[0],ev.target))
+			// console.log("drag",$("#jstree")[0], $.contains($("#jstree")[0],ev.target))
 			// check if the dragged node is contained within jstree
 			if ($.contains($("#jstree")[0],ev.target)) {
 				var closest_leaf = $(ev.target).closest(".jstree-leaf");
-				console.log('closest_leaf', closest_leaf)
+				// console.log('closest_leaf', closest_leaf)
 				// must not be able to drag folders
 				if (closest_leaf.length==1) {
 					// find the "id" = "label-id" of the selected node
 					label_id =  closest_leaf.attr("id")
-					console.log("label-id", label_id)
+					// console.log("label-id", label_id)
 				    left_col_expanded = false;
 				    expand_left_col();
 				}
@@ -629,16 +591,25 @@
 		    console.log("drop data:", label_id,"target: ", ev.target, $(ev.target).closest("div.img")[0])
 		    if (label_id!==null) {
 		    	event_id = $(ev.target).closest("div.img").attr("event-id")
-		    	if (event_id!==undefined) {
-		    		var color = getRandomColor();
+		    	var label = find_label(label_id);
+		    	if (event_id!==undefined && label!=false) {
 		    		var imgs_in_this_event = $("div.img[event-id="+event_id+"]")
-		    		imgs_in_this_event.css("background-color", color)
-		    		Event.annotate({{id}}, event_id, label_id, function(e) {
+		    		// callback will move color from background to event handles
+		    		var callback = function(e) {
 		    			console.log("done" + e);
 			    		imgs_in_this_event.css("background-color", "").removeClass("selected")
-			    		imgs_in_this_event.find(".line").css("fill", color)
-			    		imgs_in_this_event.find(".circle").css("stroke", color)
-		    		})
+			    		imgs_in_this_event.find(".line").css("fill", label.color)
+			    		imgs_in_this_event.find(".circle").css("stroke", label.color)
+		    		}
+		    		if (label.color) {
+			    		Event.annotate({{id}}, event_id, label_id, callback);
+		    		} else {
+		    			// need to generate color for the first time, and persist to backend
+			    		color = getRandomColor();
+			    		Event.annotate_and_set_color({{id}}, event_id, label_id, label.color, callback);
+		    		}
+		    		// add background color to show action has been performed (instant)
+		    		imgs_in_this_event.css("background-color", label.color)
 		    	}
 			}
 		}
@@ -1028,7 +999,7 @@
 
 
 
-
+    // fixes img x and width to not be changable, removes interaction, and removes seperators
     function fix_appearance() {
     	$(".fake.seperator").attr("class", "seperator")
     	$(".line").attr("nw", function () { return this.getBBox().width})
@@ -1112,21 +1083,22 @@
     $(function() {
         var sticky_switch_height = $(".left-sticky").offset().top;
         var sticky = $(".left-sticky")
-        $(window).on("scroll", function(e) {
-          if ($(window).scrollTop() > sticky_switch_height) {
-	        $(window).resize(resize_sticky)
-            sticky.addClass("fix-search");
-          } else {
-            sticky.removeClass("fix-search");
-	        $(window).unbind(resize_sticky)
-          }
-        });
         // resize sidebar height when not sticky 
         resize_sticky();
         $(window).resize(resize_sticky)
         function resize_sticky() {
         	sticky.height($(window).height()-sticky_switch_height);
         }
+        // add sticky class when scrolled beyond header
+        $(window).on("scroll", function(e) {
+          if ($(window).scrollTop() > sticky_switch_height) {
+	        $(window).resize(resize_sticky)
+            sticky.addClass("fix-search");
+          } else {
+            sticky.removeClass("fix-search");
+	        $(window).unbind("resize",resize_sticky)
+          }
+        });
     })
 
     var slides = []

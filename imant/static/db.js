@@ -34,6 +34,9 @@ var Event = {
 	},
 	annotate: function(participant_id, event_id, label_id, complete) {
 		create_query("/participant/"+participant_id+"/"+event_id+"/annotate",{label_id:label_id}, complete)
+	},
+	annotate_and_set_color: function(participant_id, event_id, label_id, color, complete) {
+		create_query("/participant/"+participant_id+"/"+event_id+"/annotate",{label_id:label_id, color:color}, complete)
 	}
 }
 var Study = {
