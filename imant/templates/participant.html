@@ -160,7 +160,7 @@
 			<h3>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </h3>
 		{% endif %}
 
-		<h4>Showing {{images | length}} images out of {{num_images}}</h4>
+		<h4 id="imagenum-text">Showing (calculating) images out of {{num_images}}</h4>
 		<div class="clearfix" id="calendar-box">
 			{% if days|length >0 %}
 			{% set curr_day = None %}
@@ -306,15 +306,17 @@
 	var evts;
 	var time_load = new Date()
 	evts = {{evts_json | safe}};
-	function find_event(event_id) {
-		return $.grep(evts, function(e) {return e.id==event_id});
+	var evt_lookup = {};
+	for (var i = 0, len = evts.length; i < len; i++) {
+	    evt_lookup[evts[i][0]] = evts[i];
 	}
 	imgs = {{imgs_json | safe}}
 	$(function() {generate_images(imgs, evts)})
 	function generate_images() {
 
 		console.log("imgs & evts done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
-		// var idx = 0;
+		$("#imagenum-text").html("Showing "+imgs.length+" images out of {{num_images}}")
+
 		var html = "";
 		var prev_date =[-1,-1,-1]
 		imgs.forEach(function(img, idx) {
@@ -360,8 +362,9 @@
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
 			var label_id=null;
 			if (event_id!==undefined) {
-				evt = find_event(event_id);
+				var evt = evt_lookup[event_id];
 				if (evt) label_id = evt[1];
+				console.log(event_id, evt,label_id)
 			}
 			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : "label-id='"+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
 		 	if (!(event_id!==undefined)) {			 	
@@ -466,6 +469,8 @@
 				} else console.log("something went wrong")
 
 		}
+
+		// THUMBNAIL HOVER BOX
 		var idx_prev = -1;
 		$("img.thumbnail").unbind().click(function() { 
 			// console.log($(this).closest(".img").attr("id"));
@@ -495,7 +500,6 @@
 				}
 			}
 			text+="</p>"
-			console.log(text)
 			idx_prev = idx;
 			$(".thumbnail-hover").html(text)
 			$(".thumbnail-hover").show().hover(null, function() {
