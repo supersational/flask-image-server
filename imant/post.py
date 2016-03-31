@@ -1,5 +1,5 @@
 from imant import app
-from flask import request, redirect, make_response
+from flask import request, redirect, make_response, jsonify
 from imant.db import Event, Image, Participant, Study, Label
 from imant.login import login_required, login_check
 from json import dumps as json_dumps
@@ -116,34 +116,32 @@ def annotate(participant_id, event_id):
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	event = Event.query.filter(Event.event_id==event_id).one()
 	event.label = label
+	if 'color' in request.form:
+		label.color = request.form['color']
 	return str(label) + str(participant) + str(event)
-	if study and participant:
-		if study in participant.studies:
-			participant.studies.remove(study)	
-			return redirect("/study/" + study_id)
-		else:
-			return "participant not in that study"
-	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
 @app.route("/participant/<int:participant_id>/load_images", methods=["POST"])
 @login_required
 @login_check()
 def load_images(participant_id):
+	print "participant_id", participant_id
 	query = Image.query.filter(Image.participant_id==participant_id)
-	try:
-		start_id = int(request.form['start_id'])
-		query.filter(Image.image_id>=start_id)
-	except ValueError:
-		start_id = float("inf")
-	try:
-		end_id = int(request.form['end_id'])
-	except ValueError:
-		end_id = -float("inf")
-	try:
-		number = int(request.form['number'])
-	except ValueError:
-		number = None
+	start_id = request.form.get('start_id', None) # get with default value
+	if start_id != None:
+		start_id = int(start_id)
+		query.filter(Image.image_id>start_id)
+	print "start_id", start_id
 
+	end_id = request.form.get('end_id', None)
+	if end_id is not None:
+		end_id = int(end_id)
+		query.filter(Image.image_id<end_id)
+
+	print "end_id", end_id
+
+	number = request.form.get('number', None)
+
+	print "number", number
 	if number is not None:
 		images = query.limit(number)
 	else:
@@ -151,7 +149,9 @@ def load_images(participant_id):
 	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id)).limit(number)
 	# else:
 	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id))
-	return json_dumps([x.to_array() for x in images])
+	# response = make_response(json_dumps([x.to_array() for x in images]))
+	print images
+	return jsonify(json_dumps([x.to_array() for x in images]))#)", 200, {'Content-type', 'application/json'})
 
 #  note: not technically a post request, but still belongs here for now..
 @app.route("/participant/<int:participant_id>/download_annotation", methods=["GET"])

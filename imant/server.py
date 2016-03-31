@@ -40,8 +40,8 @@ def index():
 	)
   
 @app.route("/reboot_db", methods=["GET"])
-@login_required
-@requires_admin
+# @login_required
+# @requires_admin
 def reboot_db_page():
 	return """<h2>reboot DB options:</h2>
 		<form action='/reboot_db' method='POST'> 
@@ -55,8 +55,8 @@ def reboot_db_page():
 		</form>"""
 	
 @app.route("/reboot_db", methods=["POST"])
-@login_required
-@requires_admin
+# @login_required
+# @requires_admin
 def reboot_db_action():
 	print "reboot_db_action"
 	option = request.form['option']
@@ -78,6 +78,12 @@ def drop_db():
 	drop_sql = db.read_log()
 	db_session = db.create_db()
 	create_sql = db.read_log()
+
+	# create admin user
+	u1 = User('Aiden', 'Aiden', admin=True)
+	if len(User.query.filter(User.username==u1.username).all())==0:
+	    db_session.add(u1)
+
 	with open('imant/create_db.txt','w') as f:
 			f.write(create_sql)
 	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+create_sql+"</pre>"
@@ -237,11 +243,11 @@ def render_participant(participant_id, event=None, kwargs={}):
 		if daterange is not None:
 			print daterange
 			images = participant.images.filter((Image.image_time>=daterange['min']) & \
-				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(100)
+				(Image.image_time<=daterange['max'])).order_by(Image.image_time).limit(600)
 		else:
 			# this is 0.3s faster.. but takes longer to render template when used
 			# images = participant.get_images()
-			images = participant.images.order_by(Image.image_time).limit(100)
+			images = participant.images.order_by(Image.image_time).limit(600)
 
 	print "time_before_get_image_in_range: ".ljust(40), round(time.time()-t0, 4)
 		
@@ -257,8 +263,8 @@ def render_participant(participant_id, event=None, kwargs={}):
 	sql_text = ""#db.read_log()[:6000]
 	print ("time_before_json_dumps ("+str(len(images))+" images) : ").ljust(40), round(time.time()-t0, 4)
 	# render with the first 100 images only
-	imgs_array = json_dumps([x.to_array() for x in images[:100]])
-	evts_array = json_dumps([x.to_array() for x in sorted(participant.events, key=lambda x: x.start_time)])
+	imgs_array = json_dumps([x.to_array() for x in images[:600]])
+	evts_dict = json_dumps(dict(x.to_array() for x in participant.events))# sorted( evts, key=lambda x: x.start_time)])
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
@@ -270,14 +276,17 @@ def render_participant(participant_id, event=None, kwargs={}):
 		sql_text=sql_text,
 		schema=json_dumps(Schema.query.first().to_json()),
 		schema_list=Schema.query.all(),
-		imgs_json=imgs_array,
-		evts_json=evts_array,
+		imgs_array=imgs_array,
+		evts_dict=evts_dict,
 		**kwargs
 	)))
 
 @app.errorhandler(500)
 def internal_server_error(error):
 	return "Error 500: " + str(error)
+@app.errorhandler(400)
+def internal_server_error(error):
+	return "Error 400: " + str(error)
 
 @app.after_request
 def end_timer(response):

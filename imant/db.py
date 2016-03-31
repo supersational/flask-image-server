@@ -54,12 +54,15 @@ class Event(Base):
     images = relationship(u'Image', back_populates='event', order_by='Image.image_time')
     label = relationship(u'Label', back_populates='events')
 
-    def __init__(self, participant_id, start_time, end_time, comment=''):
+    def __init__(self, participant_id, start_time, end_time, comment='', label_id=None):
         self.participant_id = participant_id
         self.start_time = start_time
         self.end_time = end_time
         self.comment = comment
         self.number_times_viewed = 0
+        if label_id is not None:
+            self.label_id = label_id
+
 
     def get_images(self):
         return Image.query.filter((Image.participant_id==self.participant_id) & (self.contains(Image))).order_by(Image.image_time.desc()).all()
@@ -197,7 +200,7 @@ class Event(Base):
     def split_left(self, image):
         index = self.images.index(image)
         if not index is None and index>0:
-            new_event = Event(self.participant_id, self.start_time, self.end_time, self.comment)
+            new_event = Event(self.participant_id, self.start_time, self.end_time, comment=self.comment, label_id=self.label_id)
             for img in self.images[:index]:
                 img.event = new_event
             new_event.adjust_time()
@@ -208,7 +211,7 @@ class Event(Base):
     def split_right(self, image):
         index = self.images.index(image)+1
         if not index is None and index<len(self.images):
-            new_event = Event(self.participant_id, self.start_time, self.end_time, self.comment)
+            new_event = Event(self.participant_id, self.start_time, self.end_time, comment=self.comment, label_id=self.label_id)
             for img in self.images[index:]:
                 img.event = new_event
             new_event.adjust_time()
@@ -274,8 +277,7 @@ class Event(Base):
         return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time)+i.full_url for i in self.images]))
 
     def to_array(self):
-        return [self.event_id,
-                self.label_id,
+        return self.event_id, [self.label_id,
                 self.comment,
                 map(serialize_datetime, [self.start_time, self.end_time])]
 
