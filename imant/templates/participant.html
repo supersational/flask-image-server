@@ -111,16 +111,14 @@
 		background-color: {{bg_color_a}};
     	padding-right: 1px;
 	}
-    .left-sticky:hover {
-/*    	border-right: 1px solid rgba(100,100,100,0.5);
-    	-webkit-transition: border-right 0.3s;
-    	transition: border-right 0.3s;*/
-    }
 	.left-sticky.fix-search {
 	    position: fixed;
 	    top: 0px;
 	    height: 100%;
 	  }
+	 .watermark {
+	 	color: #999;
+	 }
 	 #dropdown-box {
 	 	position:absolute;
 	 	top:55px;
@@ -139,15 +137,21 @@
 	 	margin-right: 20px;
 
 	 }
-	 .date-seperator{
+	 .gallery-seperator{
 	 	clear:left;
 	 }
-
+	 .thumbnail-hover {
+	 	position:absolute;
+	 	background-color:rgba(255,255,255,0.8);
+	 	text-align:center;
+	 	cursor: pointer;
+	 	pointer-events:none;
+	 }
     </style>
 {% endblock %}
 {% block pagename %} Participant: {{name}} {% endblock %}
 {% block title %}
-	<a style="color:black; padding:10px;margin:-10px;display:inline-block;" href="/participant/{{id}}" id="title-link"> Participant: {{name}} </a>
+	<a style="color:black; padding:10px;margin:-10px;display:inline-block;" href="/participant/{{id}}" id="title-link"> <img style='padding-top:10px;margin-right:15px' src='http://127.0.0.1:5001/static/calendar.png' />Participant: {{name}} </a>
 {% endblock %}
 {% block content %}
 
@@ -185,36 +189,18 @@
 		</div>
 	</div>
 	<script>
-	schema_json = [{{schema | safe}}];
-	function find_label(label_id) {
-		if (label_id<=0) return false; // don't allow root or folder nodes to be returned
-		return findNode(label_id, schema_json[0]) 
+	schema_json = {{schema | safe}};
+	labels = {}
+	add_label(schema_json)
+	function add_label(currentNode) {
+		if (currentNode.type=="label") {
+			labels[currentNode.id] = currentNode
+		}
+		if (currentNode.children) {
+			currentNode.children.forEach(function(childNode) {add_label(childNode)})
+		}
 	}
-	function findNode(id, currentNode) {
-	    var i,
-	        result;
 
-	    if (id == currentNode.id) {
-	        return currentNode;
-	    } else {
-	    	// console.log(currentNode.type, currentNode.text, currentNode.children ? currentNode.children.length : 0)
-	        // Use a for loop instead of forEach to avoid nested functions
-	        // Otherwise "return" will not work properly
-	        if (currentNode.children) for (i = 0; i < currentNode.children.length; i += 1) {
-
-	            // Search in the current child
-	            result = findNode(id,  currentNode.children[i]);
-
-	            // Return the result if the node has been found
-	            if (result !== false) {
-	                return result;
-	            }
-	        }
-
-	        // The node has not been found and we have no more options
-	        return false;
-	    }
-	}
 	</script>
 
 </div>
@@ -290,7 +276,7 @@
     </div>
 
 </div>
-<div class="thumbnail-hover" style="position:absolute; background-color:rgba(255,255,255,0.8);text-align:center;cursor: pointer;"></div>
+<div class="thumbnail-hover"></div>
 
 	<script>
 	var time_start = new Date()
@@ -302,12 +288,8 @@
 	}
 	var evts;
 	var time_load = new Date()
-	evts = {{evts_json | safe}};
-	var evt_lookup = {};
-	for (var i = 0, len = evts.length; i < len; i++) {
-	    evt_lookup[evts[i][0]] = evts[i];
-	}
-	imgs = {{imgs_json | safe}}
+	evts = {{evts_dict | safe}}; // unsorted but can be used as lookup table
+	imgs = {{imgs_array | safe}}; // sorted by time
 	$(function() {generate_images(imgs, evts)})
 	function generate_images() {
 
@@ -325,37 +307,32 @@
 			html += create_image(img, idx);
 			prev_date = date;
 		})
-
+		html+= "<h3 class='gallery-seperator load-more' style='text-align:right;padding-right:30px;'><button onClick='load_more_button()'>Load more</button></h3>"
 		// inject the newly created html
 		$(".gallery").html(html);
 		// $("#right-bar").append("<h2>more</h2>")
 		console.log("gallery done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
-		eventize_images()
-		console.log("eventize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
-		$("div.img").each(function(i, el) {
-			svg_ize($(el), i);
-		})
+		// console.log("eventize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
+		$("div.img").each(function(i, el) {svg_ize($(el), i); })
 		console.log("svg_ize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
-		// $("div.img").each(function() {})
-		// image = {
-		// 	image_id: function()
-		// }
+		$("div.img").each(function(i, el) {svg_colorize($(el), i); })
+		console.log("svg_colorize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
+
 
 		function create_day_seperator(date) { 
 			var newDate = new Date(date[0], date[1], date[2])
 			console.log(date, newDate.toDateString())
-			return "<h2 class='date-seperator'>"+newDate.toDateString()+"</h2>";
+			return "<h2 class='gallery-seperator'>"+newDate.toDateString()+"</h2>";
 		}
 		function create_image(i, idx) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
 			var label_id=null;
 			if (event_id!==undefined) {
-				var evt = evt_lookup[event_id];
-				if (evt) label_id = evt[1];
-				console.log(event_id, evt,label_id)
+				var evt = evts[event_id];
+				if (evt) label_id = evt[0];
 			}
-			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
+			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'" ">' // ondrop="img_drop(event)" ondragover="img_hover(event)
 		 	if (!(event_id!==undefined)) {			 	
 				if (!is_last) {
 					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -371,40 +348,40 @@
 			str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
 			return str;
 		}
-		function eventize_images(idx_start, idx_end){
-			imgs_i = idx_start || 0;
-			imgs_len = idx_end!==undefined ? idx_end+1 : imgs.length;
-			// imgs_len = imgs.length;
-			evts_i = 0;
-			evts_len = evts.length;
-			// evts.forEach(function(e){
-			// console.log(evts[evts_i], imgs_i)
-			// console.log(imgs[imgs_i][3])
+		// function eventize_images(idx_start, idx_end){
+		// 	imgs_i = idx_start || 0;
+		// 	imgs_len = idx_end!==undefined ? idx_end+1 : imgs.length;
+		// 	// imgs_len = imgs.length;
+		// 	evts_i = 0;
+		// 	evts_len = evts.length;
+		// 	// evts.forEach(function(e){
+		// 	// console.log(evts[evts_i], imgs_i)
+		// 	// console.log(imgs[imgs_i][3])
 
-			// console.log(date_compare(evts[evts_i][3], imgs[imgs_i][3]))
-			var already_checked_start = false;
-			while(evts_i<evts_len && imgs_i<imgs_len) {
-				var cmp = already_checked_start || date_compare(evts[evts_i][3][0], imgs[imgs_i][3])
-				// console.log("cmp: ", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][0].join(",") + "  " , imgs[imgs_i][3].join(",")) 
-				if (cmp==-1) { // if start is less than img time
-					evts_i--;
-					console.log('evts_i++ THIS SHOULDNT HAPPEN IF EVENTS NOT OVERLAPPING AND ORDERED')
+		// 	// console.log(date_compare(evts[evts_i][3], imgs[imgs_i][3]))
+		// 	var already_checked_start = false;
+		// 	while(evts_i<evts_len && imgs_i<imgs_len) {
+		// 		var cmp = already_checked_start || date_compare(evts[evts_i][3][0], imgs[imgs_i][3])
+		// 		// console.log("cmp: ", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][0].join(",") + "  " , imgs[imgs_i][3].join(",")) 
+		// 		if (cmp==-1) { // if start is less than img time
+		// 			evts_i--;
+		// 			console.log('evts_i++ THIS SHOULDNT HAPPEN IF EVENTS NOT OVERLAPPING AND ORDERED')
 
-				} else {
-					already_checked_start = true;
-					cmp = date_compare(evts[evts_i][3][1], imgs[imgs_i][3])
-					// console.log("cmp2:", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][1].join(",") + "  " , imgs[imgs_i][3].join(",")) 
-					if (cmp>0) {
-						// console.log(evts_i, imgs_i)
-						imgs_i++;
-					} else {
-						// console.log(evts_i, imgs_i)
-						evts_i++;
-						already_checked_start = false;
-					}
-				}
-			}
-		}
+		// 		} else {
+		// 			already_checked_start = true;
+		// 			cmp = date_compare(evts[evts_i][3][1], imgs[imgs_i][3])
+		// 			// console.log("cmp2:", cmp > 0 ? "e>i" : (cmp==0 ? "e=i" : "e<i"),cmp, evts[evts_i][3][1].join(",") + "  " , imgs[imgs_i][3].join(",")) 
+		// 			if (cmp>0) {
+		// 				// console.log(evts_i, imgs_i)
+		// 				imgs_i++;
+		// 			} else {
+		// 				// console.log(evts_i, imgs_i)
+		// 				evts_i++;
+		// 				already_checked_start = false;
+		// 			}
+		// 		}
+		// 	}
+		// }
 		// EVENT python
 		/*[self.event_id,
                 self.label_id,
@@ -419,45 +396,44 @@
             [1 if self.is_first else 0, 1 if self.is_last else 0]
         ] */
 		function svg_ize(el, i) {
-			// var new_svg= makeSVG("svg", {width:{{im_both}}, height:30});
-			// el.append(new_svg)
 			var container = el.find("svg")
 			var img = imgs[i];
 			// console.log(el,i, img[0],img[5])
-				if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
-					console.log("neither or no event")
-					makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
-					//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
-				}
-				else if (img[5][0] && img[5][1]) {
-					// console.log("both")
-					makeCircle(container,true)
-					makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
-					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
-				}
-				else if (img[5][1]) { // is-last
-					// console.log("last")
-					makeCircle(container,true)
-					makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:0, nx:0, id:img[0] }, true)
-					el.prepend('<div class="split left" split-dir="left"></div>')
-					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
-				}
-				else if (img[5][0]) { // is-first
-					// console.log("first")
-					makeCircle(container,true)
-					makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
-					el.prepend(' <div class="split right" split-dir="right"></div>')
-					//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
-				}
-				else if (!img[5][0] && !img[5][1]) { // connector
-					// console.log("connector")
-					el.prepend(' <div class="split right" split-dir="right"></div><div class="split left" split-dir="left"></div>')
-					makeLine(container, {width:{{im_both}}, nw:{{im_both}}, x:0, nx:0, id:img[0] }, true)
+			if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
+				console.log("neither or no event")
+				makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
+				//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
+			}
+			else if (img[5][0] && img[5][1]) {
+				// console.log("both")
+				makeCircle(container,true)
+				makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
+				//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
+			}
+			else if (img[5][1]) { // is-last
+				// console.log("last")
+				makeCircle(container,true)
+				makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:0, nx:0, id:img[0] }, true)
+				el.prepend('<div class="split left" split-dir="left"></div>')
+				//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
+			}
+			else if (img[5][0]) { // is-first
+				// console.log("first")
+				makeCircle(container,true)
+				makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
+				el.prepend(' <div class="split right" split-dir="right"></div>')
+				//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
+			}
+			else if (!img[5][0] && !img[5][1]) { // connector
+				// console.log("connector")
+				el.prepend(' <div class="split right" split-dir="right"></div><div class="split left" split-dir="left"></div>')
+				makeLine(container, {width:{{im_both}}, nw:{{im_both}}, x:0, nx:0, id:img[0] }, true)
 
-					
-				} else console.log("something went wrong")
+				
+			} else console.log("something went wrong")
 
 		}
+
 		// date (in array format) comparison
 		function date_compare(a, b) {
 			// python function for generating these dates is:
@@ -474,48 +450,61 @@
 		// THUMBNAIL HOVER BOX
 		var idx_prev = -1;
 		$("img.thumbnail").unbind().click(function() { 
-			// console.log($(this).closest(".img").attr("id"));
-			// console.log(this);
 			var idx = parseInt($(this).closest(".img").attr("id"))
-			// console.log(idx);
 			openPhotoSwipe(idx)
+
 		}).hover(function() { 
-			var idx = parseInt($(this).closest(".img").attr("id"))
+			var idx = parseInt($(this).closest(".img").attr("image-id"))
 			if (idx==idx_prev) return;
 			var text = "<p>image-id:" + idx;
 			var event_id = parseInt($(this).closest(".img").attr("event-id"))
 			text += "<br>event_id:"+event_id
 			if (!isNaN(event_id)) {
-				for (var i=0; i<evts.length; i++) {
-					if (evts[i][0] === event_id) {
-						var label_id = evts[i][1]
-						break
-					}
-				}
+				label_id = evts[event_id][0];
 				text += "<br>label-id:"+label_id;
-				if (!isNaN(parseInt(label_id))) {
-					var label_el = $("[label-id="+label_id+"]")
-					console.log("li[label-id="+label_id+"]",label_el)
-					if (label_el.length==1)
-						text+=label_el.innerHTML
+				if (labels[label_id]) {
+					text+=labels[label_id].text
 				}
 			}
 			text+="</p>"
 			idx_prev = idx;
-			$(".thumbnail-hover").html(text)
-			$(".thumbnail-hover").show().unbind().hover(null, function() {
-				$(this).hide();
-				idx_prev = -1;
-			}).dblclick(function() {
-				openPhotoSwipe(idx)
-			})
+			$(".thumbnail-hover").html(text).show()
+			// $(".thumbnail-hover").show().unbind().hover(null, function() {
+			// 	$(this).hide();
+			// 	idx_prev = -1;
+			// }).dblclick(function() {
+			// 	openPhotoSwipe(idx)
+			// })
 			var img_pos = $(this).offset()
 			$('.thumbnail-hover').css({'top':img_pos.top,'left':img_pos.left}).fadeIn('slow');
 
+		}, function() {
+			idx_prev = -1;
+			$(".thumbnail-hover").hide()
 		})
 	}
-
-
+	function load_more_button() {
+		load_more_images(200, function() {generate_images()});
+	}
+	function load_more_images(num, callback) {
+		Image.load_json({{id}}, imgs[imgs.length-1][0], undefined, num, callback);
+	}
+	function svg_colorize(el, i, color) {
+		if (!color) {
+			var img = imgs[i];
+			var evt = evts[img[1]]
+			var label = labels[evt[0]];
+			if (label && label.color) {
+				color = label.color
+			}
+		}
+		if (color) {
+			if (!$(el).is("svg")) el = el.find("svg");
+			el.find(".line").css({fill:color})
+			el.find(".circle").css({stroke:color})
+		}
+		// if (label) console.log(i, label.color, label, img)
+	}
 	</script>
 
 	<script>
@@ -583,29 +572,43 @@
 	// see https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer
 	var jstree_drag, img_drop, img_hover;
 	(function() {
-		var label_id = null;
+		var label_id_drag = null;
+		var dragged_annotation = null;
 		var event_id = null;
+		function create_dragged_annotation(ev) {
+			var posX=ev.pageX;
+			var posY=ev.pageY;
+			var sizeX=ev.target.getBoundingClientRect().width;
+			var sizeY=ev.target.getBoundingClientRect().height;
+			var target = $(ev.target).clone().addClass("jstree-clicked").addClass("moving-annotation").css({"position":"absolute","background-color":"white","pointer-events":"none", "padding":10,"border-radius": 10, "border":"1px solid #333", "z-index":100}).appendTo(document.body)
+			// target.css({'left':ev.pageX, 'top':ev.pageY});
+
+			var move_event = $(document).mousemove(function(e) {
+				target.css({'left':e.pageX-sizeX/2, 'top':e.pageY-sizeY/2});
+			})
+			$(document).mouseup(function() { $(".moving-annotation").remove();$(document).unbind("mousemove",move_event) })
+			
+		}
 		jstree_drag = function(ev) {
-			// console.log("drag",$("#jstree")[0], $.contains($("#jstree")[0],ev.target))
+			console.log("drag",ev.target, $.contains($("#jstree")[0],ev.target))
 			// check if the dragged node is contained within jstree
 			if ($.contains($("#jstree")[0],ev.target)) {
+				
 				var closest_leaf = $(ev.target).closest(".jstree-leaf");
 				// console.log('closest_leaf', closest_leaf)
 				// must not be able to drag folders
 				if (closest_leaf.length==1) {
+					create_dragged_annotation(ev)
 					// find the "id" = "label-id" of the selected node
-					label_id =  closest_leaf.attr("id")
-					// console.log("label-id", label_id)
-				    left_col_expanded = false;
-				    expand_left_col();
+					label_id_drag =  closest_leaf.attr("id")
+					console.log("label-id", label_id_drag)
 				}
 			}
 		}
 		img_hover = function(ev) {
-		    // var label_id = ev.dataTransfer.getData("label-id");
-		    // if (!isNaN(parseInt(label_id))) {
-		    if (label_id!==null) {
-			    console.log("allowDrop", label_id, ".")
+
+		    if (label_id_drag!==null) {
+			    // console.log("allowDrop", label_id_drag, ".")
 			    ev.preventDefault();
 			    var new_event_id = $(ev.target).closest("div.img").attr("event-id");
 			    // if changed..
@@ -617,16 +620,16 @@
 			    	}
 		    	}
 			}
-		    else console.log("don'tallowDrop", label_id, ".", ev)
 		}
 
 		img_drop = function(ev) {
-		    ev.preventDefault();
-		    console.log("drop data:", label_id,"target: ", ev.target, $(ev.target).closest("div.img")[0])
-		    if (label_id!==null) {
+		    // ev.preventDefault();
+		    console.log("drop data:", label_id_drag,"target: ", ev.target, $(ev.target).closest("div.img")[0])
+		    if (label_id_drag!==null) {
 		    	event_id = $(ev.target).closest("div.img").attr("event-id")
-		    	var label = find_label(label_id);
-		    	if (event_id!==undefined && label!=false) {
+		    	console.log(event_id)
+		    	var label = labels[label_id_drag];
+		    	if (event_id!==undefined && label) {
 		    		var imgs_in_this_event = $("div.img[event-id="+event_id+"]")
 		    		// callback will move color from background to event handles
 		    		var callback = function(e) {
@@ -636,19 +639,45 @@
 			    		imgs_in_this_event.find(".circle").css("stroke", label.color)
 		    		}
 		    		if (label.color) {
-			    		Event.annotate({{id}}, event_id, label_id, callback);
+			    		Event.annotate({{id}}, event_id, label_id_drag, callback);
 		    		} else {
 		    			// need to generate color for the first time, and persist to backend
 			    		label.color = getRandomColor();
-			    		Event.annotate_and_set_color({{id}}, event_id, label_id, label.color, callback);
+			    		Event.annotate_and_set_color({{id}}, event_id, label_id_drag, label.color, callback);
 		    		}
+		    		evts[event_id][0] = label_id_drag;
 		    		// add background color to show action has been performed (instant)
 		    		imgs_in_this_event.css("background-color", label.color)
 		    	}
 			}
 		}
-		$(document).mouseup(function() {
-			label_id = null;
+		$(document).mousemove(function(ev) {
+			if ($.contains($(".gallery")[0], ev.target)) {
+				img_hover(ev);
+			} else {
+				event_id = null;
+				$(".selected").removeClass("selected")
+			}
+			if (label_id_drag!=null) {
+				ev.preventDefault()
+				if (!$.contains($("#jstree")[0],ev.target)) {
+					is_dragging = true;
+					left_col_expanded = false;
+					expand_left_col();
+				}
+			}
+		});
+		$(document).mouseup(function(ev) {
+			if ($.contains($(".gallery")[0], ev.target)) {
+				// ev.preventDefault();
+				img_drop(ev);
+				console.log("OFF")
+				label_id_drag = null;
+				is_dragging = false;
+			}
+			$(".selected").removeClass("selected")
+		}).mousemove(function(ev) {
+			// console.log(label_id_drag, $.contains($("#jstree")[0],ev.target))
 		})
 	})();
 
@@ -673,7 +702,7 @@
 				$('#jstree_box').show()
 			}).jstree({
 				"core" : {
-					'data': schema_json[0].children,
+					'data': schema_json.children,
 					"multiple" : false,
 					"animation" : 0,
 					"check_callback" : true,
@@ -695,16 +724,27 @@
 				$("#jstree").jstree(true).toggle_node(e.target);
 			}).bind("move_node.jstree", function (e, data) {console.log("move_node",e, data)}); 
 			var to = false;
+			var watermark = "search" // to display "greyed out" search string
 			$('#jstree_searchbox').keyup(function () {
 				if(to) { clearTimeout(to); }
 				to = setTimeout(function () {
 					var v = $('#jstree_searchbox').val();
 					$('#jstree').jstree(true).search(v);
 				}, 250);
-			});
+			}).focus(function(){
+		  		if ($(this).val() == watermark){
+		    		$(this).val('').removeClass('watermark');
+				}
+		 	}).blur(function(){
+		  		if ($(this).val().length == 0){
+		    		$(this).val(watermark).addClass('watermark');
+				}
+		 	}).val(watermark).addClass('watermark');
 
 			// attach  dragging event
 			$("#jstree").mousedown(jstree_drag)
+			$("#jstree").on('open_node.jstree', expand_left_col);
+			$("#jstree").on('close_node.jstree', expand_left_col);
 		});
 	})();
 
@@ -722,7 +762,7 @@
 		expand_left_col = function() { // on
 		        // var fn = function() { console.log("done")};
 		        var max_width = Math.min(left_bar_width+left_col_expanded*500, $( window ).width()*0.9);
-		        console.log(left_col_expanded ? "on" : "off", max_width, $('#left-bar')[0].scrollWidth)
+		        // console.log(left_col_expanded ? "on" : "off", max_width, $('#left-bar')[0].scrollWidth)
 		        $('#left-bar').stop().animate({
 		        	width:Math.min(max_width, Math.max(left_bar_width, $('#left-bar')[0].scrollWidth))
 		        }, {duration: 200, done: null});
@@ -736,16 +776,16 @@
 			    }
 		    }, 
 		    function() { // off
-		        console.log('hover off');
+		        // console.log('hover off');
 		        left_col_expanded = false;
 		        expand_left_col();
 		    }
 		);
-		$("#jstree").on('click', function() {
-			// console.log("click");
-			left_col_expanded = true;
-			expand_left_col();
-		});
+		// $("#jstree").on('click', function() {
+		// 	// console.log("click");
+		// 	left_col_expanded = true;
+		// 	expand_left_col();
+		// });
 	})();
 
 
@@ -798,30 +838,33 @@
 		var event_to_right = null;
 		var event_to_right_is_standalone = null;
 		var selection_is_expanding = null;
-
+		// for colors:
+		var col_this = null;
+		var col_pair = null;
 		 $(document).mouseup(function() {
 
 		 	// modify event boundaries
 			if (start_img!=null && start_id != curr_id) {
 				console.log("mouseup on ", this);
 				var image_id = $(curr_img).attr("image-id");
-				if (image_id===undefined) return false;
+				if (image_id!==undefined) { 
 
-				if (selection_is_expanding==true) {
-					console.log("db.add_image("+{{id}}+","+start_event_id+","+image_id+")")
-					Event.add_image({{id}}, start_event_id, image_id, reload_page)
-				}
-				if (selection_is_expanding==false) {
-					if (curr_id > start_id) var direction = "left"
-					else var direction = "right"
-					// if (curr_id == event_pair_id) include_target = false;
-					// else include_target = true;
-					var include_target = false;
-					console.log("db.remove_image("+{{id}}+","+start_event_id+","+image_id+","+direction+", "+include_target+")")
-					// need to make sure don't remove the last image in the event!
-					Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_page)
-				}
-				fix_appearance()	        	
+					if (selection_is_expanding==true) {
+						console.log("db.add_image("+{{id}}+","+start_event_id+","+image_id+")")
+						Event.add_image({{id}}, start_event_id, image_id, reload_page)
+					}
+					if (selection_is_expanding==false) {
+						if (curr_id > start_id) var direction = "left"
+						else var direction = "right"
+						// if (curr_id == event_pair_id) include_target = false;
+						// else include_target = true;
+						var include_target = false;
+						console.log("db.remove_image("+{{id}}+","+start_event_id+","+image_id+","+direction+", "+include_target+")")
+						// need to make sure don't remove the last image in the event!
+						Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_page)
+					}
+					fix_appearance()
+				} 	
 			}
 		 	else if (start_img!==null ) reset_all()
 		 	curr_img = null;
@@ -848,6 +891,8 @@
 			start_img_is_standalone = ( $(start_img).attr('is-first')=="1" && $(start_img).attr('is-last')=="1" )
 			start_id  = curr_id  = parseInt(start_img.id)
 			start_event_id = parseInt($(start_img).attr('event-id'));
+			col_this = labels[evts[start_event_id][0]].color
+			console.log("col_this", col_this)
 			// find other 'end' of event (if none set to null)
 			event_pair_img = $("[event-id="+start_event_id+"]").filter( "[is-first='1'],[is-last='1']" ).not(start_img);
 			event_pair_img = (event_pair_img.length==0) ? null : event_pair_img[0];
@@ -892,6 +937,7 @@
 
 				// create dict of id's to modify
 				var modify = {}
+				var other_event = null
 				// if same id as started do nothing
 				if (!(start_id == curr_id)) {
 
@@ -899,6 +945,8 @@
 						selection_is_expanding = false;
 						// if shrinking own event, hide parts that will no longer exist
 						if (start_id < curr_id) {
+							var direction = "left";
+							other_event = event_to_left;
 							// moving towards left, this does the strike-through
 							for( var i=start_id; i<curr_id; i++ ){
 								if (event_to_left!==false) modify[i] = "through"
@@ -912,6 +960,8 @@
 		 						else modify[event_to_left] = "through"
 		 					}
 		 				} else {
+							var direction = "right";
+							other_event = event_to_right;
 							// moving towards right
 		 					for( var i=start_id; i>curr_id; i-- ){
 								if (event_to_right!==false) modify[i] = "through"
@@ -929,6 +979,7 @@
 						// must be expanding into another event:
 						selection_is_expanding = true;
 						if (start_id < curr_id) {
+							var direction = "right";
 							// moving towards right
 							console.log("moving towards right")
 							// strike-through images behind move
@@ -942,11 +993,13 @@
 							var img_on_right = $("div#"+(curr_id+1)+".img");
 							if (img_on_right.length==1) {
 								if (img_on_right.attr("event-id")!=="") {
+									other_event = parseInt(img_on_right.attr("event-id"))
 									if (img_on_right.attr("is-last")=="1") modify[curr_id+1] = "standalone"
 									else modify[curr_id+1] = "from-right"
 								}
 							}
 						} else {
+							var direction = "left";
 							// moving towards left
 							console.log("moving towards left")
 
@@ -959,6 +1012,7 @@
 							var img_on_left = $("div#"+(curr_id-1)+".img");
 							if (img_on_left.length==1) {
 								if (img_on_left.attr("event-id")!=="") {
+									other_event = parseInt(img_on_left.attr("event-id"))
 									if (img_on_left.attr("is-first")=="1") modify[curr_id-1] = "standalone"
 									else modify[curr_id-1] = "from-left"
 								}
@@ -967,14 +1021,29 @@
 					}
 				}
 				reset_all()
+
+				// var other_event_id = $(".img[id="+modify_cutoff+"]").attr("label-id")
+				// console.log('other_event_id',other_event_id)
+				console.log('other_event', other_event)
+				if (other_event && evts[other_event] && evts[other_event][0]!==null) 
+					var col_other = labels[evts[other_event][0]].color
+				if (selection_is_expanding) {col_default = col_this; col_end = col_other;}
+				else {col_default = col_other; col_end = col_this}
+				console.log("cols:", col_default, col_other, modify)
+				other_i = (direction=="right") ?
+					curr_id +1 :
+					curr_id -1;
+
  				for (i in modify) {
- 					console.log(i, modify[i])
- 					modify_img(i, modify[i]);
+ 					if (i == other_i) 
+						modify_img(i, modify[i], col_other);
+					else
+						modify_img(i, modify[i], col_this);
  				}
 				console.log("moved" ,same_event ? "same_event" : "", start_id, curr_id)
 			}
 		});
-		function modify_img(id, state) {
+		function modify_img(id, state, color) {
 			var img = $("div#"+id+".img")
 			var svg = img.find("svg")
 			if (state=="from-left") {
@@ -1000,6 +1069,7 @@
 				svg.find(".line").attr("visibility","hidden");
 				svg.find(".circle").attr("visibility","hidden")
 			}
+			if (color) svg_colorize(svg, null, color) 
 		}
 
 	})
@@ -1138,8 +1208,16 @@
         }
     })
 
+
+
+
+
+
     var slides = []
-    $(function() {slides = new Array(imgs.length)})
+    for(var i = 0; i < imgs.length; i++) {
+    	slides[i] = {}
+    }
+    // $(function() {slides = new Array(imgs.length)})
 	function openPhotoSwipe(index) {
 		console.log(index)
 		var pswpElement = document.querySelectorAll('.pswp')[0];
@@ -1205,7 +1283,7 @@
 
 		// gettingData event fires each time PhotoSwipe retrieves image source & size
 		gallery.listen('gettingData', function(index, item) {
-			console.log(index, item, imgs[index])
+			// console.log(index, item, imgs[index])
 		    // Set image source & size based on real viewport width
 		    if( useLargeImages ) {
 		        item.src = imgs[index][4][2];
@@ -1218,10 +1296,12 @@
 		    }
 
 		});
+		gallery.listen('afterChange', function() {
+			console.log('index', gallery.getCurrentIndex()) 
+			// $(document).scrollTo($("div.img#"+gallery.getCurrentIndex()))
+		});
 
-	    for(var i = 0; i < imgs.length; i++) {
-	    	slides[i] = {}
-	    }
+
 
 	    gallery.init();
 	}
