@@ -77,10 +77,10 @@ def drop_db():
 	db.drop_db()
 	drop_sql = db.read_log()
 	db_session = db.create_db()
-	sql = db.read_log()
+	create_sql = db.read_log()
 	with open('imant/create_db.txt','w') as f:
-			f.write(sql)
-	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+sql+"</pre>"
+			f.write(create_sql)
+	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+create_sql+"</pre>"
 
 
 

@@ -91,6 +91,7 @@
     li.jstree-leaf > a .jstree-icon { display: none; }
     #right-bar {
     	float:left; margin-left: 200px;
+    	overflow-x:hidden;
     }
     #calendar-box { 
 		display:inline-block;
@@ -132,10 +133,6 @@
 	 	padding-right:20px;
 	 	overflow-y: scroll;
 	 	display: block;
-	 	/*visibility: hidden;*/
-	 }
-	 #dropdown-box:hover {
-	 	/*visibility: visible;*/
 	 }
 	 .load-next {
 	 	float:right;
@@ -293,7 +290,7 @@
     </div>
 
 </div>
-<div class="thumbnail-hover" style="position:absolute; background-color:rgba(255,255,255,0.8);text-align:center;"></div>
+<div class="thumbnail-hover" style="position:absolute; background-color:rgba(255,255,255,0.8);text-align:center;cursor: pointer;"></div>
 
 	<script>
 	var time_start = new Date()
@@ -328,7 +325,10 @@
 			html += create_image(img, idx);
 			prev_date = date;
 		})
-		$(".gallery").html(html)
+
+		// inject the newly created html
+		$(".gallery").html(html);
+		// $("#right-bar").append("<h2>more</h2>")
 		console.log("gallery done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		eventize_images()
 		console.log("eventize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
@@ -340,17 +340,6 @@
 		// image = {
 		// 	image_id: function()
 		// }
-		function date_compare(a, b) {
-			// python function for generating these dates is:
-			// def serialize_datetime(d):
-			//     return [d.year, d.month, d.day, d.hour, d.minute, d.second]
-
-			for (var i = 0; i <= 6; i++) {
-				if (a[i]<b[i]) return -(i+1); // b<a
-				if (a[i]>b[i]) return (i+1);  // a>b
-			}
-			return 0; // equal
-		}
 
 		function create_day_seperator(date) { 
 			var newDate = new Date(date[0], date[1], date[2])
@@ -366,7 +355,7 @@
 				if (evt) label_id = evt[1];
 				console.log(event_id, evt,label_id)
 			}
-			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : "label-id='"+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
+			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'"  ondrop="img_drop(event)" ondragover="img_hover(event)">'
 		 	if (!(event_id!==undefined)) {			 	
 				if (!is_last) {
 					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -469,6 +458,18 @@
 				} else console.log("something went wrong")
 
 		}
+		// date (in array format) comparison
+		function date_compare(a, b) {
+			// python function for generating these dates is:
+			// def serialize_datetime(d):
+			//     return [d.year, d.month, d.day, d.hour, d.minute, d.second]
+
+			for (var i = 0; i <= 6; i++) {
+				if (a[i]<b[i]) return -(i+1); // b<a
+				if (a[i]>b[i]) return (i+1);  // a>b
+			}
+			return 0; // equal
+		}
 
 		// THUMBNAIL HOVER BOX
 		var idx_prev = -1;
@@ -502,9 +503,11 @@
 			text+="</p>"
 			idx_prev = idx;
 			$(".thumbnail-hover").html(text)
-			$(".thumbnail-hover").show().hover(null, function() {
+			$(".thumbnail-hover").show().unbind().hover(null, function() {
 				$(this).hide();
 				idx_prev = -1;
+			}).dblclick(function() {
+				openPhotoSwipe(idx)
 			})
 			var img_pos = $(this).offset()
 			$('.thumbnail-hover').css({'top':img_pos.top,'left':img_pos.left}).fadeIn('slow');

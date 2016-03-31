@@ -616,6 +616,7 @@ def create_session(autoflush=True, autocommit=True):
 
 def get_session(create_data=False, run_tests=False, fake=True):
     if run_tests:
+        print "running tests"
         # running tests requires an empty database
         drop_db()
         # will throw error if test fails
@@ -624,11 +625,11 @@ def get_session(create_data=False, run_tests=False, fake=True):
         drop_db()
 
     # does not actually connect until work is done
-    print "creating db"
     create_db()
     session = create_session()
     Base.query = session.query_property()
     if create_data:
+        print "creating db"
         db_data.create_data(session, engine, fake=fake)
     return session
 
