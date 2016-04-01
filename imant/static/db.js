@@ -12,6 +12,7 @@ function create_query(url, data, callback) {
 		  	console.log("db.js request completed: "+url+", status:"+textStatus);
 		  	if (jqXHR) console.log(jqXHR)
 			if (callback && textStatus!=="error") callback(textStatus) // if error don't reload page so we can see the response object
+			else if (textStatus=="error" && jqXHR.responseText.length > 2000) alert(jqXHR.responseText)
 		} 
 	});
 }

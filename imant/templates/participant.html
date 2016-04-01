@@ -290,6 +290,14 @@
 	var time_load = new Date()
 	evts = {{evts_dict | safe}}; // unsorted but can be used as lookup table
 	imgs = {{imgs_array | safe}}; // sorted by time
+	// function evt_id_col(event_id) {
+
+	// }
+	// function img_id_col(image_id) {
+	// 	for(var i in imgs) {
+	// 		if (imgs[i])
+	// 	}
+	// }
 	$(function() {generate_images(imgs, evts)})
 	function generate_images() {
 
@@ -315,7 +323,7 @@
 		// console.log("eventize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		$("div.img").each(function(i, el) {svg_ize($(el), i); })
 		console.log("svg_ize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
-		$("div.img").each(function(i, el) {svg_colorize($(el), i); })
+		$("div.img").each(function(i, el) {svg_colorize(i); })
 		console.log("svg_colorize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 
 
@@ -489,17 +497,19 @@
 	function load_more_images(num, callback) {
 		Image.load_json({{id}}, imgs[imgs.length-1][0], undefined, num, callback);
 	}
-	function svg_colorize(el, i, color) {
+	function svg_colorize(i, color) {
 		if (!color) {
 			var img = imgs[i];
 			var evt = evts[img[1]]
-			var label = labels[evt[0]];
-			if (label && label.color) {
-				color = label.color
+			if (evt) {
+				var label = labels[evt[0]];
+				if (label && label.color) {
+					color = label.color
+				}
 			}
 		}
 		if (color) {
-			if (!$(el).is("svg")) el = el.find("svg");
+			el = $("div.img#"+i);
 			el.find(".line").css({fill:color})
 			el.find(".circle").css({stroke:color})
 		}
@@ -645,7 +655,8 @@
 			    		label.color = getRandomColor();
 			    		Event.annotate_and_set_color({{id}}, event_id, label_id_drag, label.color, callback);
 		    		}
-		    		evts[event_id][0] = label_id_drag;
+		    		if (evts[event_id]!==undefined) evts[event_id][0] = label_id_drag;
+		    		else console.log("event_id:", event_id," has no evts[event_id] so cannot set label_id_drag")
 		    		// add background color to show action has been performed (instant)
 		    		imgs_in_this_event.css("background-color", label.color)
 		    	}
@@ -801,7 +812,6 @@
 	// IMAGE SELECTION
 	$(function() {
 		$("div.img").click(function(e) {
-			console.log("div.img")
 			$("div.img").not(this).removeClass("selected")
 			$(this).addClass("selected")
 			var event_id = $(this).attr("event-id")
@@ -810,7 +820,6 @@
 		})
 
 		$("#right-bar").click(function() {
-			console.log("gallery")
 			 $("div.img").removeClass("selected")
 		})
 	});
@@ -841,6 +850,7 @@
 		// for colors:
 		var col_this = null;
 		var col_pair = null;
+		var modify_prev = [];
 		 $(document).mouseup(function() {
 
 		 	// modify event boundaries
@@ -882,6 +892,7 @@
 		 	event_to_right_is_standalone = null;
 		 	selection_is_expanding = null;
 		 	is_dragging = false;
+		 	modify_prev = [];
 		 })
 
 		$('circle').mousedown(function(e) {
@@ -946,7 +957,7 @@
 						// if shrinking own event, hide parts that will no longer exist
 						if (start_id < curr_id) {
 							var direction = "left";
-							other_event = event_to_left;
+							other_event = $("div.img#"+event_to_left).attr("event-id");
 							// moving towards left, this does the strike-through
 							for( var i=start_id; i<curr_id; i++ ){
 								if (event_to_left!==false) modify[i] = "through"
@@ -961,7 +972,7 @@
 		 					}
 		 				} else {
 							var direction = "right";
-							other_event = event_to_right;
+							other_event = $("div.img#"+event_to_right).attr("event-id");;
 							// moving towards right
 		 					for( var i=start_id; i>curr_id; i-- ){
 								if (event_to_right!==false) modify[i] = "through"
@@ -1024,23 +1035,34 @@
 
 				// var other_event_id = $(".img[id="+modify_cutoff+"]").attr("label-id")
 				// console.log('other_event_id',other_event_id)
-				console.log('other_event', other_event)
+				console.log('other_event=', other_event)
 				if (other_event && evts[other_event] && evts[other_event][0]!==null) 
 					var col_other = labels[evts[other_event][0]].color
+				else var col_other = "{{fillcol}}";
 				if (selection_is_expanding) {col_default = col_this; col_end = col_other;}
 				else {col_default = col_other; col_end = col_this}
-				console.log("cols:", col_default, col_other, modify)
+				console.log("cols:", col_default, col_other)
 				other_i = (direction=="right") ?
 					curr_id +1 :
 					curr_id -1;
 
  				for (i in modify) {
- 					if (i == other_i) 
+ 					if ((i<curr_id && direction=="left") || (i>curr_id && direction=="right"))
 						modify_img(i, modify[i], col_other);
 					else
 						modify_img(i, modify[i], col_this);
+ 					// if (i == other_i) 
  				}
-				console.log("moved" ,same_event ? "same_event" : "", start_id, curr_id)
+ 				for (i in modify_prev) {
+ 					// console.log(i, modify[i]==undefined)
+ 					if (modify[i]==undefined) {
+ 						console.log("resetting",i,$("div.img#"+i).attr("image-id"))
+	 					svg_colorize(i)
+	 				}
+ 				}
+ 				console.log(modify, modify_prev)
+ 				modify_prev = modify;
+				console.log((selection_is_expanding ? "expanding":"shrinking") + " into" ,same_event ? "same_event" : "", start_id, curr_id)
 			}
 		});
 		function modify_img(id, state, color) {
@@ -1069,7 +1091,7 @@
 				svg.find(".line").attr("visibility","hidden");
 				svg.find(".circle").attr("visibility","hidden")
 			}
-			if (color) svg_colorize(svg, null, color) 
+			if (color) svg_colorize(id, color) 
 		}
 
 	})
