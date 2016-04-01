@@ -263,7 +263,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 	sql_text = ""#db.read_log()[:6000]
 	print ("time_before_json_dumps ("+str(len(images))+" images) : ").ljust(40), round(time.time()-t0, 4)
 	# render with the first 100 images only
-	imgs_array = json_dumps([x.to_array() for x in images[:600]])
+	imgs_array = json_dumps([x.to_array() for x in images[:20]])
 	evts_dict = json_dumps(dict(x.to_array() for x in participant.events))# sorted( evts, key=lambda x: x.start_time)])
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
 	return Response(stream_with_context(stream_template('participant.html', 
@@ -277,7 +277,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		schema=json_dumps(Schema.query.first().to_json()),
 		schema_list=Schema.query.all(),
 		imgs_array=imgs_array,
-		evts_dict=evts_dict,
+		# evts_dict=evts_dict,
 		**kwargs
 	)))
 

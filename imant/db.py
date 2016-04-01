@@ -324,7 +324,9 @@ class Image(Base):
             self.participant_id,
             serialize_datetime(self.image_time), 
             map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
-            [1 if self.is_first else 0, 1 if self.is_last else 0]
+            [1 if self.is_first else 0, 1 if self.is_last else 0],
+            self.event.label_id if self.event else None,
+            self.event.label.color if self.event and self.event.label else None
         ]
 
     @hybrid_method

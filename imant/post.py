@@ -129,31 +129,36 @@ def load_images(participant_id):
 	start_id = request.form.get('start_id', None) # get with default value
 	if start_id != None:
 		start_id = int(start_id)
-		query.filter(Image.image_id>start_id)
+		start_img = Image.query.filter(Image.image_id==start_id).one()
+		query = query.filter(Image.image_time>start_img.image_time)
 	print "start_id", start_id
 
 	end_id = request.form.get('end_id', None)
 	if end_id is not None:
 		end_id = int(end_id)
-		query.filter(Image.image_id<end_id)
+		end_img = Image.query.filter(Image.image_id==end_id).one()
+		query = query.filter(Image.image_time<end_img.image_time)
 
 	print "end_id", end_id
 
 	number = request.form.get('number', None)
 
 	print "number", number
+	print query
 	if number is not None:
 		images = query.limit(number)
 	else:
 		images = query.all()
+	images = sorted(images, key=lambda x: x.image_time)
+
 	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id)).limit(number)
 	# else:
 	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id))
 	# response = make_response(json_dumps([x.to_array() for x in images]))
 	print images
 	print "to array() :"
-	print [x.to_array() for x in images]
-	return jsonify(images=[x.to_array() for x in images])#)", 200, {'Content-type', 'application/json'})
+	print [x.to_array()[5] for x in images]
+	return jsonify(images=[x.to_array() for x in images], query={'start_id':start_id, 'end_id':end_id, 'number':number})#)", 200, {'Content-type', 'application/json'})
 
 #  note: not technically a post request, but still belongs here for now..
 @app.route("/participant/<int:participant_id>/download_annotation", methods=["GET"])
