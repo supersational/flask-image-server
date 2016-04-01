@@ -288,9 +288,9 @@
 	}
 	var evts;
 	var time_load = new Date()
-	evts = {{evts_dict | safe}}; // unsorted but can be used as lookup table
+	// evts = {{evts_dict | safe}}; // unsorted but can be used as lookup table
 	imgs = {{imgs_array | safe}}; // sorted by time
-	var prev_date =[-1,-1,-1]
+	imgs.forEach(function(img) {img[8]=true;}) // set [8]=needs_update to true
 	// function evt_id_col(event_id) {
 
 	// }
@@ -299,20 +299,24 @@
 	// 		if (imgs[i])
 	// 	}
 	// }
-	$(function() {generate_images(imgs, evts)})
-	function generate_images(imgs, evts) {
+	$(function() {generate_images()})
+	function generate_images() {
 
-		console.log("imgs & evts done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
+		console.log("imgs generate", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		$("#imagenum-text").html("Showing "+imgs.length+" images out of {{num_images}}")
 
+		var prev_date =[-1,-1,-1]
 		var html = "";
 		imgs.forEach(function(img, idx) {
 			// check if day has changed
 			var date = img[3].slice(0,3)
-			if (date[2]!=prev_date[2] || date[1]!=prev_date[1] || date[0]!=prev_date[0]) {
-				html += create_day_seperator(date);
+			if (img[8]===true) {
+				if (date[2]!=prev_date[2] || date[1]!=prev_date[1] || date[0]!=prev_date[0]) {
+					html += create_day_seperator(date);
+				}
+				html += create_image(img, idx);
+				img[8] = false; // flag as rendered
 			}
-			html += create_image(img, idx);
 			prev_date = date;
 		})
 		html+= "<h3 class='gallery-seperator load-more' style='text-align:right;padding-right:30px;'><button onClick='load_more_button()'>Load more</button></h3>"
@@ -335,11 +339,7 @@
 		function create_image(i, idx) { 
 
 			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
-			var label_id=null;
-			if (event_id!==undefined) {
-				var evt = evts[event_id];
-				if (evt) label_id = evt[0];
-			}
+			var label_id=i[6];
 			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'" ">' // ondrop="img_drop(event)" ondragover="img_hover(event)
 		 	if (!(event_id!==undefined)) {			 	
 				if (!is_last) {
@@ -462,14 +462,14 @@
 			openPhotoSwipe(idx)
 
 		}).hover(function() { 
-			var idx = parseInt($(this).closest(".img").attr("image-id"))
+			var idx = parseInt($(this).closest(".img").attr("id"))
 			if (idx==idx_prev) return;
 			var text = "<p>image-id:" + idx;
-			var event_id = parseInt($(this).closest(".img").attr("event-id"))
-			text += "<br>event_id:"+event_id
-			if (!isNaN(event_id)) {
-				label_id = evts[event_id][0];
-				text += "<br>label-id:"+label_id;
+			if (imgs[idx][1])
+				text += "<br>event_id:"+imgs[idx][1]
+			var label_id = imgs[idx][6];
+			if (label_id) {
+				text += "<br>label_id:"+label_id
 				if (labels[label_id]) {
 					text+=labels[label_id].text
 				}
@@ -491,28 +491,34 @@
 			$(".thumbnail-hover").hide()
 		})
 	}
+	$(window).scroll(function() {
+	    if($(window).scrollTop() == $(document).height() - $(window).height()) {
+	           load_more_images(20);
+	    }
+	});
 	function load_more_button() {
-		load_more_images(200, function(_, jqXHR) {
-			var new_imgs =$.parseJSON(jqXHR.responseText).images;
-			console.log(new_imgs);
-			imgs = imgs.concat(new_imgs)
-			// $()
-			$(".gallery").html($(".gallery").html() + "<h2 class='gallery-seperator'>loaded more: </h2>")
-			generate_images(new_imgs, evts)
-		});
+		load_more_images(20)
 	}
-	function load_more_images(num, callback) {
-		Image.load_json({{id}}, imgs[imgs.length-1][0], undefined, num, callback);
+	function load_more_images(num) {
+		Image.load_by_id({{id}}, imgs[imgs.length-1][0], undefined, num, function(_, jqXHR) {
+			var returned_data =$.parseJSON(jqXHR.responseText);
+			console.log(returned_data.query)
+			var new_imgs = returned_data.images;
+			console.log(new_imgs);
+			new_imgs.forEach(function(img) {console.log("img",img);img[8] = true})
+			imgs = imgs.concat(new_imgs)
+			$(".load-more").remove()
+			// add seperator?
+			// $(".gallery").html($(".gallery").html() + "<h2 class='gallery-seperator'>loaded more: </h2>")
+			generate_images();
+		});
 	}
 	function svg_colorize(i, color) {
 		if (!color) {
-			var img = imgs[i];
-			var evt = evts[img[1]]
-			if (evt) {
-				var label = labels[evt[0]];
-				if (label && label.color) {
-					color = label.color
-				}
+			// var img = imgs[i];
+			var label_color = imgs[i][7];
+			if (label_color) {
+				color = label_color
 			}
 		}
 		if (color) {
