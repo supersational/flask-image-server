@@ -286,7 +286,7 @@
 		medium: [864,645],
 		original: [2592,1936]
 	}
-	var evts;
+	// var evts;
 	var time_load = new Date()
 	// evts = {{evts_dict | safe}}; // unsorted but can be used as lookup table
 	imgs = {{imgs_array | safe}}; // sorted by time
@@ -409,13 +409,13 @@
 			// console.log(el,i, img[0],img[5])
 			if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
 				console.log("neither or no event")
-				makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
+				// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
 				//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
 			}
 			else if (img[5][0] && img[5][1]) {
 				// console.log("both")
 				makeCircle(container,true)
-				makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
+				// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
 				//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
 			}
 			else if (img[5][1]) { // is-last
@@ -908,14 +908,15 @@
 		 	modify_prev = [];
 		 })
 
-		$('circle').mousedown(function(e) {
+		$(document).mousedown(function(e) {
+			if (!$(e.target).is("circle")) {console.log("no", e.target);return}
 			e.preventDefault()
 			is_dragging = true;
-			start_img = curr_img = $(this).closest("div.img")[0];
+			start_img = curr_img = $(e.target).closest("div.img")[0];
 			start_img_is_standalone = ( $(start_img).attr('is-first')=="1" && $(start_img).attr('is-last')=="1" )
 			start_id  = curr_id  = parseInt(start_img.id)
 			start_event_id = parseInt($(start_img).attr('event-id'));
-			col_this = labels[evts[start_event_id][0]].color
+			col_this = imgs[start_id][7]
 			console.log("col_this", col_this)
 			// find other 'end' of event (if none set to null)
 			event_pair_img = $("[event-id="+start_event_id+"]").filter( "[is-first='1'],[is-last='1']" ).not(start_img);
@@ -933,7 +934,7 @@
 				event_to_right_is_standalone = (right.attr("is-last")=="1" && right.attr("event-id") != start_event_id)
 			} else event_to_right = false;
 			console.log('event_to_left:',event_to_left, 'event_to_right:',event_to_right, 'left:',left, 'right:',right)
-			console.log('this:',this, 'curr_img:',curr_img, 'event_pair_img:',event_pair_img)
+			console.log('e.target:',e.target, 'curr_img:',curr_img, 'event_pair_img:',event_pair_img)
 		});
 
 		$('div.img').mousemove(function(e) {
@@ -961,7 +962,7 @@
 
 				// create dict of id's to modify
 				var modify = {}
-				var other_event = null
+				var other_label = null
 				// if same id as started do nothing
 				if (!(start_id == curr_id)) {
 
@@ -970,7 +971,8 @@
 						// if shrinking own event, hide parts that will no longer exist
 						if (start_id < curr_id) {
 							var direction = "left";
-							other_event = $("div.img#"+event_to_left).attr("event-id");
+							other_label = parseInt($("div.img#"+event_to_left).attr("label-id"));
+
 							// moving towards left, this does the strike-through
 							for( var i=start_id; i<curr_id; i++ ){
 								if (event_to_left!==false) modify[i] = "through"
@@ -985,7 +987,7 @@
 		 					}
 		 				} else {
 							var direction = "right";
-							other_event = $("div.img#"+event_to_right).attr("event-id");;
+							other_label = parseInt($("div.img#"+event_to_right).attr("label-id"));
 							// moving towards right
 		 					for( var i=start_id; i>curr_id; i-- ){
 								if (event_to_right!==false) modify[i] = "through"
@@ -1017,7 +1019,7 @@
 							var img_on_right = $("div#"+(curr_id+1)+".img");
 							if (img_on_right.length==1) {
 								if (img_on_right.attr("event-id")!=="") {
-									other_event = parseInt(img_on_right.attr("event-id"))
+									other_label = parseInt(img_on_right.attr("label-id"))
 									if (img_on_right.attr("is-last")=="1") modify[curr_id+1] = "standalone"
 									else modify[curr_id+1] = "from-right"
 								}
@@ -1036,7 +1038,7 @@
 							var img_on_left = $("div#"+(curr_id-1)+".img");
 							if (img_on_left.length==1) {
 								if (img_on_left.attr("event-id")!=="") {
-									other_event = parseInt(img_on_left.attr("event-id"))
+									other_label = parseInt(img_on_left.attr("label-id"))
 									if (img_on_left.attr("is-first")=="1") modify[curr_id-1] = "standalone"
 									else modify[curr_id-1] = "from-left"
 								}
@@ -1048,9 +1050,9 @@
 
 				// var other_event_id = $(".img[id="+modify_cutoff+"]").attr("label-id")
 				// console.log('other_event_id',other_event_id)
-				console.log('other_event=', other_event)
-				if (other_event && evts[other_event] && evts[other_event][0]!==null) 
-					var col_other = labels[evts[other_event][0]].color
+				console.log('other_label=', other_label)
+				if (other_label && labels[other_label]) 
+					var col_other = labels[other_label].color
 				else var col_other = "{{fillcol}}";
 				if (selection_is_expanding) {col_default = col_this; col_end = col_other;}
 				else {col_default = col_other; col_end = col_this}
@@ -1193,6 +1195,8 @@
         	makeSeperatorLine(el, attrs);
         	var curr_line = $(el).find(".line");
         	// console.log( curr_line.attr("width"),  curr_line.attr("x"))
+        	if ( curr_line.attr("nw")-10<0) console.log(el, attrs, curr_line)
+
     		curr_line.attr("width", curr_line.attr("nw")-10)
         	if (attrs['x']<{{im_half}}) {
         		curr_line.attr("x", curr_line.attr("nx") + 10)
