@@ -1,17 +1,18 @@
 
 var _request_pending = false;
-function create_query(url, data, callback) {
+function create_query(url, data, callback, is_json) {
 	if (_request_pending==true) return console.log("already waiting for a request to complete");
 	_request_pending = true;
 	$.ajax({
 		type: "POST",
 		url: url,
 		data: data,
+		dataType: (is_json ? "json" : undefined),
 		complete : function(jqXHR, textStatus) {
 			_request_pending = false;
 		  	console.log("db.js request completed: "+url+", status:"+textStatus);
 		  	if (jqXHR) console.log(jqXHR)
-			if (callback && textStatus!=="error") callback(textStatus) // if error don't reload page so we can see the response object
+			if (callback && textStatus!=="error") callback(textStatus, jqXHR) // if error don't reload page so we can see the response object
 			else if (textStatus=="error" && jqXHR.responseText.length > 2000) alert(jqXHR.responseText)
 		} 
 	});

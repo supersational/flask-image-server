@@ -290,6 +290,7 @@
 	var time_load = new Date()
 	evts = {{evts_dict | safe}}; // unsorted but can be used as lookup table
 	imgs = {{imgs_array | safe}}; // sorted by time
+	var prev_date =[-1,-1,-1]
 	// function evt_id_col(event_id) {
 
 	// }
@@ -299,13 +300,12 @@
 	// 	}
 	// }
 	$(function() {generate_images(imgs, evts)})
-	function generate_images() {
+	function generate_images(imgs, evts) {
 
 		console.log("imgs & evts done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		$("#imagenum-text").html("Showing "+imgs.length+" images out of {{num_images}}")
 
 		var html = "";
-		var prev_date =[-1,-1,-1]
 		imgs.forEach(function(img, idx) {
 			// check if day has changed
 			var date = img[3].slice(0,3)
@@ -317,7 +317,7 @@
 		})
 		html+= "<h3 class='gallery-seperator load-more' style='text-align:right;padding-right:30px;'><button onClick='load_more_button()'>Load more</button></h3>"
 		// inject the newly created html
-		$(".gallery").html(html);
+		$(".gallery").html($(".gallery").html() +html);
 		// $("#right-bar").append("<h2>more</h2>")
 		console.log("gallery done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		// console.log("eventize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
@@ -492,7 +492,14 @@
 		})
 	}
 	function load_more_button() {
-		load_more_images(200, function() {generate_images()});
+		load_more_images(200, function(_, jqXHR) {
+			var new_imgs =$.parseJSON(jqXHR.responseText).images;
+			console.log(new_imgs);
+			imgs = imgs.concat(new_imgs)
+			// $()
+			$(".gallery").html($(".gallery").html() + "<h2 class='gallery-seperator'>loaded more: </h2>")
+			generate_images(new_imgs, evts)
+		});
 	}
 	function load_more_images(num, callback) {
 		Image.load_json({{id}}, imgs[imgs.length-1][0], undefined, num, callback);

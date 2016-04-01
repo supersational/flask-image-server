@@ -151,7 +151,9 @@ def load_images(participant_id):
 	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id))
 	# response = make_response(json_dumps([x.to_array() for x in images]))
 	print images
-	return jsonify(json_dumps([x.to_array() for x in images]))#)", 200, {'Content-type', 'application/json'})
+	print "to array() :"
+	print [x.to_array() for x in images]
+	return jsonify(images=[x.to_array() for x in images])#)", 200, {'Content-type', 'application/json'})
 
 #  note: not technically a post request, but still belongs here for now..
 @app.route("/participant/<int:participant_id>/download_annotation", methods=["GET"])
