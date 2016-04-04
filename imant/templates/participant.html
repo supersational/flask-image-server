@@ -291,6 +291,66 @@
 	imgs.forEach(function(img) {img[8]=true;}) // set [8]=needs_update to true
 
 	$(function() {generate_images()})
+
+	function create_image(i, idx) { 
+
+		var image_id=i[0], event_id=i[1], image_time=i[3], full_url=i[4][2], thumbnail_url=i[4][0], is_first=i[5][0], is_last=i[5][1];
+		var label_id=i[6];
+		var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'" >' // ondrop="img_drop(event)" ondragover="img_hover(event)
+	 	if (!(event_id!==undefined)) {			 	
+			if (!is_last) {
+				 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
+			}
+			if (!is_first) {
+				str += '<div style="left:0px;" class="split left" split-dir="left"></div>'
+			}
+		}
+		str += '<svg width="{{im_both}}" height="30">'
+
+		str += '</svg>'
+		str += '<img class="thumbnail" width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" >'
+		str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
+		return str;
+	}
+
+	function svg_ize(el, i) {
+		var container = el.find("svg")
+		var img = imgs[i];
+		// console.log(el,i, img[0],img[5])
+		if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
+			console.log("neither or no event")
+			// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
+			//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
+		}
+		else if (img[5][0] && img[5][1]) {
+			// console.log("both")
+			makeCircle(container,true)
+			// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
+			//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
+		}
+		else if (img[5][1]) { // is-last
+			// console.log("last")
+			makeCircle(container,true)
+			makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:0, nx:0, id:img[0] }, true)
+			el.prepend('<div class="split left" split-dir="left"></div>')
+			//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
+		}
+		else if (img[5][0]) { // is-first
+			// console.log("first")
+			makeCircle(container,true)
+			makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
+			el.prepend(' <div class="split right" split-dir="right"></div>')
+			//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
+		}
+		else if (!img[5][0] && !img[5][1]) { // connector
+			// console.log("connector")
+			el.prepend(' <div class="split right" split-dir="right"></div><div class="split left" split-dir="left"></div>')
+			makeLine(container, {width:{{im_both}}, nw:{{im_both}}, x:0, nx:0, id:img[0] }, true)
+
+			
+		} else console.log("something went wrong")
+
+	}
 	function generate_images() {
 
 		console.log("imgs generate", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
@@ -310,7 +370,7 @@
 			}
 			prev_date = date;
 		})
-		html+= "<h3 class='gallery-seperator load-more' style='text-align:right;padding-right:30px;'><button onClick='load_more_button()'>Load more</button></h3>"
+		html+= "<h3 class='gallery-seperator load-more' style='text-align:right;padding-right:30px;'><button onClick='load_more_images(20)'>Load more</button></h3>"
 		// inject the newly created html
 		$(".gallery").html($(".gallery").html() +html);
 		// $("#right-bar").append("<h2>more</h2>")
@@ -327,26 +387,7 @@
 			console.log(date, newDate.toDateString())
 			return "<h2 class='gallery-seperator'>"+newDate.toDateString()+"</h2>";
 		}
-		function create_image(i, idx) { 
 
-			var image_id=i[0], event_id=i[1], full_url=i[4][2], thumbnail_url=i[4][0], image_time=i[3],is_last=i[5][1], is_first=i[5][0];
-			var label_id=i[6];
-			var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'" ">' // ondrop="img_drop(event)" ondragover="img_hover(event)
-		 	if (!(event_id!==undefined)) {			 	
-				if (!is_last) {
-					 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
-				}
-				if (!is_first) {
-					str += '<div style="left:0px;" class="split left" split-dir="left"></div>'
-				}
-			}
-			str += '<svg width="{{im_both}}" height="30">'
-
-			str += '</svg>'
-			str += '<img class="thumbnail" width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" >'
-			str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
-			return str;
-		}
 		// EVENT python
 		/*[self.event_id,
                 self.label_id,
@@ -360,44 +401,7 @@
             map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
             [1 if self.is_first else 0, 1 if self.is_last else 0]
         ] */
-		function svg_ize(el, i) {
-			var container = el.find("svg")
-			var img = imgs[i];
-			// console.log(el,i, img[0],img[5])
-			if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
-				console.log("neither or no event")
-				// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
-				//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
-			}
-			else if (img[5][0] && img[5][1]) {
-				// console.log("both")
-				makeCircle(container,true)
-				// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
-				//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
-			}
-			else if (img[5][1]) { // is-last
-				// console.log("last")
-				makeCircle(container,true)
-				makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:0, nx:0, id:img[0] }, true)
-				el.prepend('<div class="split left" split-dir="left"></div>')
-				//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
-			}
-			else if (img[5][0]) { // is-first
-				// console.log("first")
-				makeCircle(container,true)
-				makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
-				el.prepend(' <div class="split right" split-dir="right"></div>')
-				//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
-			}
-			else if (!img[5][0] && !img[5][1]) { // connector
-				// console.log("connector")
-				el.prepend(' <div class="split right" split-dir="right"></div><div class="split left" split-dir="left"></div>')
-				makeLine(container, {width:{{im_both}}, nw:{{im_both}}, x:0, nx:0, id:img[0] }, true)
 
-				
-			} else console.log("something went wrong")
-
-		}
 
 		// date (in array format) comparison
 		function date_compare(a, b) {
@@ -412,16 +416,23 @@
 			return 0; // equal
 		}
 
-		// THUMBNAIL HOVER BOX
+	}
+
+
+
+	// THUMBNAIL HOVER BOX
+	(function() {
 		var idx_prev = -1;
-		$("img.thumbnail").unbind().click(function() { 
+		$(document).on('mousedown','img.thumbnail', function(e) {
+			if (e.which!==1) return; 
 			var idx = parseInt($(this).closest(".img").attr("id"))
 			openPhotoSwipe(idx)
 
-		}).hover(function() { 
+		}).on('mouseenter', 'img.thumbnail', function() { 
 			var idx = parseInt($(this).closest(".img").attr("id"))
 			if (idx==idx_prev) return;
-			var text = "<p>image-id:" + idx;
+			var text = "<p>image-idx:" + idx;
+			text += "<br>image-id:"+imgs[idx][0]
 			if (imgs[idx][1])
 				text += "<br>event_id:"+imgs[idx][1]
 			var label_id = imgs[idx][6];
@@ -437,26 +448,29 @@
 			var img_pos = $(this).offset()
 			$('.thumbnail-hover').css({'top':img_pos.top,'left':img_pos.left}).fadeIn('slow');
 
-		}, function() {
+		}).on('mouseleave', 'img.thumbnail', function() {
 			idx_prev = -1;
 			$(".thumbnail-hover").hide()
 		})
-	}
-	$(window).scroll(function() {
+	})();
+
+
+
+	$(window).bind('mousewheel DOMMouseScroll scroll', function() {
 	    if($(window).scrollTop() == $(document).height() - $(window).height()) {
 	           load_more_images(20);
 	    }
 	});
-	function load_more_button() {
-		load_more_images(20)
-	}
 	function load_more_images(num) {
 		Image.load_by_id({{id}}, imgs[imgs.length-1][0], undefined, num, function(_, jqXHR) {
-			var returned_data =$.parseJSON(jqXHR.responseText);
-			console.log(returned_data.query)
+			var returned_data = $.parseJSON(jqXHR.responseText);
+			// console.log(returned_data.query)
 			var new_imgs = returned_data.images;
-			console.log(new_imgs);
-			new_imgs.forEach(function(img) {console.log("img",img);img[8] = true})
+			// console.log(new_imgs);
+			new_imgs.forEach(function(img) {
+				// console.log("img",img);
+				img[8] = true // set to "needs creating"
+			})
 			imgs = imgs.concat(new_imgs)
 			$(".load-more").remove()
 			// add seperator?
@@ -464,6 +478,10 @@
 			generate_images();
 		});
 	}
+	// function reload_images(selection) {
+	// 	Image.load_by_id({{id}}, imgs[imgs.length-1][0], undefined, num, function(_, jqXHR) {
+
+	// }
 	function svg_colorize(i, color) {
 		if (!color) {
 			// var img = imgs[i];
@@ -599,10 +617,11 @@
 		    // ev.preventDefault();
 		    console.log("drop data:", label_id_drag,"target: ", ev.target, $(ev.target).closest("div.img")[0])
 		    if (label_id_drag!==null) {
-		    	event_id = $(ev.target).closest("div.img").attr("event-id")
+		    	var event_id = $(ev.target).closest("div.img").attr("event-id")
 		    	console.log(event_id)
 		    	var label = labels[label_id_drag];
 		    	if (event_id!==undefined && label) {
+		    		var image_idx = $(ev.target).closest("div.img").attr("id")
 		    		var imgs_in_this_event = $("div.img[event-id="+event_id+"]")
 		    		// callback will move color from background to event handles
 		    		var callback = function(e) {
@@ -610,6 +629,8 @@
 			    		imgs_in_this_event.css("background-color", "").removeClass("selected")
 			    		imgs_in_this_event.find(".line").css("fill", label.color)
 			    		imgs_in_this_event.find(".circle").css("stroke", label.color)
+			    		imgs[image_idx][6] =  label_id_drag;
+			    		imgs[image_idx][7] =  label.color;
 		    		}
 		    		if (label.color) {
 			    		Event.annotate({{id}}, event_id, label_id_drag, callback);
@@ -770,7 +791,23 @@
 
 
 
-
+	function reload_images(_, jqXHR) {
+		var data = $.parseJSON(jqXHR.responseText);
+		console.log(data)
+		if (data.result!=="success") return 0;
+		data.images.forEach(function(img) {
+			console.log(img)
+			var image_id = img[0];
+			var img_to_replace = $("div.img[image-id="+image_id+"]")
+			var image_idx = img_to_replace.attr("id")
+			console.log(imgs[image_idx])
+			console.log(image_id, img_to_replace[0], image_idx)
+			imgs[image_idx] = img
+			img_to_replace.replaceWith(create_image(img, image_idx))
+			svg_ize($("div.img[image-id="+image_id+"]"), image_idx)
+			svg_colorize(image_idx)
+		})
+	}
 
 	// IMAGE SELECTION
 	$(function() {
@@ -824,7 +861,7 @@
 
 					if (selection_is_expanding==true) {
 						console.log("db.add_image("+{{id}}+","+start_event_id+","+image_id+")")
-						Event.add_image({{id}}, start_event_id, image_id, reload_page)
+						Event.add_image({{id}}, start_event_id, image_id, reload_images)
 					}
 					if (selection_is_expanding==false) {
 						if (curr_id > start_id) var direction = "left"
@@ -834,7 +871,7 @@
 						var include_target = false;
 						console.log("db.remove_image("+{{id}}+","+start_event_id+","+image_id+","+direction+", "+include_target+")")
 						// need to make sure don't remove the last image in the event!
-						Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_page)
+						Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_images)
 					}
 					fix_appearance()
 				} 	
@@ -858,8 +895,8 @@
 		 	modify_prev = [];
 		 })
 
-		$(document).mousedown(function(e) {
-			if (!$(e.target).is("circle")) {console.log("no", e.target);return}
+		$(document).on('mousedown', 'circle', function(e) {
+			if (e.which!==1) return; 
 			e.preventDefault()
 			is_dragging = true;
 			start_img = curr_img = $(e.target).closest("div.img")[0];
@@ -887,17 +924,16 @@
 			console.log('e.target:',e.target, 'curr_img:',curr_img, 'event_pair_img:',event_pair_img)
 		});
 
-		$(document).mousemove(function(e) {
-			// if (!$.contains($(".gallery")[0],e.target)) return 0;
-			this_img = $(e.target).closest(".img")
-			if (this_img.length<=0) return 0; else this_img = this_img[0]
+		$(document).on('mousemove', 'div.img', function(e) {
 			if (start_img===null) {return 0;}
+			// this = e.target
+			// console.log(this, this, curr_img)
 			e.preventDefault()
-			console.log("mousemove", e.target, this, curr_img)
+			// console.log("mousemove", e.target, this, curr_img)
 			// if it has moved from previous position
-			if (this_img !== curr_img) {
+			if (this !== curr_img) {
 				// make sure we can not move futher back than the end of the event
-				curr_id = parseInt(this_img.id);
+				curr_id = parseInt(this.id);
 				// if we have gone further than the other end of our own event
 				if (event_pair_id!==null && (
 					(start_id < event_pair_id && curr_id > event_pair_id) || 
@@ -909,7 +945,7 @@
 					if (curr_img==event_pair_img) return 0;
 					curr_img = event_pair_img;
 				} else {
-					curr_img = this_img;
+					curr_img = this;
 				}
 				curr_event_id = parseInt($(curr_img).attr('event-id'));
 				var same_event = (curr_event_id == start_event_id)
@@ -927,7 +963,7 @@
 							var direction = "left";
 							other_label = parseInt($("div.img#"+event_to_left).attr("label-id"));
 
-							// moving towards left, this_img does the strike-through
+							// moving towards left, this does the strike-through
 							for( var i=start_id; i<curr_id; i++ ){
 								if (event_to_left!==false) modify[i] = "through"
 								else modify[i] = "blank"
@@ -1108,24 +1144,26 @@
     // SPLIT IMAGES CODE
 	$(function() {
 
-        $('.split').click(function() {
-        	me = $(this)
+        $(document).on('click', '.split', function(e) {
+        	// if (!$(e.target).hasClass("split")) return 0;
+        	var me = $(e.target)
         	var image_id = me.closest("div.img").attr("image-id");
         	var event_id = me.closest("div.img").attr("event-id");
         	var dir = me.attr("split-dir");
 			fix_appearance()	        	
         	// return 0
-        	Event.split(dir, {{id}},event_id, image_id, function(status) {
-        		if (status=="success") reload_page();
+        	Event.split(dir, {{id}},event_id, image_id, function(status, jqXHR) {
+        		if (status=="success") reload_images(undefined, jqXHR);
         		else {
         			console.log(status);
         			me.attr("fill", "red")
         		}
         	});
-        }).hover(function(){ 
+        }).on('mouseenter', '.split', function(e){ 
+        	// if (!$(e.target).hasClass("split")) return 0;
         	if (is_dragging) return 0;
-        	var dir = $(this).attr("split-dir");
-        	var img = $(this).closest("div.img")
+        	var dir = $(e.target).attr("split-dir");
+        	var img = $(e.target).closest("div.img")
         	if (dir=="left") {
         		makeSeperator(img, {'x':10})
         		makeSeperator(img.prev("div.img"), {'x':{{im_both}}-10})
@@ -1134,8 +1172,9 @@
         		makeSeperator(img, {'x':{{im_both}}-10})
         		makeSeperator(img.next("div.img"), {'x':10})
         	}
-        }, function() { // hover off
-        	var img = $(this).closest("div.img")
+        }).on('mouseleave', '.split', function(e) { // hover off
+        	// if (!$(e.target).hasClass("split")) {console.log(e.target);return 0;}
+        	var img = $(e.target).closest("div.img")
         	$(".fake.seperator").remove()
         	$(".line").each(function(){
 				$(this).attr({"width":$(this).attr("nw"), "x":$(this).attr("nx")});
@@ -1206,13 +1245,12 @@
 
 
 
-    var slides = []
-    for(var i = 0; i < imgs.length; i++) {
-    	slides[i] = {}
-    }
+
     // $(function() {slides = new Array(imgs.length)})
 	function openPhotoSwipe(index) {
 		console.log(index)
+		var slides = Array.apply(null, Array(imgs.length)).map(Object.valueOf,0);
+
 		var pswpElement = document.querySelectorAll('.pswp')[0];
 		var options = {
 			shareEl: false,

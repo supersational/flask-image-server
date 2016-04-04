@@ -48,39 +48,42 @@ def event_modify(participant_id, event_id, image_id, code):
 	img = Image.query.filter((Image.image_id==image_id) &
 							 (Image.participant_id==participant_id)).one()
 	# print evt
-	print "".join(map(lambda x: ('\n'+str(evt.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.images))
-	if  evt.prev_event is not None:
-		# print evt.prev_event
-		print "".join(map(lambda x: ('\n'+str(evt.prev_event.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.prev_event.images))
-	if  evt.next_event is not None:
-		# print evt.next_event
-		print "".join(map(lambda x: ('\n'+str(evt.next_event.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.next_event.images))
-	if not img: return "no matching image"
-	if not evt: return "no matching event"
+	if 0:
+		print "".join(map(lambda x: ('\n'+str(evt.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.images))
+		if  evt.prev_event is not None:
+			# print evt.prev_event
+			print "".join(map(lambda x: ('\n'+str(evt.prev_event.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.prev_event.images))
+		if  evt.next_event is not None:
+			# print evt.next_event
+			print "".join(map(lambda x: ('\n'+str(evt.next_event.event_id)+' - ') + str(x.image_id) + ": " + str(x.image_time), evt.next_event.images))
+	if not img: return jsonify(result="no matching image")  
+	if not evt: return jsonify(result="no matching event")
+	# create list of images which could have potentially changed
 	if code=="add_image":
 		if evt.add_image(img):
-			return "success"
-		return "add_image failed"
+			changed_images = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
+			return jsonify(images=[x.to_array() for x in changed_images], result='success')
+		return jsonify(result="add_image failed")
 	if code=="split_left":
+		changed_images = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
 		if evt.split_left(img):
-			return "success"
-		return "split_left failed"
+			return jsonify(images=[x.to_array() for x in changed_images], result='success')
+		return jsonify(result="split_left failed")
 	if code=="split_right":
+		changed_images = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
 		if evt.split_right(img):
-			return "success"
-		return "split_right failed"
+			return jsonify(images=[x.to_array() for x in changed_images], result='success')
+		return jsonify(result="split_right failed")
 	if code=="remove":
 		direction = request.form['direction']
 		include_target =  request.form['include_target'].lower()=="true"
 		print direction, include_target
 		cmd = evt.remove_left if direction=="left" else evt.remove_right
-		if cmd(img, include_target=include_target):
-			return "success"
-		return "remove_"+direction+" failed"
-	# if code=="remove_right":
-	# 	if evt.remove_right(img):
-	# 		return "success"
-	# 	return "remove_right failed"
+		changed_images = cmd(img, include_target=include_target)
+			 # = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
+		return jsonify(images=[x.to_array() for x in changed_images], result='success')
+		# return jsonify(result='split '+direction+' failed')
+
 
 @app.route("/add_studyparticipant", methods=["POST"])
 def add_studyparticipant():
@@ -124,41 +127,42 @@ def annotate(participant_id, event_id):
 @login_required
 @login_check()
 def load_images(participant_id):
-	print "participant_id", participant_id
-	query = Image.query.filter(Image.participant_id==participant_id)
+
+	query = Image.query.filter(Image.participant_id==participant_id).order_by(Image.image_time)
+
 	start_id = request.form.get('start_id', None) # get with default value
+
 	if start_id != None:
 		start_id = int(start_id)
 		start_img = Image.query.filter(Image.image_id==start_id).one()
 		query = query.filter(Image.image_time>start_img.image_time)
-	print "start_id", start_id
 
 	end_id = request.form.get('end_id', None)
+
 	if end_id is not None:
 		end_id = int(end_id)
 		end_img = Image.query.filter(Image.image_id==end_id).one()
 		query = query.filter(Image.image_time<end_img.image_time)
 
-	print "end_id", end_id
-
 	number = request.form.get('number', None)
 
-	print "number", number
-	print query
 	if number is not None:
 		images = query.limit(number)
 	else:
 		images = query.all()
-	images = sorted(images, key=lambda x: x.image_time)
+	# images = sorted(images, key=lambda x: x.image_time)
 
-	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id)).limit(number)
-	# else:
-	# 	images = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id>=start_id) & (Image.image_id<=end_id))
-	# response = make_response(json_dumps([x.to_array() for x in images]))
-	print images
+
 	print "to array() :"
+	print "\n".join([str([x.image_id, x.is_first, x.is_last, x.image_time]) for x in images])
 	print [x.to_array()[5] for x in images]
+	for e in set([img.event for img in images]):
+		print e.event_id
+		print e.first_image.image_id, e.first_image.image_time
+		print e.last_image.image_id, e.last_image.image_time
 	return jsonify(images=[x.to_array() for x in images], query={'start_id':start_id, 'end_id':end_id, 'number':number})#)", 200, {'Content-type', 'application/json'})
+
+
 
 #  note: not technically a post request, but still belongs here for now..
 @app.route("/participant/<int:participant_id>/download_annotation", methods=["GET"])

@@ -1,13 +1,12 @@
 
 var _request_pending = false;
-function create_query(url, data, callback, is_json) {
+function create_query(url, data, callback) {
 	if (_request_pending==true) return console.log("already waiting for a request to complete");
 	_request_pending = true;
 	$.ajax({
 		type: "POST",
 		url: url,
 		data: data,
-		dataType: (is_json ? "json" : undefined),
 		complete : function(jqXHR, textStatus) {
 			_request_pending = false;
 		  	console.log("db.js request completed: "+url+", status:"+textStatus);
@@ -61,4 +60,7 @@ var Image = {
 	load_by_id: function(participant_id, start, end, num, complete) {
 		create_query("/participant/"+participant_id+"/load_images", {start_id:start, end_id:end, number:num}, complete)
 	}
+	// reload_by_id: function(participant_id, image_id_list, complete) {
+	// 	create_query("/participant/"+participant_id+"/load_images", {image_id_list:image_id_list}, complete)
+	// }
 }

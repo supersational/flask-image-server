@@ -63,8 +63,10 @@ def reboot_db_action():
 	print option
 	if 'i_am_sure' in request.form and request.form['i_am_sure']=="yes":
 		if option=='recreate_fake':
+			db.drop_db()
 			db_session = db.get_session(create_data=True, fake=True)
 		elif option=='recreate_real':
+			db.drop_db()
 			db_session = db.get_session(create_data=True, fake=False)
 		elif option=='drop_db':
 			db.drop_db()

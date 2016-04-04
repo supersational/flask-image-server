@@ -82,6 +82,7 @@ class Event(Base):
             return False
         return True
         Event.query.filter(Event.prev_event==some_event).one()
+
     @hybrid_property 
     def prev_event(self):
         prev_events = Event.query.filter((Event.participant_id==self.participant_id) & (Event.end_time < self.end_time)).all()
@@ -125,6 +126,16 @@ class Event(Base):
             print "assume " + str(image) + " is an image ID"
             return add_image(images.query.filter(Image.image_id==image).one())
 
+        affected_images = Image.query.filter((Image.participant_id==self.participant_id) &
+                            (((Image.image_time<=image.image_time) & (Image.image_time>=self.start_time)) |
+                            ((Image.image_time>=image.image_time) & (Image.image_time<=self.end_time)))
+                            )
+        affected_images.update({Image.event_id: self.event_id})
+        for evt in set([img.event for img in affected_images.all()]):
+            if evt.check_valid():
+                evt.adjust_time()
+        return True
+
         if image.event_id == self.event_id:
             print "image to be added is already in the event"
             raise ValueError("image to be added is already in the event")
@@ -163,24 +174,80 @@ class Event(Base):
         return True
 
     def remove_left(self, image, steal=True, include_target=True):
-        print 'incllude_target', include_target
-        if image.event_id!=self.event_id:
-            raise ValueError("image to be removed isn't in event")
-        if steal and self.prev_event is not None:
-            prev = self.prev_event
-            for img in [x for x in self.images if x.image_time <= image.image_time]:
-                if include_target or img.image_id!=image.image_id: 
-                    img.event_id = prev.event_id
-                    print img.image_id, "added to event ", prev.event_id 
-        else: 
-            # set to no event
-            for img in [x for x in self.images if x.image_time <= image.image_time]:
-                if include_target or img.image_id!=image.image_id: 
-                    img.event_id = None
-                    print img.image_id, "removed" , image.image_id , image.image_id!=img.image_id
-        return True
+        print "remove_left  ", steal, include_target, image.image_id, image.event_id,
+        affected_images = Image.query.filter((Image.participant_id==self.participant_id) & (Image.event_id==self.event_id))
+        if include_target:
+            affected_images = affected_images.filter(Image.image_time<=image.image_time)
+        else:
+            affected_images = affected_images.filter(Image.image_time<image.image_time)
+
+        affected =affected_images.all()
+        if steal and self.prev_event is not None :
+            for img in affected:
+                img.event = self.prev_event
+            self.prev_event.adjust_time()
+            # print "\nsteal", self.prev_event/
+        else:
+            for img in affected:
+                img.event = None
+            # affected_images.update({Image.event_id: None})
+
+        self.check_valid()
+        self.adjust_time()
+
+
+        print '\n\naffected_images:'
+        print "\n".join(map(str,affected_images.all()))
+        return affected
+
 
     def remove_right(self, image, steal=True, include_target=True):
+        print "remove_right  ", steal, include_target, image.image_id, image.event_id,
+        affected_images = Image.query.filter((Image.participant_id==self.participant_id) & (Image.event_id==self.event_id))
+        if include_target:
+            affected_images = affected_images.filter(Image.image_time>=image.image_time)
+        else:
+            affected_images = affected_images.filter(Image.image_time>image.image_time)
+
+        affected = affected_images.all()
+        if steal and self.next_event is not None :
+            for img in affected:
+                img.event = self.next_event
+            self.next_event.adjust_time()
+            # print "\nsteal", self.prev_event/
+        else:
+            for img in affected:
+                img.event = None
+            # affected_images.update({Image.event_id: None})
+
+        self.check_valid()
+        self.adjust_time()
+
+
+        print '\n\naffected_images:'
+        print "\n".join(map(str,affected_images.all()))
+        return affected
+
+
+
+
+
+
+        print "remove_right ", steal, include_target, image.image_id
+        affected_images = Image.query.filter((Image.participant_id==self.participant_id) & (Image.event_id==image.event_id))
+        if include_target:
+            affected_images.filter(Image.image_time>=image.image_time)
+        else:
+            affected_images.filter(Image.image_time>image.image_time)
+        if steal and self.next_event is not None:
+            affected_images.update({Image.event_id: self.next_event.event_id})
+        else:
+            affected_images.update({Image.event_id: None})
+        print affected_images.all()
+        self.adjust_time()
+        return affected_images.all()
+        
+
         if image.event_id!=self.event_id:
             raise ValueError("image to be removed isn't in event")
         if steal and self.next_event is not None:
@@ -203,6 +270,7 @@ class Event(Base):
             new_event = Event(self.participant_id, self.start_time, self.end_time, comment=self.comment, label_id=self.label_id)
             for img in self.images[:index]:
                 img.event = new_event
+            # self.images.update().where(Image.image_time<image.image_time).values(event=new_event)
             new_event.adjust_time()
             self.adjust_time()
             return True
@@ -228,6 +296,7 @@ class Event(Base):
     def adjust_time(self):
         start_time = datetime.datetime.max
         end_time = datetime.datetime.min
+        # start_time = Image.query(func.max(Image.image_time).label('max_time')).filter(Image.event_id==self.event_id).one().max_time
         for image in self.images:
             start_time = min(start_time, image.image_time)
             end_time = max(end_time, image.image_time)
@@ -308,7 +377,7 @@ class Image(Base):
             self.event_id = event_id
 
     def __repr__(self):
-        return str(self.image_time) + " - " + self.full_url + "(" + str(self.participant_id) + ")"
+        return str(self.image_id) + ": " + str(self.image_time) + " - " + str(self.event_id) + "(" + str(self.participant_id) + ")"
 
     @hybrid_property 
     def is_first(self):
