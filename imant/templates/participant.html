@@ -887,13 +887,17 @@
 			console.log('e.target:',e.target, 'curr_img:',curr_img, 'event_pair_img:',event_pair_img)
 		});
 
-		$('div.img').mousemove(function(e) {
+		$(document).mousemove(function(e) {
+			// if (!$.contains($(".gallery")[0],e.target)) return 0;
+			this_img = $(e.target).closest(".img")
+			if (this_img.length<=0) return 0; else this_img = this_img[0]
 			if (start_img===null) {return 0;}
 			e.preventDefault()
+			console.log("mousemove", e.target, this, curr_img)
 			// if it has moved from previous position
-			if (this !== curr_img) {
+			if (this_img !== curr_img) {
 				// make sure we can not move futher back than the end of the event
-				curr_id = parseInt(this.id);
+				curr_id = parseInt(this_img.id);
 				// if we have gone further than the other end of our own event
 				if (event_pair_id!==null && (
 					(start_id < event_pair_id && curr_id > event_pair_id) || 
@@ -905,7 +909,7 @@
 					if (curr_img==event_pair_img) return 0;
 					curr_img = event_pair_img;
 				} else {
-					curr_img = this;
+					curr_img = this_img;
 				}
 				curr_event_id = parseInt($(curr_img).attr('event-id'));
 				var same_event = (curr_event_id == start_event_id)
@@ -923,7 +927,7 @@
 							var direction = "left";
 							other_label = parseInt($("div.img#"+event_to_left).attr("label-id"));
 
-							// moving towards left, this does the strike-through
+							// moving towards left, this_img does the strike-through
 							for( var i=start_id; i<curr_id; i++ ){
 								if (event_to_left!==false) modify[i] = "through"
 								else modify[i] = "blank"
