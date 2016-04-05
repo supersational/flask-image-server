@@ -22,21 +22,17 @@ def user_change_password(user_id):
 	return "error changing user %s password" % user_id
 
 
-@app.route("/participant/<int:participant_id>/<int:event_id>/check_valid", methods=["POST"])
+@app.route("/participant/<int:participant_id>/check_valid", methods=["POST"])
 @login_required
 @login_check()
-def event_check_valid(participant_id, event_id):
-	evt = Event.query.filter(
-		(Event.participant_id==participant_id) &
-		(Event.event_id==event_id) 
-		).one()
-	if evt:
-		if evt.check_valid():
-			return redirect("/participant/%s/%s" % (participant_id, event_id))
-		else:
-			return redirect("/participant/%s" % (participant_id))
-	return "error, no event : %s" % event_id
-		
+def event_check_valid(participant_id):
+	num_not_valid = 0
+	evts = Event.query.filter((Event.participant_id==participant_id)).all()
+	for evt in evts:
+		if not evt.check_valid():
+			num_not_valid += 1
+	return "deleted: " + str(num_not_valid) + " invalid events"
+
 @app.route("/participant/<int:participant_id>/<int:event_id>/<int:image_id>/<code>", methods=["POST"])
 @login_required
 @login_check()

@@ -178,7 +178,8 @@
 			{% endif %}
 		</div>
 		<div class="clearfix">
-			<button  onClick="Study.get_annotation_csv({{id}})">Download .csv</button>
+			<button  onClick="Study.get_annotation_csv({{id}})">Download .csv</button> 
+			<button  onClick="Event.check_valid({{id}}, function(status, jqXHR) {alert(status + ' ' + jqXHR.responseText)})">Event-checker</button>
 		</div>
 	</div>
 	<div class="left-sticky" id="left-bar">

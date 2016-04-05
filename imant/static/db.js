@@ -18,8 +18,8 @@ function create_query(url, data, callback) {
 }
 var Event = {
 	// participant_id not really necessary here, but can't hurt
-	check_valid: function(participant_id, event_id, complete) {
-		create_query("/participant/"+participant_id+"/"+event_id+"/check_valid",undefined, complete)
+	check_valid: function(participant_id, complete) {
+		create_query("/participant/"+participant_id+"/check_valid",undefined, complete)
 	},
 	add_image: function(participant_id, event_id, image_id, complete) {
 		create_query("/participant/"+participant_id+"/"+event_id+"/"+image_id+"/add_image",undefined, complete)
