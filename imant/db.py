@@ -126,18 +126,24 @@ class Event(Base):
             print "assume " + str(image) + " is an image ID"
             return add_image(images.query.filter(Image.image_id==image).one())
 
-        print image.image_time
+        # print image.image_time
+        # print self.start_time
+        # print self.end_time
         affected_images = Image.query.filter((Image.participant_id==self.participant_id) &
                             (((Image.image_time<=image.image_time) & (Image.image_time>=self.start_time)) |
                             ((Image.image_time>=image.image_time) & (Image.image_time<=self.end_time)))
                             )
+        # print "affected_images before:"
+        # print "\n".join(map(str, sorted(affected_images.all(), key=lambda x: x.image_time)))
         affected_events = set()
         for img in affected_images:
             if img.event:
                 # we need to check if it's empty in the next bit
                 affected_events.add(img.event)
             img.event = self
+            img.event_id = self.event_id
         # affected_images.update({Image.event_id: self.event_id})
+
         for evt in affected_events:
             print evt
             print "\n".join(map(str,evt.images))
@@ -148,44 +154,6 @@ class Event(Base):
         print "\n".join(map(str, sorted(affected_images.all(), key=lambda x: x.image_time)))
         return affected_images.all()
 
-
-
-        if image.event_id == self.event_id:
-            print "image to be added is already in the event"
-            raise ValueError("image to be added is already in the event")
-        affected_events = [self] # events that will need times modified and might need deleting
-        if image.event: affected_events.append(image.event)
-        image.event_id = self.event_id
-        if image.image_time > self.end_time:
-            # image after end of event
-            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time > self.end_time) & (Image.image_time < image.image_time)).all()
-            self.end_time = image.image_time
-        elif image.image_time < self.start_time:
-            # image before start of event
-            images_between = Image.query.filter((Image.participant_id==self.participant_id) & (Image.image_time < self.start_time) & (Image.image_time > image.image_time)).all()
-            self.start_time = image.image_time
-        else:
-            print "image must already be within event boundary! (wierd)"
-            print "start_time:", self.start_time
-            print "end_time:", self.end_time
-            print "image_time:", image.image_time
-            print "image in self.images", (image in self.images)
-            print "self.contains(image)", (self.contains(image))
-            raise ValueError("image must already be within event boundary! (wierd)")
-        print "my images:", len(self.images)
-        print "images between: ", len(images_between)
-        for img in images_between:
-            print img
-            affected_events.append(img.event)
-            img.event_id = self.event_id
-
-        print "I now have %d images, and %d affected_events (%d total)" % (len(self.images), len(set(affected_events)), len(affected_events))
-        for evt in set(affected_events):
-            print evt.event_id, " - ", len(evt.images)
-            if evt.adjust_time(): 
-                print "still valid"
-        print self.images
-        return True
 
     def remove_left(self, image, steal=True, include_target=True):
         print "remove_left  ", steal, include_target, image.image_id, image.event_id,
@@ -230,12 +198,14 @@ class Event(Base):
         if steal and self.next_event is not None:
             for img in affected_images:
                 img.event = self.next_event
+                img.event_id = self.next_event.event_id
             self.next_event.adjust_time()
             affected_images += self.next_event.images
             # print "\nsteal", self.prev_event/
         else:
             for img in affected_images:
                 img.event = None
+                img.event_id = None
             # affected_images.update({Image.event_id: None})
 
         self.check_valid()
@@ -245,42 +215,6 @@ class Event(Base):
         print '\n\naffected_images:'
         print "\n".join(map(str,sorted(affected_images, key=lambda x: x.image_time)))
         return affected_images
-
-
-
-
-
-
-        print "remove_right ", steal, include_target, image.image_id
-        affected_images = Image.query.filter((Image.participant_id==self.participant_id) & (Image.event_id==image.event_id))
-        if include_target:
-            affected_images.filter(Image.image_time>=image.image_time)
-        else:
-            affected_images.filter(Image.image_time>image.image_time)
-        if steal and self.next_event is not None:
-            affected_images.update({Image.event_id: self.next_event.event_id})
-        else:
-            affected_images.update({Image.event_id: None})
-        print affected_images.all()
-        self.adjust_time()
-        return affected_images.all()
-        
-
-        if image.event_id!=self.event_id:
-            raise ValueError("image to be removed isn't in event")
-        if steal and self.next_event is not None:
-            next = self.next_event
-            for img in [x for x in self.images if x.image_time >= image.image_time]:
-                if include_target or img.image_id!=image.image_id: 
-                    img.event_id = next.event_id
-                    print img.image_id, " added to event ", next.event_id
-        else: 
-            # set to no event
-            for img in [x for x in self.images if x.image_time >= image.image_time]:
-                if include_target or img.image_id!=image.image_id: 
-                    img.event_id = None
-                    print img.image_id, " removed" 
-        return True
 
     def split_left(self, image):
         index = self.images.index(image)
@@ -319,8 +253,8 @@ class Event(Base):
             start_time = min(start_time, image.image_time)
             end_time = max(end_time, image.image_time)
 
-        if start_time < end_time:
-            print "adjusting time %s - %s " % (start_time, end_time)
+        print "adjusting time %s - %s " % (start_time, end_time)
+        if start_time <= end_time:
             self.start_time = start_time
             self.end_time = end_time
             self.tag_images()

@@ -1,6 +1,7 @@
 
 var _request_pending = false;
 function create_query(url, data, callback) {
+	console.log("create_query", url, data)
 	if (_request_pending==true) return console.log("already waiting for a request to complete");
 	_request_pending = true;
 	$.ajax({

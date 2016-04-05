@@ -812,11 +812,17 @@
 			var image_idx = img_to_replace.attr("id")
 			console.log(imgs[image_idx])
 			console.log(image_id, img_to_replace[0], image_idx)
-			imgs[image_idx] = img
-			img_to_replace.replaceWith(create_image(img, image_idx))
-			svg_ize($("div.img[image-id="+image_id+"]"), image_idx)
-			svg_colorize(image_idx)
-
+			if (imgs[image_idx]) {
+				img[4] = imgs[image_idx][4] // keep old image urls
+				imgs[image_idx] = img
+				
+			
+				img_to_replace.replaceWith(create_image(img, image_idx))
+				svg_ize($("div.img[image-id="+image_id+"]"), image_idx)
+				svg_colorize(image_idx)
+			} else {
+				console.log(img)
+			}
 			var bgcol = $("div.img[image-id="+image_id+"]").css("background-color")
 			$("div.img[image-id="+image_id+"]").css("background-color", "lightblue")
 			$("div.img[image-id="+image_id+"]").animate({backgroundColor: bgcol},1000)
