@@ -60,10 +60,10 @@ def event_modify(participant_id, event_id, image_id, code):
 	if not evt: return jsonify(result="no matching event")
 	# create list of images which could have potentially changed
 	if code=="add_image":
-		if evt.add_image(img):
-			changed_images = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
-			return jsonify(images=[x.to_array() for x in changed_images], result='success')
-		return jsonify(result="add_image failed")
+		changed_images = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
+		changed_images |= set(evt.add_image(img)) # merge sets
+		return jsonify(images=[x.to_array() for x in changed_images], result='success')
+		# return jsonify(result="add_image failed")
 	if code=="split_left":
 		changed_images = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
 		if evt.split_left(img):
@@ -80,6 +80,7 @@ def event_modify(participant_id, event_id, image_id, code):
 		print direction, include_target
 		cmd = evt.remove_left if direction=="left" else evt.remove_right
 		changed_images = cmd(img, include_target=include_target)
+		changed_images.append(img)
 			 # = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
 		return jsonify(images=[x.to_array() for x in changed_images], result='success')
 		# return jsonify(result='split '+direction+' failed')

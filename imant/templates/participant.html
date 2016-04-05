@@ -147,6 +147,9 @@
 	 	cursor: pointer;
 	 	pointer-events:none;
 	 }
+	 .thumbnail-hover p {
+	 	margin:3px;
+	 }
     </style>
 {% endblock %}
 {% block pagename %} Participant: {{name}} {% endblock %}
@@ -294,9 +297,9 @@
 
 	function create_image(i, idx) { 
 
-		var image_id=i[0], event_id=i[1], image_time=i[3], full_url=i[4][2], thumbnail_url=i[4][0], is_first=i[5][0], is_last=i[5][1];
+		var image_id=i[0], event_id=i[1], image_time=i[3], full_url=i[4][2], thumbnail_url=i[4][0], is_first=i[5][0], is_last=i[5][1], first_id=i[5][2][0], last_id=i[5][2][1];
 		var label_id=i[6];
-		var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'" >' // ondrop="img_drop(event)" ondragover="img_hover(event)
+		var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'" first-id="' + first_id + '"  last-id="' + last_id + '">' // ondrop="img_drop(event)" ondragover="img_hover(event)
 	 	if (!(event_id!==undefined)) {			 	
 			if (!is_last) {
 				 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -431,13 +434,16 @@
 		}).on('mouseenter', 'img.thumbnail', function() { 
 			var idx = parseInt($(this).closest(".img").attr("id"))
 			if (idx==idx_prev) return;
-			var text = "<p>image-idx:" + idx;
-			text += "<br>image-id:"+imgs[idx][0]
+			var text = "<p>"
+			text += "image-id:"+imgs[idx][0] + "<br>"
+			text += (imgs[idx][5][0] ? "O " : "") + imgs[idx][5][2][0] + " : "  + imgs[idx][5][2][1] + (imgs[idx][5][1] ? "O" : "") + "<br>"
+			text += "image-idx:" + idx + "<br>"
+			
 			if (imgs[idx][1])
-				text += "<br>event_id:"+imgs[idx][1]
+				text += "event_id:"+imgs[idx][1]// + "<br>"
 			var label_id = imgs[idx][6];
-			if (label_id) {
-				text += "<br>label_id:"+label_id
+			if (label_id && 0) {
+				text += "label_id:"+label_id + "<br>"
 				if (labels[label_id]) {
 					text+=labels[label_id].text
 				}
@@ -445,8 +451,11 @@
 			text+="</p>"
 			idx_prev = idx;
 			$(".thumbnail-hover").html(text).show()
+
+			var box_size = $(".thumbnail-hover")[0].getBoundingClientRect();
+			var img_size = $(this)[0].getBoundingClientRect();
 			var img_pos = $(this).offset()
-			$('.thumbnail-hover').css({'top':img_pos.top,'left':img_pos.left}).fadeIn('slow');
+			$('.thumbnail-hover').css({'top':img_pos.top,'left':img_pos.left+(img_size.width-box_size.width)/2}).fadeIn('slow');
 
 		}).on('mouseleave', 'img.thumbnail', function() {
 			idx_prev = -1;
@@ -806,6 +815,10 @@
 			img_to_replace.replaceWith(create_image(img, image_idx))
 			svg_ize($("div.img[image-id="+image_id+"]"), image_idx)
 			svg_colorize(image_idx)
+
+			var bgcol = $("div.img[image-id="+image_id+"]").css("background-color")
+			$("div.img[image-id="+image_id+"]").css("background-color", "lightblue")
+			$("div.img[image-id="+image_id+"]").animate({backgroundColor: bgcol},1000)
 		})
 	}
 

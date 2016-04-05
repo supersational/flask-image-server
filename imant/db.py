@@ -121,20 +121,34 @@ class Event(Base):
 
     def add_image(self, image):
         """adds a new image to the event (including all in-between images)"""
-        print self.images
+
         if type(image) is int:
             print "assume " + str(image) + " is an image ID"
             return add_image(images.query.filter(Image.image_id==image).one())
 
+        print image.image_time
         affected_images = Image.query.filter((Image.participant_id==self.participant_id) &
                             (((Image.image_time<=image.image_time) & (Image.image_time>=self.start_time)) |
                             ((Image.image_time>=image.image_time) & (Image.image_time<=self.end_time)))
                             )
-        affected_images.update({Image.event_id: self.event_id})
-        for evt in set([img.event for img in affected_images.all()]):
+        affected_events = set()
+        for img in affected_images:
+            if img.event:
+                # we need to check if it's empty in the next bit
+                affected_events.add(img.event)
+            img.event = self
+        # affected_images.update({Image.event_id: self.event_id})
+        for evt in affected_events:
+            print evt
+            print "\n".join(map(str,evt.images))
             if evt.check_valid():
                 evt.adjust_time()
-        return True
+            else:
+                print "deleted an event"
+        print "\n".join(map(str, sorted(affected_images.all(), key=lambda x: x.image_time)))
+        return affected_images.all()
+
+
 
         if image.event_id == self.event_id:
             print "image to be added is already in the event"
@@ -181,15 +195,18 @@ class Event(Base):
         else:
             affected_images = affected_images.filter(Image.image_time<image.image_time)
 
-        affected =affected_images.all()
-        if steal and self.prev_event is not None :
-            for img in affected:
+        affected_images = affected_images.all()
+        if steal and self.prev_event is not None:
+            for img in affected_images:
                 img.event = self.prev_event
+                img.event_id = self.prev_event.event_id
             self.prev_event.adjust_time()
+            affected_images += self.prev_event.images            
             # print "\nsteal", self.prev_event/
         else:
-            for img in affected:
+            for img in affected_images:
                 img.event = None
+                img.event_id = None # usually not necessary to update both, but we are returning these images afterwards
             # affected_images.update({Image.event_id: None})
 
         self.check_valid()
@@ -197,8 +214,8 @@ class Event(Base):
 
 
         print '\n\naffected_images:'
-        print "\n".join(map(str,affected_images.all()))
-        return affected
+        print "\n".join(map(str,sorted(affected_images, key=lambda x: x.image_time)))
+        return affected_images
 
 
     def remove_right(self, image, steal=True, include_target=True):
@@ -209,14 +226,15 @@ class Event(Base):
         else:
             affected_images = affected_images.filter(Image.image_time>image.image_time)
 
-        affected = affected_images.all()
-        if steal and self.next_event is not None :
-            for img in affected:
+        affected_images = affected_images.all()
+        if steal and self.next_event is not None:
+            for img in affected_images:
                 img.event = self.next_event
             self.next_event.adjust_time()
+            affected_images += self.next_event.images
             # print "\nsteal", self.prev_event/
         else:
-            for img in affected:
+            for img in affected_images:
                 img.event = None
             # affected_images.update({Image.event_id: None})
 
@@ -225,8 +243,8 @@ class Event(Base):
 
 
         print '\n\naffected_images:'
-        print "\n".join(map(str,affected_images.all()))
-        return affected
+        print "\n".join(map(str,sorted(affected_images, key=lambda x: x.image_time)))
+        return affected_images
 
 
 
@@ -329,13 +347,13 @@ class Event(Base):
     @hybrid_property 
     def first_image(self):
         if len(self.images) > 0:
-            return self.images[0]
+            return min(self.images, key=lambda x: x.image_time)
         return None
 
     @hybrid_property 
     def last_image(self):
         if len(self.images) > 0:
-            return self.images[-1]
+            return max(self.images, key=lambda x: x.image_time)
         return None
 
     @hybrid_method
@@ -343,7 +361,7 @@ class Event(Base):
         return (self.start_time <= image.image_time) & (image.image_time <= self.end_time)
 
     def __repr__(self):
-        return "Event: %s, %s - %s, participant_id:%s, %s images.\n%s" % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images), "\n".join([str(i.image_time)+i.full_url for i in self.images]))
+        return "Event: %s, %s - %s, participant_id:%s, %s images." % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images))
 
     def to_array(self):
         return self.event_id, [self.label_id,
@@ -377,7 +395,7 @@ class Image(Base):
             self.event_id = event_id
 
     def __repr__(self):
-        return str(self.image_id) + ": " + str(self.image_time) + " - " + str(self.event_id) + "(" + str(self.participant_id) + ")"
+        return "image " + str(self.image_id) + ": " + str(self.image_time) + " - " + str(self.event_id) + "(" + str(self.participant_id) + ")"
 
     @hybrid_property 
     def is_first(self):
@@ -393,7 +411,8 @@ class Image(Base):
             self.participant_id,
             serialize_datetime(self.image_time), 
             map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
-            [1 if self.is_first else 0, 1 if self.is_last else 0],
+            [1 if self.is_first else 0, 1 if self.is_last else 0,
+                [self.event.first_image.image_id if (self.event and self.event.first_image) else None, self.event.last_image.image_id if (self.event and self.event.last_image) else None]],
             self.event.label_id if self.event else None,
             self.event.label.color if self.event and self.event.label else None
         ]
