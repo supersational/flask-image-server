@@ -20,7 +20,7 @@ sizes = collections.OrderedDict(sorted(sizes.items(), key=lambda x: x)) # order 
 
 verbose = False
 overwrite = True
-output_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'images')
+output_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)),'application', 'images')
 participant_dir = 'C:\\Users\\shollowell\\Documents\\wearable_image_data'
 # participant_dir = 'T:\\Data\\Main'
 allsubdirs = [x for x in os.listdir(participant_dir) if os.path.isdir(os.path.join(participant_dir,x))]
