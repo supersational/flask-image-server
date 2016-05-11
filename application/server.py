@@ -1,5 +1,5 @@
-from imant import app
-from config import  __file__ as imant_file
+from application import app
+from config import  __file__ as application_file
 
 import time # measuring response time
 # date handling
@@ -11,7 +11,7 @@ timeformat = lambda x: datetime.datetime.strptime(x, "%H:%M:%S")
 from functools import wraps
 from json import dumps as json_dumps
 # custom sorting e.g. ['hi10', 'hi1', 'hi2', 'hi3'] -> ['hi1', 'hi2', 'hi3', 'hi10'] 
-from imant.natsort import natural_sort, natural_keys
+from application.natsort import natural_sort, natural_keys
 # import flask
 from flask import Flask, request, redirect, send_from_directory, url_for
 from flask import render_template, Response, stream_with_context
@@ -19,14 +19,14 @@ from flask.ext.login import login_required, current_user
 
 
 
-from imant.login import login_check, requires_admin # our login wrappers
+from application.login import login_check, requires_admin # our login wrappers
 # login_manager = LoginManager()
 # login_manager.init_app(app)
 # import our custom db interface
-import imant.db as db
+import application.db as db
 # print dir(db)
-from imant.db import Event, Image, Participant, User, Study, Schema, Label, Folder
-db_session = db.get_session()
+from application.db import Event, Image, Participant, User, Study, Schema, Label, Folder
+db_session = db.session
 
 @app.route("/")
 def index():
@@ -35,7 +35,7 @@ def index():
 		participants=Participant.query.all(),
 		users=User.query.all(),
 		num_images=len(Image.query.all()),
-		sql_create=open('imant/create_db.txt','r').read(),
+		sql_create=open('application/create_db.txt','r').read(),
 		sql_text=db.read_log()[:2000]
 	)
   
@@ -86,7 +86,7 @@ def drop_db():
 	if len(User.query.filter(User.username==u1.username).all())==0:
 	    db_session.add(u1)
 
-	with open('imant/create_db.txt','w') as f:
+	with open('application/create_db.txt','w') as f:
 			f.write(create_sql)
 	return "<h2>Rebooted DB</h2><h3>Drop SQL:</h3><pre>"+drop_sql+"</pre><h3>Create SQL:</h3><pre>"+create_sql+"</pre>"
 

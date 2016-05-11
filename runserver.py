@@ -1,2 +1,2 @@
-from imant import app
+from application import app
 app.run(debug=True)

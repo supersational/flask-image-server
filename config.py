@@ -1,10 +1,10 @@
+import os
 # Statement for enabling the development environment
 DEBUG = True
 
 #	controls if the cookie should be set with the secure flag. Defaults to False.
 SESSION_COOKIE_SECURE = True
 # Define the application directory
-import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))  
 
 # Define the database - we are working with

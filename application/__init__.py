@@ -5,8 +5,8 @@ app = Flask(__name__, static_folder='static', template_folder='templates')
 app.config.from_object('config')
 
 # for running node server
-import imant.run_node
-import imant.login
-import imant.template_filters
-import imant.post
-import imant.server
+import application.run_node
+import application.login
+import application.template_filters
+import application.post
+import application.server

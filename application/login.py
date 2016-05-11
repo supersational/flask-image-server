@@ -1,8 +1,8 @@
-from imant import app
+from application import app
 from flask import request, redirect, url_for
 from flask import render_template
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
-from imant.db import User, Study, Participant
+from application.db import User, Study, Participant
 from functools import wraps
 
 login_manager = LoginManager()

@@ -1,4 +1,4 @@
-from imant import app
+from application import app
 if 1:
     # this seems to be the simplest method:
     import subprocess
@@ -6,7 +6,7 @@ if 1:
     @app.before_first_request
     def before_first_request():
         print '########### Restarted, first request @ {} ############'.format(datetime.datetime.utcnow())
-        subprocess.Popen(['node', 'imant/server.js', app.config['NODE_SECRET_KEY']], shell=True)
+        subprocess.Popen(['node', 'application/server.js', app.config['NODE_SECRET_KEY']], shell=True)
 
 else:
     # this has a race condition, but could be useful for querying the server in future

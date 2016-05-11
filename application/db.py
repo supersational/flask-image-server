@@ -24,11 +24,20 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.sql import text
 # custom data creation class
 
+engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, logging_name="sqlalchemy.engine")
+
+def create_session(autoflush=True, autocommit=True):
+    return scoped_session(sessionmaker(autocommit=autocommit,
+                                             autoflush=autoflush,
+                                             bind=engine))  
+
+session = create_session()
 
 Base = declarative_base()
+Base.query = session.query_property()
+
 metadata = Base.metadata
 
-engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, logging_name="sqlalchemy.engine")
 connection = engine.connect()
 
 # logging
@@ -630,15 +639,12 @@ class Folder(Base):
         }
 
 def drop_db():
+    print "Base.metadata.drop_all(engine)"
     Base.metadata.drop_all(engine)
 
 def create_db():
+    print "Base.metadata.create_all(engine)"
     Base.metadata.create_all(engine)
-
-def create_session(autoflush=True, autocommit=True):
-    return scoped_session(sessionmaker(autocommit=autocommit,
-                                             autoflush=autoflush,
-                                             bind=engine))  
 
 def get_session(create_data=False, run_tests=False, fake=True):
     if run_tests:
@@ -652,8 +658,6 @@ def get_session(create_data=False, run_tests=False, fake=True):
 
     # does not actually connect until work is done
     create_db()
-    session = create_session()
-    Base.query = session.query_property()
     if create_data:
         print "creating db"
         db_data.create_data(session, engine, fake=fake)

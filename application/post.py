@@ -1,7 +1,7 @@
-from imant import app
+from application import app
 from flask import request, redirect, make_response, jsonify
-from imant.db import Event, Image, Participant, Study, Label
-from imant.login import login_required, login_check
+from application.db import Event, Image, Participant, Study, Label
+from application.login import login_required, login_check
 from json import dumps as json_dumps
 
 #csv stuff

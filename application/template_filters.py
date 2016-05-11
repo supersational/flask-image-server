@@ -1,4 +1,4 @@
-from imant import app
+from application import app
 # Add Jinja2 filters
 @app.template_filter('time')
 def get_time(s):

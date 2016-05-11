@@ -7,6 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import IntegrityError
 
 from db import Base, Event, Image, Participant, User, Study, Schema, Label, Folder
+from db import session, engine
 
 # needs connection object to efficiently insert many rows
 def create_data(session, engine, fake=False):
