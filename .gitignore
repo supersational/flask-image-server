@@ -4,3 +4,4 @@ logfile*.txt
 node_modules
 logs
 logs/
+env/
