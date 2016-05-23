@@ -12,7 +12,7 @@ from db import session, engine
 # needs connection object to efficiently insert many rows
 def create_data(session, engine, fake=False):
     Base.query = session.query_property()
-    s = Schema("from file")
+    s = Schema("main-annotation-schema")
     session.add(s)
     s.from_file(open(os.path.join(script_folder, "annotation/annotation.csv"),"r"))
     # print s.dump()
