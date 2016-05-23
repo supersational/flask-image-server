@@ -154,6 +154,8 @@ def load_images(participant_id):
 	print "\n".join([str([x.image_id, x.is_first, x.is_last, x.image_time]) for x in images])
 	print [x.to_array()[5] for x in images]
 	for e in set([img.event for img in images]):
+		if e is None:
+			continue
 		print e.event_id
 		print e.first_image.image_id, e.first_image.image_time
 		print e.last_image.image_id, e.last_image.image_time
@@ -161,7 +163,8 @@ def load_images(participant_id):
 
 
 
-#  note: not technically a post request, but still belongs here for now..
+# download csv of the annotations
+# note: not technically a post request, but still belongs here for now..
 @app.route("/participant/<int:participant_id>/download_annotation", methods=["GET"])
 @login_required
 @login_check()
