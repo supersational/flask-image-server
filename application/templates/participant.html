@@ -283,6 +283,10 @@
 <div class="thumbnail-hover"></div>
 
 	<script>
+	function pad_num(n, width) {
+		n = n + '';
+		return n.length >= width ? n : new Array(width - n.length + 1).join("0") + n;
+	}
 	var time_start = new Date()
 	var imgs;
 	var img_sizes = {
@@ -313,7 +317,7 @@
 
 		str += '</svg>'
 		str += '<img class="thumbnail" width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" >'
-		str += '<p>' + image_time[3]+':'+image_time[4]+':'+image_time[5]+'</p></div>'
+		str += '<p>' + pad_num(image_time[3],2)+':'+ pad_num(image_time[4],2)+':'+pad_num(image_time[5],2)+'</p></div>'
 		return str;
 	}
 
@@ -465,27 +469,37 @@
 	})();
 
 
-
-	$(window).bind('mousewheel DOMMouseScroll scroll', function() {
+	function loadMoreOnScroll() {
 	    if($(window).scrollTop() == $(document).height() - $(window).height()) {
-	           load_more_images(20);
+           load_more_images(20);
 	    }
-	});
+	}
+	$(window).bind('mousewheel DOMMouseScroll scroll', loadMoreOnScroll);
+
 	function load_more_images(num) {
 		Image.load_by_id({{id}}, imgs[imgs.length-1][0], undefined, num, function(_, jqXHR) {
 			var returned_data = $.parseJSON(jqXHR.responseText);
 			// console.log(returned_data.query)
 			var new_imgs = returned_data.images;
 			// console.log(new_imgs);
+
 			new_imgs.forEach(function(img) {
 				// console.log("img",img);
 				img[8] = true // set to "needs creating"
-			})
-			imgs = imgs.concat(new_imgs)
-			$(".load-more").remove()
-			// add seperator?
-			// $(".gallery").html($(".gallery").html() + "<h2 class='gallery-seperator'>loaded more: </h2>")
+			});
+			imgs = imgs.concat(new_imgs);
+			$(".load-more").remove();
+
 			generate_images();
+			
+			if (new_imgs.length < num) { // remove load more button if run out
+				console.log(".load-more", new_imgs.length, new_imgs)
+				var btn = $(".load-more").find("button")
+				btn.prop('disabled', "disabled");
+				btn.text("No more images");
+				btn.removeAttr('onclick');
+				$(window).unbind('mousewheel DOMMouseScroll scroll', loadMoreOnScroll);
+			}
 		});
 	}
 	// function reload_images(selection) {
@@ -674,9 +688,7 @@
 		});
 		$(document).mouseup(function(ev) {
 			if ($.contains($(".gallery")[0], ev.target)) {
-				// ev.preventDefault();
 				img_drop(ev);
-				console.log("OFF")
 				label_id_drag = null;
 				is_dragging = false;
 			}
