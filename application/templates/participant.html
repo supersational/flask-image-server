@@ -486,7 +486,8 @@
 	$(window).bind('mousewheel DOMMouseScroll scroll', loadMoreOnScroll);
 
 	function load_more_images(num) {
-		Image.load_by_id({{id}}, imgs[imgs.length-1][0], undefined, num, function(_, jqXHR) {
+		var start_img_id  = imgs.length > 0 ? imgs[imgs.length-1][0] : 0;
+		Image.load_by_id({{id}}, start_img_id , undefined, num, function(_, jqXHR) {
 			var returned_data = $.parseJSON(jqXHR.responseText);
 			// console.log(returned_data.query)
 			var new_imgs = returned_data.images;
