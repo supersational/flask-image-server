@@ -2,7 +2,7 @@ images
 *.pyc
 logfile*.txt
 node_modules
-logs
-logs/
+
+logs/*
 env/
 application/upload_folder/
