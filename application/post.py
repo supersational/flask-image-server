@@ -129,23 +129,25 @@ def annotate(participant_id, event_id):
 @login_check()
 def load_images(participant_id):
 
-	query = Image.query.filter(Image.participant_id==participant_id).order_by(Image.image_time)
-
 	start_id = request.form.get('start_id', None) # get with default value
+	end_id = request.form.get('end_id', None)
+	number = request.form.get('number', None)
+	if Participant.query.filter(Participant.participant_id==participant_id).one().has_images is False:
+		return jsonify(images=[], query={'start_id':start_id, 'end_id':end_id, 'number':number})
+
+	query = Image.query.filter(Image.participant_id==participant_id).order_by(Image.image_time)
 
 	if start_id != None:
 		start_id = int(start_id)
 		start_img = Image.query.filter(Image.image_id==start_id).one()
 		query = query.filter(Image.image_time>start_img.image_time)
 
-	end_id = request.form.get('end_id', None)
 
 	if end_id is not None:
 		end_id = int(end_id)
 		end_img = Image.query.filter(Image.image_id==end_id).one()
 		query = query.filter(Image.image_time<end_img.image_time)
 
-	number = request.form.get('number', None)
 
 	if number is not None:
 		images = query.limit(number)

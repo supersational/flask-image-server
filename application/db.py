@@ -405,7 +405,10 @@ class Participant(Base):
         return Image.query.filter(Image.participant_id==self.participant_id)
     @hybrid_property
     def num_images(self):
-        return connection.execute(text("SELECT COUNT(*) FROM images WHERE (participant_id=:pid)"), {"pid":self.participant_id}).first()[0];
+        return connection.execute(text("SELECT COUNT(*) FROM images WHERE (participant_id=:pid)"), {"pid":self.participant_id}).first()[0]
+    @hybrid_property
+    def has_images(self):
+        return self.num_images>0
 
     def get_images_by_hour(self):
         unique_days = {}

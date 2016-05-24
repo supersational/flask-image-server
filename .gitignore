@@ -5,4 +5,4 @@ node_modules
 
 logs/*
 env/
-application/upload_folder/
+application/upload_folder/*
