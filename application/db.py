@@ -687,6 +687,7 @@ def get_session(create_data=False, run_tests=False, fake=True):
 
 import db_data
 if __name__ == "__main__":
+    # run db.py directly to do testing (and create fake data)
     drop_db()
     global session
     fake = True # create fake data by default
