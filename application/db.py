@@ -290,6 +290,10 @@ class Event(Base):
         else:
             return self.check_valid()
 
+    @staticmethod
+    def get_event_at_time(time, participant_id):
+        return Event.query.filter((Event.contains_time(time))).first() # note: does not check for overlapping events
+
     def resolve_time_conflicts(self):
         with self.next_event as next:
             if next.start_time < self.end_time:
@@ -321,6 +325,10 @@ class Event(Base):
     @hybrid_method
     def contains(self, image):
         return (self.start_time <= image.image_time) & (image.image_time <= self.end_time)
+
+    @hybrid_method
+    def contains_time(self, time):
+        return (self.start_time <= time) & (time <= self.end_time)
 
     def __repr__(self):
         return "Event: %s, %s - %s, participant_id:%s, %s images." % (self.event_id, self.start_time, self.end_time, self.participant_id, len(self.images))
@@ -357,7 +365,7 @@ class Image(Base):
             self.event_id = event_id
 
     def __repr__(self):
-        return "image " + str(self.image_id) + ": " + str(self.image_time) + " - " + str(self.event_id) + "(" + str(self.participant_id) + ")"
+        return "image_id " + str(self.image_id) + ": time:" + str(self.image_time) + " event: " + str(self.event_id) + "(" + str(self.participant_id) + ")"
 
     @hybrid_property 
     def is_first(self):

@@ -30,4 +30,13 @@ JSONIFY_PRETTYPRINT_REGULAR = False
 
 SERVER_NAME = 'localhost:5000'
 
+APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
+IMAGES_FOLDER =os.path.join(BASE_DIR, "application", "images")
 UPLOAD_FOLDER =os.path.join(BASE_DIR, "application", "upload_folder")
+
+IMAGE_SIZES = {
+	'thumbnail':{'size':(100, 100),'dir':'thumbnail'},
+	'medium':{'size':(864, 645),'dir':'medium'},
+	'full':{'size':(0, 0),'dir':'full'}
+}
+

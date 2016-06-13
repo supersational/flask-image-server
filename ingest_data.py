@@ -2,6 +2,7 @@ import os, sys
 from PIL import Image
 from time import sleep
 import collections 
+from config import IMAGE_SIZES
 def create_folder(folder): 
 	if not os.path.exists(os.path.dirname(folder)):
 	    try:
@@ -11,12 +12,12 @@ def create_folder(folder):
 	            raise
 	return folder
 
-sizes = {
-	'thumbnail':{'size':(100, 100),'dir':'thumbnail'},
-	'medium':{'size':(864, 645),'dir':'medium'},
-	'full':{'size':(0, 0),'dir':'full'}
-}
-sizes = collections.OrderedDict(sorted(sizes.items(), key=lambda x: x)) # order alphabetically
+# IMAGE_SIZES = {
+# 	'thumbnail':{'size':(100, 100),'dir':'thumbnail'},
+# 	'medium':{'size':(864, 645),'dir':'medium'},
+# 	'full':{'size':(0, 0),'dir':'full'}
+# }
+sizes = collections.OrderedDict(sorted(IMAGE_SIZES.items(), key=lambda x: x)) # order alphabetically
 
 verbose = False
 overwrite = True

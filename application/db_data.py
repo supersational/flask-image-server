@@ -41,9 +41,9 @@ def add_participant_images(participants, session, engine):
     for p, image_array in participants.iteritems():
         # find or create participant if (not) exists
         try:
-            p = Participant.query.filter(Participant.name==p).one()
+            p = Participant.query.filter(Participant.participant_id==p).one()
         except NoResultFound:
-            p = Participant(p)
+            p = Participant("P"+str(p))
             session.add(p)
         session.flush() # required for participant_id to be updates
         print p, p.participant_id
