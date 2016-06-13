@@ -23,7 +23,6 @@
     <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe.min.js"></script>
     <!-- UI JS file -->
     <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe-ui-default.min.js"></script> 
-    <script src="http://127.0.0.1:5001/static/dropzone.js"></script>
 
     <style>
     .img {
@@ -181,6 +180,11 @@
 		<div class="clearfix">
 			<button  onClick="Study.get_annotation_csv({{id}})">Download .csv</button> 
 			<button  onClick="Event.check_valid({{id}}, function(status, jqXHR) {alert(status + ' ' + jqXHR.responseText)})">Event-checker</button>
+			<form action="/participant/{{id}}/upload_file" method=post enctype=multipart/form-data>
+				<!-- <form action="/participant/{{id}}/upload_file">  -->
+				<input type="file" name="file">
+				<input type="submit">
+			</form>
 		</div>
 	</div>
 	<div class="left-sticky" id="left-bar">
@@ -282,15 +286,6 @@
 
 </div>
 <div class="thumbnail-hover"></div>
-    <script>
-    var dropZone = new Dropzone(document.body, {
-		  previewsContainer:null,
-		  // You probably don't want the whole body
-		  // to be clickable to select files
-		  clickable: false,
-		  url:"/participant/{{id}}/upload_file"
-		});
-    </script>
 	<script>
 	function pad_num(n, width) {
 		n = n + '';

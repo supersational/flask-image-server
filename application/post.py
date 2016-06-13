@@ -1,16 +1,11 @@
 from application import app
-# uploads
-from config import UPLOAD_FOLDER
-from werkzeug import secure_filename
 
 from flask import request, redirect, make_response, jsonify
 from application.db import Event, Image, Participant, Study, Label
 from application.login import login_required, login_check
 from json import dumps as json_dumps
 
-#csv stuff
-import csv
-from io import BytesIO
+
 @app.route("/user/<int:user_id>/change_password", methods=["POST"])
 @login_required
 @login_check()
@@ -193,26 +188,3 @@ def generate_annotation(participant_id):
 	response = make_response(output.getvalue())
 	response.headers["Content-Disposition"] = "attachment; filename=annotation.csv"
 	return response
-
-
-
-ALLOWED_EXTENSIONS = ["csv", "js","jpg","png"]
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
-
-@app.route("/participant/<int:participant_id>/upload_file", methods=["POST"])
-@login_required
-@login_check()
-def upload_file(participant_id):
-	file = request.files['file']
-	print file
-	print file.filename
-	print file.filename.rsplit('.', 1)[-1]
-	print file.filename.rsplit('.', 1)[1]
-	if file and allowed_file(file.filename):
-		filename = secure_filename(file.filename)
-		file.save(os.path.join(UPLOAD_FOLDER, filename))
-		return redirect("/participant/"+participant_id)
-	else:
-		return "no", 418

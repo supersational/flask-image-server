@@ -10,3 +10,4 @@ import application.login
 import application.template_filters
 import application.post
 import application.server
+import application.file_upload

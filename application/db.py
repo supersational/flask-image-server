@@ -6,7 +6,7 @@ from collections import OrderedDict
 # security
 import hashlib, uuid
 # define database
-from sqlalchemy import Column, Date, DateTime, Boolean, ForeignKey, Integer, String, Table, Text, UniqueConstraint, text
+from sqlalchemy import Column, Date, DateTime, Boolean, ForeignKey, Integer, Float, String, Table, Text, UniqueConstraint, text
 from sqlalchemy.sql.expression import func, funcfilter
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -47,6 +47,25 @@ logger = loghandler.init("sqlalchemy.engine")
 
 def read_log():
     return loghandler.read()
+
+class Datatype(Base):
+    __tablename__ = 'datatypes'
+
+    datatype_id = Column(Integer, primary_key=True)
+    name = Column(String(256))
+
+    datapoints = relationship(u'Datapoint', back_populates='datatype')
+
+class Datapoint(Base):
+    __tablename__ = 'datapoints'
+    datapoint_id = Column(Integer, primary_key=True)
+    participant_id = Column(ForeignKey(u'participants.participant_id'), nullable=False)
+    datatype_id = Column(ForeignKey(u'datatypes.datatype_id'), nullable=False)
+
+    time = Column(DateTime, nullable=False)
+    value = Column(Float, nullable=False)
+
+    datatype = relationship(u'Datatype', back_populates='datapoints')
 
 class Event(Base):
     __tablename__ = 'events'
