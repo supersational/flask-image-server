@@ -590,7 +590,7 @@
 	(function() {
 		var label_id_drag = null;
 		var dragged_annotation = null;
-		var event_id = null;
+		var event_id = null; // event_id of the currently hovered image
 		function create_dragged_annotation(ev) {
 			var posX=ev.pageX;
 			var posY=ev.pageY;
@@ -627,14 +627,24 @@
 			    // console.log("allowDrop", label_id_drag, ".")
 			    ev.preventDefault();
 			    var new_event_id = $(ev.target).closest("div.img").attr("event-id");
-			    // if changed..
-		    	if (new_event_id!==event_id) {
-			    	event_id = new_event_id;
-		    		$("div.img").removeClass("selected");
-		    		if (new_event_id!==undefined) {
-			    		$("div.img[event-id="+event_id+"]").addClass("selected")
+			    if (new_event_id!=undefined && new_event_id.length>0) {
+				    // if changed..
+			    	if (new_event_id!==event_id) {
+				    	event_id = new_event_id;
+			    		$("div.img").removeClass("selected");
+			    		if (new_event_id!==undefined) {
+				    		$("div.img[event-id="+event_id+"]").addClass("selected")
+				    	}
 			    	}
-		    	}
+			    } else {
+			    	event_id = undefined;
+			    	var this_img = $(ev.target).closest("div.img");
+			    	if (!this_img.hasClass("selected")) {
+				    	$("div.img").removeClass("selected");
+				    	this_img.addClass("selected");
+				    	console.log("no event!",$(ev.target).closest("div.img"))
+				    }
+			    }
 			}
 		}
 
@@ -643,27 +653,48 @@
 		    console.log("drop data:", label_id_drag,"target: ", ev.target, $(ev.target).closest("div.img")[0])
 		    if (label_id_drag!==null) {
 		    	var event_id = $(ev.target).closest("div.img").attr("event-id")
-		    	console.log(event_id)
+		    	console.log('event_id:'+event_id)
 		    	var label = labels[label_id_drag];
-		    	if (event_id!==undefined && label) {
+		    	if (label) {
 		    		var image_idx = $(ev.target).closest("div.img").attr("id")
-		    		var imgs_in_this_event = $("div.img[event-id="+event_id+"]")
-		    		// callback will move color from background to event handles
-		    		var callback = function(e) {
-		    			console.log("done" + e);
-			    		imgs_in_this_event.css("background-color", "").removeClass("selected")
-			    		imgs_in_this_event.find(".line").css("fill", label.color)
-			    		imgs_in_this_event.find(".circle").css("stroke", label.color)
-			    		imgs[image_idx][6] =  label_id_drag;
-			    		imgs[image_idx][7] =  label.color;
-		    		}
-		    		if (label.color) {
-			    		Event.annotate({{id}}, event_id, label_id_drag, callback);
+		    		var imgs_in_this_event = [];
+		    		if (event_id!==undefined || event_id.length==0) {
+			    		var image_id = $(ev.target).closest("div.img").attr("image-id")
+			    		// callback will move color from background to event handles
+			    		var callback = function(e, jqXHR) {
+			    			console.log("done" + e, jqXHR);
+				    		imgs_in_this_event.css("background-color", "").removeClass("selected")
+				    		// makeSVG(imgs_in_this_event.find("svg"))
+				    		imgs[image_idx][6] =  label_id_drag;
+				    		imgs[image_idx][7] =  label.color;
+				    		reload_images(e, jqXHR)
+			    		}
+			    		Event.annotate_image({{id}}, image_id, label_id_drag, callback);
+			    		imgs_in_this_event = $("div.img[image-id="+image_id+"]")
+			    		// set correct label-id's and change color
+			    		imgs_in_this_event.attr("label-id", label_id_drag)
+			    		// add background color to show action has been performed (instant)
+			    		imgs_in_this_event.css("background-color", label.color)
 		    		} else {
-		    			// need to generate color for the first time, and persist to backend
-			    		label.color = getRandomColor();
-			    		Event.annotate_and_set_color({{id}}, event_id, label_id_drag, label.color, callback);
-		    		}
+		    			imgs_in_this_event = $("div.img[event-id="+event_id+"]")
+			    		
+    		    		// callback will move color from background to event handles
+    		    		var callback = function(e) {
+    		    			console.log("done" + e);
+    			    		imgs_in_this_event.css("background-color", "").removeClass("selected")
+    			    		imgs_in_this_event.find(".line").css("fill", label.color)
+    			    		imgs_in_this_event.find(".circle").css("stroke", label.color)
+    			    		imgs[image_idx][6] =  label_id_drag;
+    			    		imgs[image_idx][7] =  label.color;
+    		    		}
+			    		if (label.color) {
+				    		Event.annotate({{id}}, event_id, label_id_drag, callback);
+			    		} else {
+			    			// need to generate color for the first time, and persist to backend
+				    		label.color = getRandomColor();
+				    		Event.annotate_and_set_color({{id}}, event_id, label_id_drag, label.color, callback);
+			    		}
+			    	}
 		    		// set correct label-id's and change color
 		    		imgs_in_this_event.attr("label-id", label_id_drag)
 		    		// add background color to show action has been performed (instant)
@@ -815,9 +846,9 @@
 
 
 
-
+	// callback function for reloading images where appearances might have changed
 	function reload_images(_, jqXHR) {
-		var data = $.parseJSON(jqXHR.responseText);
+		var data = $.parseJSON(jqXHR.responseText); // recieves list of images
 		console.log(data)
 		if (data.result!=="success") return 0;
 		data.images.forEach(function(img) {

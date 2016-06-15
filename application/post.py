@@ -4,6 +4,7 @@ from flask import request, redirect, make_response, jsonify
 from application.db import Event, Image, Participant, Study, Label
 from application.login import login_required, login_check
 from json import dumps as json_dumps
+import datetime
 
 
 @app.route("/user/<int:user_id>/change_password", methods=["POST"])
@@ -106,10 +107,30 @@ def remove_studyparticipant():
 
 
 
+@app.route("/participant/<int:participant_id>/<int:image_id>/annotate_image", methods=["POST"])
+@login_required
+@login_check()
+def annotate_image(participant_id, image_id):
+	label_id = request.form['label_id']
+	label = Label.query.filter(Label.label_id==label_id).one()
+	if 'color' in request.form:
+		label.color = request.form['color']
+	# participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+	image = Image.query.filter((Image.participant_id==participant_id) & (Image.image_id==image_id)).one()
+	t = image.image_time
+	dt = datetime.timedelta.resolution # smallest possible time
+	image.event = Event(participant_id, t - dt, t + dt , label_id=label_id)
+	changed_images = set([image]) \
+		.union(image.event.next_event.images if image.event.next_event is not None else []) \
+		.union(image.event.prev_event.images if image.event.prev_event is not None else [])
+	print changed_images
+	return jsonify(images=[x.to_array() for x in changed_images], result='success')
+
+
 @app.route("/participant/<int:participant_id>/<int:event_id>/annotate", methods=["POST"])
 @login_required
 @login_check()
-def annotate(participant_id, event_id):
+def annotate_event(participant_id, event_id):
 	label_id = request.form['label_id']
 	label = Label.query.filter(Label.label_id==label_id).one()
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()

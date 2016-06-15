@@ -34,6 +34,9 @@ var Event = {
 		if (dir=="left" || dir=="right") 
 			create_query("/participant/"+participant_id+"/"+event_id+"/"+image_id+"/split_"+dir,undefined, complete)
 	},
+	annotate_image: function(participant_id, image_id, label_id, complete) {
+		create_query("/participant/"+participant_id+"/"+image_id+"/annotate_image",{label_id:label_id}, complete)
+	},	
 	annotate: function(participant_id, event_id, label_id, complete) {
 		create_query("/participant/"+participant_id+"/"+event_id+"/annotate",{label_id:label_id}, complete)
 	},
