@@ -191,14 +191,18 @@ class Event(Base):
         else:
             affected_images = affected_images.filter(Image.image_time<image.image_time)
 
+        try:
+            prev_event = self.prev_image.event
+        except AttributeError:
+            prev_event = None  
         affected_images = affected_images.all()
-        if steal and self.prev_event is not None:
+        if steal and prev_event is not None:
             for img in affected_images:
-                img.event = self.prev_event
-                img.event_id = self.prev_event.event_id
-            self.prev_event.adjust_time()
-            affected_images += self.prev_event.images            
-            # print "\nsteal", self.prev_event/
+                img.event = prev_event
+                img.event_id = prev_event.event_id
+            prev_event.adjust_time()
+            affected_images += prev_event.images            
+            # print "\nsteal", prev_event/
         else:
             for img in affected_images:
                 img.event = None
@@ -221,14 +225,18 @@ class Event(Base):
             affected_images = affected_images.filter(Image.image_time>=image.image_time)
         else:
             affected_images = affected_images.filter(Image.image_time>image.image_time)
-
+        
+        try:
+            next_event = self.next_image.event
+        except AttributeError:
+            next_event = None  
         affected_images = affected_images.all()
-        if steal and self.next_event is not None:
+        if steal and next_event is not None:
             for img in affected_images:
-                img.event = self.next_event
-                img.event_id = self.next_event.event_id
-            self.next_event.adjust_time()
-            affected_images += self.next_event.images
+                img.event = next_event
+                img.event_id = next_event.event_id
+            next_event.adjust_time()
+            affected_images += next_event.images
             # print "\nsteal", self.prev_event/
         else:
             for img in affected_images:
