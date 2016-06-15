@@ -6,6 +6,7 @@ import threading
 # image processing stuff
 import binascii
 import PIL
+import cgi
 from PIL import Image as PILImage 
 from io import BytesIO
 
@@ -51,38 +52,35 @@ def gen_hash():
 # }
 
 # hashed 'pending additions' to the database (so can be confirmed by user)
-pending_uploads = {} # should be [time_created, path, participant_id, data to be added to db:=[Image(), Data(), etc.], display_html]
-def add_upload(path, participant_id):
-	hash = gen_hash() # random hash to allow secure 'landing page' URL
-	pending_uploads[hash] = [time.time(), path, participant_id, [], '']
-	threading.Timer(0, lambda: process_uploaded_file(hash)).start()
-	return hash
+pending_uploads = {} # should be [time_created, path, participant_id, data to be added to db:=[Image(), Data(), etc.], display_html]	
+
 
 axivity_pattern = re.compile(r'B\d{8}_\d\dI\dTA_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})')
 thumbnail_size = 256, 256
 
 # extract data that can be added to the db (e.g. Images, .csv -> data)
-def process_uploaded_file(hash):
+def process_file_thread(hash, save_path):
 	upload = pending_uploads[hash]
-	filename = upload[1]
+	upload_file = upload['files'][save_path]
+	filename = save_path
 	filenamebase = os.path.basename(filename).split('.')[0]
 	ext = file_extension(filename)
-	participant_id = upload[2]
+	participant_id = upload['participant_id']
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	if ext=='jpg' or ext=='jpeg':
 		match = re.match(axivity_pattern, filenamebase)
 		#generate a temporary image thumbnail (stored/served in string format)
-		im = PILImage.open(os.path.join(UPLOAD_FOLDER, upload[1]))
+		im = PILImage.open(os.path.join(UPLOAD_FOLDER, save_path))
 		with im.copy() as im_thumb:
 			stream = BytesIO()
 			im_thumb.thumbnail(thumbnail_size)
 			im_thumb.save(stream, "JPEG")
-			upload[4] = "<img src='data:image//png;base64,%s'\>" % (binascii.b2a_base64(stream.getvalue()), )
+			upload_file['display'] += "<img src='data:image//png;base64,%s'\>" % (binascii.b2a_base64(stream.getvalue()), )
 			# upload[4] = "<img src='data:image//png;base64,%s'\>" % (binascii.b2a_base64(f.read()), )
 		if match:
 			g = map(int, match.groups('0'))
 			image_time = datetime.datetime(g[0], g[1], g[2], g[3], g[4], g[5])
-			upload[3].append('time is: ' + str(image_time))
+			upload_file['display'] += '<p>time found: ' + str(image_time) + '</p>'
 			
 			def gen_path(size):
 				return os.path.join('images', str(participant_id),size, filenamebase+".jpg")
@@ -100,9 +98,10 @@ def process_uploaded_file(hash):
 			# if there is already an event we add the image to it
 			event_id = getattr(Event.get_event_at_time(image_time, participant_id), 'event_id', None) 
 			upload_image = Image(participant_id, image_time, '/'+gen_path('full'), '/'+gen_path('medium'), '/'+gen_path('thumbnail'), event_id=event_id)
-			upload[3].append(upload_image)
+			upload_file['data'].append(upload_image)
 		else:
-			upload[3].append(filenamebase+' not a valid jpg filename')
+			upload_file['display'] += '<p> %s is not a valid jpg filename</p>' % (filenamebase,)
+	# if ext=='csv':
 
 
 @app.route("/participant/<int:participant_id>/upload", methods=["GET","POST"])
@@ -114,7 +113,8 @@ def upload_url(participant_id):
 		confirm_hash = (request.args.get('confirm_hash'))
 		if confirm_hash is None:
 			# first case is the user will be prompted to view his uploaded files
-			return upload_file(participant_id, request.files['file'])
+
+			return save_file(participant_id, request.files.getlist('file'))
 		else:
 			# then they can confirm that upload (for a specified pending_upload hash)
 			return confirm_upload(confirm_hash)
@@ -128,23 +128,21 @@ def upload_url(participant_id):
 		html =  '''<!doctype html><title>Upload complete</title>'''
 		if len(confirm_hash)>0:
 			if confirm_hash not in pending_uploads:
-				html += '''<h1>hash: %s not in pending_uploads</h1>''' % (confirm_hash,)
+				html += '''<h1>hash: %s not in pending_uploads</h1><p>%s</p>''' % (confirm_hash,cgi.escape(str(pending_uploads)))
 			else:
 				upload = pending_uploads[confirm_hash]
 				html += '''
 					<h1>Confirmed addition to db:</h1>
 					<p>%s</p> 
-					<p>path: %s</p>
 					<p>participant_id: %s</p>
 					<form action="" method=post><input type=submit></form>
 					<h3>extracted data:</h3>
 					<p>%s</p>
 					%s<br>''' % (
-						datetime.datetime.fromtimestamp(upload[0]).strftime('%Y-%m-%d %H:%M:%S'),
-						upload[1],
-						upload[2],
-						"</p><p>".join(map(str,upload[3])), 
-						upload[4]
+						datetime.datetime.fromtimestamp(upload['time']).strftime('%Y-%m-%d %H:%M:%S'),
+						upload['participant_id'],
+						"</p><p>".join(map(lambda x: str(upload['files'][x]['data']),upload['files'])), 
+						"".join([upload['files'][x]['display'] for x in upload['files']]) 
 						)
 
 			html += '''<a href='/participant/%i/upload'><button>Upload new file<button?</a> ''' % (participant_id, )
@@ -153,7 +151,7 @@ def upload_url(participant_id):
 				<p>%s</p>
 				<h1>Upload new participant file</h1>
 				<form action="" method=post enctype=multipart/form-data>
-				<p><input type=file name=file>
+				<p><input type=file name=file multiple>
 				<input type=submit value=Upload>
 				</form>
 				''' % (message,)
@@ -165,38 +163,63 @@ def csv_to_data(file):
 	for row in file:
 		cols = row.split(",")
 
+# when a file is submitted
+def save_file(participant_id, files):
+	hash = gen_hash() # random hash to allow secure 'landing page' URL
+	pending_uploads[hash] = {
+		'time':time.time(),
+		'participant_id':participant_id,
+		'files':{}
+	}
 
-def upload_file(participant_id, file):
-	print file
-	print file.filename
-	if file.filename is None or len(file.filename)==0:
-		return redirect("/participant/"+str(participant_id)+"/upload?message=invalid filename")
-	print file.filename.rsplit('.', 1)[-1]
-	print file.filename.rsplit('.', 1)[1]
-	ext = file_extension(file.filename) 
-	if file and ext in ALLOWED_EXTENSIONS:
-		filename = secure_filename(file.filename)
-		save_path = os.path.join(UPLOAD_FOLDER, str(participant_id), filename) 
-		ensure_dir_exists(save_path)
-		file.save(save_path)
-		file_hash = add_upload(save_path, participant_id)
+	for file in files:
 
-		return redirect("/participant/"+str(participant_id)+"/upload?confirm_hash="+file_hash)
-	else:
-		return redirect("/participant/"+str(participant_id)+"/upload?message=filetype ." + file_extension(file.filename) + " not allowed")
+		# [time.time(), participant_id, [], '']
+		
+		print file
+		print file.filename
+		if file.filename is None or len(file.filename)==0:
+			return redirect("/participant/"+str(participant_id)+"/upload?message=invalid filename")
+		print file.filename.rsplit('.', 1)[-1]
+		print file.filename.rsplit('.', 1)[1]
+		ext = file_extension(file.filename) 
+		if file and ext in ALLOWED_EXTENSIONS:
+
+			filename = secure_filename(file.filename)
+			save_path = os.path.join(UPLOAD_FOLDER, str(participant_id), filename) 
+			ensure_dir_exists(save_path)
+			file.save(save_path)
+
+			
+			pending_uploads[hash]['files'][save_path] = {
+				'ext':ext,
+				'data':[],
+				'display':'<p>upload: ' + save_path + "</p>"
+				}
+
+
+			threading.Timer(0, lambda: process_file_thread(hash, save_path)).start()
+
+	return redirect("/participant/"+str(participant_id)+"/upload?confirm_hash="+hash)
+	# else:
+	# 	return redirect("/participant/"+str(participant_id)+"/upload?message=filetype ." + file_extension(file.filename) + " not allowed")
 
 
 def confirm_upload(hash):
 	if hash not in pending_uploads:
 		return "hash %s does not exist" % hash
 
-	# confirm what was added by 'process_uploaded_file'
+	# confirm what was added by 'process_file_thread'
 	num_added = 0
-	for obj in pending_uploads[hash][3]:
-		if isinstance(obj, Image):
-			print obj, " is Image"
-			session.add(obj)
-			num_added += 1
-		else:
-			print obj, "is type: ", type(obj)
-	return "sucessfully added %i objects " % (num_added)
+	added_html = ''
+	for file in pending_uploads[hash]['files'].itervalues():
+		for obj in file['data']:
+			if isinstance(obj, Image):
+				print obj, " is Image"
+				session.add(obj)
+				session.flush()
+				num_added += 1
+				added_html += "<p>%s</p>" % (str(obj),)
+			else:
+				print obj, "is type: ", type(obj)
+	return "sucessfully added %i objects: %s " % (num_added, added_html)
