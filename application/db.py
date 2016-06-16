@@ -1,6 +1,6 @@
 # coding: utf-8
 # https://www.python.org/dev/peps/pep-0249/
-from config import NODE_SECRET_KEY, SQLALCHEMY_DATABASE_URI
+from config import NODE_SECRET_KEY, SQLALCHEMY_DATABASE_URI, IMAGES_FOLDER
 import datetime, sys
 from collections import OrderedDict
 # security
@@ -401,6 +401,14 @@ class Image(Base):
         t = int(time.time())
         return 'http://127.0.0.1:5001'+url+"?t="+str(t)+"&k="+gen_hash(t, url)
 
+    @staticmethod
+    def from_file(image_path, participant_id):
+        try:
+            import PIL
+
+        except:
+            return None
+
 def gen_hash(t, url):
     s = str(t)+url+NODE_SECRET_KEY
     # print s
@@ -466,7 +474,10 @@ class Participant(Base):
         #       print day, "- " + str(hour) + ":00 : ", unique_days[day][hour], " images"
         return OrderedDict(sorted(unique_days.items(), key=lambda  d:d[0]))
 
-
+    @hybrid_method
+    def get_image_folder(self):
+        return os.path.join(IMAGE_FOLDER, self.participant_id)
+        
 t_useraccess = Table(
     'useraccess', metadata,
     Column('user_id', Integer, ForeignKey(u'users.user_id')),

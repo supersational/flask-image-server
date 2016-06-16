@@ -59,6 +59,7 @@ axivity_pattern = re.compile(r'B\d{8}_\d\dI\dTA_(\d{4})(\d{2})(\d{2})_(\d{2})(\d
 thumbnail_size = 256, 256
 
 # extract data that can be added to the db (e.g. Images, .csv -> data)
+# and save the image as thumbnail, medium etc.
 def process_file_thread(hash, save_path):
 	upload = pending_uploads[hash]
 	upload_file = upload['files'][save_path]
@@ -205,11 +206,11 @@ def save_file(participant_id, files):
 	# 	return redirect("/participant/"+str(participant_id)+"/upload?message=filetype ." + file_extension(file.filename) + " not allowed")
 
 
+# confirm what was added by 'process_file_thread'
 def confirm_upload(hash):
 	if hash not in pending_uploads:
 		return "hash %s does not exist" % hash
 
-	# confirm what was added by 'process_file_thread'
 	num_added = 0
 	added_html = ''
 	for file in pending_uploads[hash]['files'].itervalues():
