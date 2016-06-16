@@ -157,6 +157,7 @@
 	<a style="color:black; padding:10px;margin:-10px;display:inline-block;" href="/participant/{{id}}" id="title-link"> <img style='padding-top:10px;margin-right:15px' src='http://127.0.0.1:5001/static/calendar.png' />Participant: {{name}} </a>
 {% endblock %}
 {% block content %}
+<div id="error-log" style="background-color:red; position:fixed; top:10px; right:10px;display:none;">an error happened! press F5 to reload the page<br></div> 
 
 	<div id="dropdown-box">
 
@@ -1403,5 +1404,30 @@
 	    gallery.init();
 	}
 
+	// show error messages in div!
+	(function() {
+		var div_log = document.getElementById("error-log");
+		function logError(text) {
+	        div_log.innerHTML += text + "<br>";
+	        div_log.style.display = 'block';
+	        // alert(text)
+		}
+		['warn','error'].forEach(function (verb) {
+			console[verb] = (function (old_function) { 
+			    return function (text) {
+			        old_function(text);
+			        text = verb + ":" + text;
+			        logError(text);
+			    };
+			} (console[verb].bind(console)));
+		});
+		window.onerror = function(message, url, lineNumber) {  
+			logError(lineNumber+":"+message);
+			return false; // allows default handler to run afterwards
+		}
+		$(document).ajaxError(function(e, xhr, settings) {
+		  logError(settings.url + ':' + xhr.status + '\n\n' + xhr.responseText);
+		});
+	})()
 	</script>
 {% endblock %}
