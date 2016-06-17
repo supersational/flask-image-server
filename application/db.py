@@ -22,7 +22,8 @@ from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 # for generating commands for executing raw SQL
 from sqlalchemy.sql import text
-# custom data creation class
+# regex
+import re
 
 engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, logging_name="sqlalchemy.engine")
 
@@ -48,25 +49,77 @@ logger = loghandler.init("sqlalchemy.engine")
 def read_log():
     return loghandler.read()
 
+class Datafile(Base):
+    __tablename__ = 'datafiles'
+    datafile_id = Column(Integer, primary_key=True)
+    filename = Column(String(256), nullable=False)
+    datapoints = [] #relationship(u'Datapoint', back_populates='datafile')
+    def __init__(self, filename):
+        self.filename = filename
+    def __repr__(self):
+        return "Datafile: "+self.filename
+
+
+# 'special case' column name converter     
+DATATYPE_SPECIAL = {
+    re.compile(r'acceleration \(mg\) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = \d+ seconds'):
+    'acceleration (mg)'
+}
 class Datatype(Base):
     __tablename__ = 'datatypes'
 
     datatype_id = Column(Integer, primary_key=True)
-    name = Column(String(256))
+    name = Column(String(256), unique=True)
 
     datapoints = relationship(u'Datapoint', back_populates='datatype')
+    def __init__(self, name):
+        self.name = Datatype.gen_name(name)
+
+    def __repr__(self):
+        return "Datatype: "+self.name
+
+    @staticmethod
+    def get_or_create(name):
+        instance = Datatype.query.filter(Datatype.name==name).first()
+        if not instance:
+            instance = Datatype(name)
+        return instance
+
+    @staticmethod
+    def gen_name(name):
+        name = name.strip() # strip whitespace
+        for key, value in DATATYPE_SPECIAL:
+            if re.match(key, name):
+                name = value
+        return name
 
 class Datapoint(Base):
     __tablename__ = 'datapoints'
     datapoint_id = Column(Integer, primary_key=True)
     participant_id = Column(ForeignKey(u'participants.participant_id'), nullable=False)
     datatype_id = Column(ForeignKey(u'datatypes.datatype_id'), nullable=False)
+    # datafile_id = Column(ForeignKey(u'datafiles.datafile_id'), nullable=True)
 
     time = Column(DateTime, nullable=False)
     value = Column(Float, nullable=False)
 
     datatype = relationship(u'Datatype', back_populates='datapoints')
+    # datafile = relationship(u'Datafile', back_populates='datapoints')
 
+    def __init__(self, time, value, participant_id, datatype_id=None, datatype=None, datafile_id=None, datafile=None):
+        self.time = time
+        self.value = value
+        if participant_id is not None: self.participant_id = participant_id
+
+        if datatype_id is not None: self.datatype_id = datatype_id
+        if datatype is not None: self.datatype = datatype   
+
+        if datafile_id is not None: self.datafile_id = datafile_id
+        if datafile is not None: self.datafile = datafile   
+
+    def __repr__(self):
+        return "Datapoint: "+str(self.time)+", "+str(self.value)
+            
 class Event(Base):
     __tablename__ = 'events'
 
