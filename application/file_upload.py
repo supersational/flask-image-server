@@ -21,7 +21,7 @@ import csv
 from flask import request, redirect, make_response, jsonify
 from application.db import Event, Image, Participant, Study, Label
 # for parsing csv into datapoints
-from application.db import Datapoint, Datatype
+from application.db import Datapoint, Datatype, Datafile
 from application.db import session
 from application.login import login_required, login_check
 from json import dumps as json_dumps
@@ -43,14 +43,6 @@ def gen_hash():
 	hash = random.getrandbits(128)
 	return "%032x" % hash
 
-
-
-# IMAGE_SIZES = {
-# 	'thumbnail':{'size':(100, 100),'dir':'thumbnail'},
-# 	'medium':{'size':(864, 645),'dir':'medium'},
-# 	'full':{'size':(0, 0),'dir':'full'}
-# }
-
 # hashed 'pending additions' to the database (so can be confirmed by user)
 pending_uploads = {} # should be [time_created, path, participant_id, data to be added to db:=[Image(), Data(), etc.], display_html]	
 
@@ -68,6 +60,8 @@ def process_file_thread(hash, save_path):
 	ext = file_extension(filename)
 	participant_id = upload['participant_id']
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+
+
 	if ext=='jpg' or ext=='jpeg':
 		match = re.match(axivity_pattern, filenamebase)
 		#generate a temporary image thumbnail (stored/served in string format)
@@ -102,9 +96,52 @@ def process_file_thread(hash, save_path):
 			upload_file['data'].append(upload_image)
 		else:
 			upload_file['display'] += '<p> %s is not a valid jpg filename</p>' % (filenamebase,)
-	# if ext=='csv':
 
 
+	if ext=='csv':
+		datafile = Datafile(filenamebase)
+		upload_file['data'].append(datafile)
+		with open(filename, 'rb') as csvfile:
+			csvreader = csv.reader(csvfile)
+			firstrow = next(csvreader)
+			datatypes = map(Datatype.get_or_create, firstrow)
+			time_cols = []
+			for column_name in firstrow:
+				acc_parser = parse_acc_header(column_name)
+				if acc_parser:
+					time_cols.append(i)
+					datatypes[i] = None
+			# for i, col in enumerate(firstrow):
+			# 	print i, col
+			# 	datatype = Datatype.get_or_create(col)
+			# 	datatypes[i] = datatype
+			print datatypes
+			# upload_file['data'].extend(datatypes)
+			limit = 100
+
+			for row in csvreader:
+				print ', '.join(row)
+				for i, col in enumerate(row):
+					print i, col
+					try:
+						val = float(col)
+					except ValueError:
+						print "not a float"
+						val = 0
+					datapoint = Datapoint(datetime.datetime.now(), val, upload['participant_id'])
+					datatypes[i].datapoints.append(datapoint)
+					datafile.datapoints.append(datapoint)
+				limit -= 1
+				if limit < 0: 
+					break
+
+acc_header = re.compile(r'acceleration \(mg\) - (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = (\d)+ seconds')
+def parse_acc_header(col):
+	match = re.match(acc_header, col)
+	if match:
+		g = match.groups
+		return (datetime.datetime(g(0),g(1),g(2), g(3),g(4),g(5)), datetime.timedelta(seconds=g(6)))
+	else: return None
 @app.route("/participant/<int:participant_id>/upload", methods=["GET","POST"])
 @login_required
 @login_check()
@@ -133,10 +170,10 @@ def upload_url(participant_id):
 			else:
 				upload = pending_uploads[confirm_hash]
 				html += '''
-					<h1>Confirmed addition to db:</h1>
+					<h1>Upload successful:</h1>
+					<form action="" method=post><input type=submit value="Add this data pernamently"></form>
 					<p>%s</p> 
 					<p>participant_id: %s</p>
-					<form action="" method=post><input type=submit></form>
 					<h3>extracted data:</h3>
 					<p>%s</p>
 					%s<br>''' % (
@@ -198,8 +235,8 @@ def save_file(participant_id, files):
 				'display':'<p>upload: ' + save_path + "</p>"
 				}
 
-
-			threading.Timer(0, lambda: process_file_thread(hash, save_path)).start()
+			process_file_thread(hash, save_path)
+			# threading.Timer(0, lambda: process_file_thread(hash, save_path)).start()
 
 	return redirect("/participant/"+str(participant_id)+"/upload?confirm_hash="+hash)
 	# else:
@@ -211,7 +248,8 @@ def confirm_upload(hash):
 	if hash not in pending_uploads:
 		return "hash %s does not exist" % hash
 
-	num_added = 0
+	num_images = 0
+	num_datapoints = 0
 	added_html = ''
 	for file in pending_uploads[hash]['files'].itervalues():
 		for obj in file['data']:
@@ -219,8 +257,18 @@ def confirm_upload(hash):
 				print obj, " is Image"
 				session.add(obj)
 				session.flush()
-				num_added += 1
+				num_images += 1
+			elif isinstance(obj, Datatype) or isinstance(obj, Datapoint):
+				added_html += "<p>%s</p>" % (str(obj),)
+				session.add(obj)
+				session.flush()
+				num_datapoints += 1
+				added_html += "<p>%s</p>" % (str(obj),)
+			elif isinstance(obj, Datafile):
+				session.add(obj)
+				session.flush()
+				num_datapoints += len(obj.datapoints)
 				added_html += "<p>%s</p>" % (str(obj),)
 			else:
 				print obj, "is type: ", type(obj)
-	return "sucessfully added %i objects: %s " % (num_added, added_html)
+	return "sucessfully added %i images and %i dataponts: %s " % (num_images, num_datapoints, added_html)
