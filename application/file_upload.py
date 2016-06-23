@@ -12,6 +12,7 @@ from io import BytesIO
 
 # uploads
 from config import UPLOAD_FOLDER, APPLICATION_FOLDER, IMAGE_SIZES
+from config import SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_DATA_EXTENSIONS
 from werkzeug import secure_filename
 from flask import Response
 
@@ -21,13 +22,14 @@ import csv
 from flask import request, redirect, make_response, jsonify
 from application.db import Event, Image, Participant, Study, Label
 # for parsing csv into datapoints
-from application.db import Datapoint, Datatype, Datafile
+from application.db import Datapoint, Datatype
 from application.db import session
 from application.login import login_required, login_check
+from application import image_processing
 from json import dumps as json_dumps
 ## FILE UPLOAD
 
-ALLOWED_EXTENSIONS = ["csv", "jpg", "jpeg", "png"]
+ALLOWED_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS + SUPPORTED_DATA_EXTENSIONS  # == ["csv", "jpg", "jpeg", "png"]
 def file_extension(filename):
 	return '' if '.' not in filename else filename.rsplit('.', 1)[1].lower()
 
@@ -52,51 +54,26 @@ thumbnail_size = 256, 256
 
 # extract data that can be added to the db (e.g. Images, .csv -> data)
 # and save the image as thumbnail, medium etc.
-def process_file_thread(hash, save_path):
+def process_file_thread(hash, filename):
+	print "processing :", filename
 	upload = pending_uploads[hash]
-	upload_file = upload['files'][save_path]
-	filename = save_path
+	upload_file = upload['files'][filename]
 	filenamebase = os.path.basename(filename).split('.')[0]
 	ext = file_extension(filename)
 	participant_id = upload['participant_id']
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 
 
-	if ext=='jpg' or ext=='jpeg':
-		match = re.match(axivity_pattern, filenamebase)
-		#generate a temporary image thumbnail (stored/served in string format)
-		im = PILImage.open(os.path.join(UPLOAD_FOLDER, save_path))
-		with im.copy() as im_thumb:
-			stream = BytesIO()
-			im_thumb.thumbnail(thumbnail_size)
-			im_thumb.save(stream, "JPEG")
-			upload_file['display'] += "<img src='data:image//png;base64,%s'\>" % (binascii.b2a_base64(stream.getvalue()), )
-			# upload[4] = "<img src='data:image//png;base64,%s'\>" % (binascii.b2a_base64(f.read()), )
-		if match:
-			g = map(int, match.groups('0'))
-			image_time = datetime.datetime(g[0], g[1], g[2], g[3], g[4], g[5])
-			upload_file['display'] += '<p>time found: ' + str(image_time) + '</p>'
-			
-			def gen_path(size):
-				return os.path.join('images', str(participant_id),size, filenamebase+".jpg")
-
-			for key, size in IMAGE_SIZES.iteritems():
-				outfile = os.path.join(APPLICATION_FOLDER, gen_path(size['dir']))
-				ensure_dir_exists(outfile)
-				exists = os.path.isfile(outfile)
-				if not exists:
-					print("    generating : " + key + " " + str(size['size']) + " " + outfile)
-					if size['size'][0]>0 and size['size'][1]>0:
-						im.thumbnail(size['size'])
-					im.save(outfile,"JPEG")
-
-			# if there is already an event we add the image to it
-			event_id = getattr(Event.get_event_at_time(image_time, participant_id), 'event_id', None) 
-			upload_image = Image(participant_id, image_time, '/'+gen_path('full'), '/'+gen_path('medium'), '/'+gen_path('thumbnail'), event_id=event_id)
-			upload_file['data'].append(upload_image)
+	if ext in SUPPORTED_IMAGE_EXTENSIONS:
+		
+		upload_file['display'] += image_processing.to_html_img(filename, size=IMAGE_SIZES['thumbnail']['size'])
+		print filename, participant_id
+		image = Image.from_file(filename, participant_id)
+		if image is not None:
+			upload_file['display'] += '<p>Image date extracted: %s</p>' % (str(image.image_time), )
+			upload_file['data'].append(image)
 		else:
 			upload_file['display'] += '<p> %s is not a valid jpg filename</p>' % (filenamebase,)
-
 
 	if ext=='csv':
 		datafile = Datafile(filenamebase)
@@ -111,6 +88,7 @@ def process_file_thread(hash, save_path):
 				if acc_parser:
 					time_cols.append(i)
 					datatypes[i] = None
+
 			# for i, col in enumerate(firstrow):
 			# 	print i, col
 			# 	datatype = Datatype.get_or_create(col)
@@ -122,6 +100,9 @@ def process_file_thread(hash, save_path):
 			for row in csvreader:
 				print ', '.join(row)
 				for i, col in enumerate(row):
+					if i in time_cols:
+						pass
+						# parse datetime
 					print i, col
 					try:
 						val = float(col)

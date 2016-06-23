@@ -40,17 +40,24 @@ def to_html_img(input_file, size=None):
 def generate_sizes(input_file, output_path):
 	im = PILImage.open(input_file)
 	name = file_noextension(input_file)
-
+	output_files = {}
 	for key, size in IMAGE_SIZES.iteritems():
 		outfile = os.path.join(output_path, size['dir'], name+".jpg")
 		ensure_dir_exists(outfile)
 		exists = os.path.isfile(outfile)
 		if not exists:
-			print("    generating : " + key + " " + str(size['size']) + " " + outfile)
+			print("    generating : " + key + " " + str(size['size']) + " " + outfile +" curr size:" + str(im.size))
+
+			# if a size is specified, then resize
 			if size['size'][0]>0 and size['size'][1]>0:
 				im_thumb = im.copy()
 				im_thumb.thumbnail(size['size'])
 				im_thumb.save(outfile,"JPEG")
 			else:
+				# full resolution
 				im.save(outfile,"JPEG")
-
+			# store file location for each size
+			output_files[key] = outfile
+		else:
+			output_files[key] = None
+	return output_files

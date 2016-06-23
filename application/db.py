@@ -1,7 +1,7 @@
 # coding: utf-8
 # https://www.python.org/dev/peps/pep-0249/
 from config import NODE_SECRET_KEY, SQLALCHEMY_DATABASE_URI, IMAGES_FOLDER
-import datetime, sys
+import datetime, sys, os
 from collections import OrderedDict
 # security
 import hashlib, uuid
@@ -22,8 +22,7 @@ from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 # for generating commands for executing raw SQL
 from sqlalchemy.sql import text
-# regex
-import re
+
 
 engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, logging_name="sqlalchemy.engine")
 
@@ -49,77 +48,25 @@ logger = loghandler.init("sqlalchemy.engine")
 def read_log():
     return loghandler.read()
 
-class Datafile(Base):
-    __tablename__ = 'datafiles'
-    datafile_id = Column(Integer, primary_key=True)
-    filename = Column(String(256), nullable=False)
-    datapoints = [] #relationship(u'Datapoint', back_populates='datafile')
-    def __init__(self, filename):
-        self.filename = filename
-    def __repr__(self):
-        return "Datafile: "+self.filename
-
-
-# 'special case' column name converter     
-DATATYPE_SPECIAL = {
-    re.compile(r'acceleration \(mg\) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = \d+ seconds'):
-    'acceleration (mg)'
-}
 class Datatype(Base):
     __tablename__ = 'datatypes'
 
     datatype_id = Column(Integer, primary_key=True)
-    name = Column(String(256), unique=True)
+    name = Column(String(256))
 
     datapoints = relationship(u'Datapoint', back_populates='datatype')
-    def __init__(self, name):
-        self.name = Datatype.gen_name(name)
-
-    def __repr__(self):
-        return "Datatype: "+self.name
-
-    @staticmethod
-    def get_or_create(name):
-        instance = Datatype.query.filter(Datatype.name==name).first()
-        if not instance:
-            instance = Datatype(name)
-        return instance
-
-    @staticmethod
-    def gen_name(name):
-        name = name.strip() # strip whitespace
-        for key, value in DATATYPE_SPECIAL:
-            if re.match(key, name):
-                name = value
-        return name
 
 class Datapoint(Base):
     __tablename__ = 'datapoints'
     datapoint_id = Column(Integer, primary_key=True)
     participant_id = Column(ForeignKey(u'participants.participant_id'), nullable=False)
     datatype_id = Column(ForeignKey(u'datatypes.datatype_id'), nullable=False)
-    # datafile_id = Column(ForeignKey(u'datafiles.datafile_id'), nullable=True)
 
     time = Column(DateTime, nullable=False)
     value = Column(Float, nullable=False)
 
     datatype = relationship(u'Datatype', back_populates='datapoints')
-    # datafile = relationship(u'Datafile', back_populates='datapoints')
 
-    def __init__(self, time, value, participant_id, datatype_id=None, datatype=None, datafile_id=None, datafile=None):
-        self.time = time
-        self.value = value
-        if participant_id is not None: self.participant_id = participant_id
-
-        if datatype_id is not None: self.datatype_id = datatype_id
-        if datatype is not None: self.datatype = datatype   
-
-        if datafile_id is not None: self.datafile_id = datafile_id
-        if datafile is not None: self.datafile = datafile   
-
-    def __repr__(self):
-        return "Datapoint: "+str(self.time)+", "+str(self.value)
-            
 class Event(Base):
     __tablename__ = 'events'
 
@@ -354,6 +301,9 @@ class Event(Base):
     @staticmethod
     def get_event_at_time(time, participant_id):
         return Event.query.filter((Event.contains_time(time))).first() # note: does not check for overlapping events
+    @staticmethod
+    def get_event_id_at_time(time, participant_id):
+        return getattr(Event.get_event_at_time(time, participant_id), 'event_id', None) 
 
     def resolve_time_conflicts(self):
         with self.next_event as next:
@@ -441,33 +391,69 @@ class Image(Base):
             self.event_id,
             self.participant_id,
             serialize_datetime(self.image_time), 
-            map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
+            map(Image.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
             [1 if self.is_first else 0, 1 if self.is_last else 0,
                 [self.event.first_image.image_id if (self.event and self.event.first_image) else None, self.event.last_image.image_id if (self.event and self.event.last_image) else None]],
             self.event.label_id if self.event else None,
             self.event.label.color if self.event and self.event.label else None
         ]
 
-    @hybrid_method
-    def gen_url(self, url): 
+    @staticmethod
+    def gen_url(url): 
+        if url is None: return ''
         url = url.replace('\\','/')
         t = int(time.time())
-        return 'http://127.0.0.1:5001'+url+"?t="+str(t)+"&k="+gen_hash(t, url)
+        return 'http://127.0.0.1:5001'+url+"?t="+str(t)+"&k="+Image.gen_hash(t, url)
 
+    @staticmethod
+    def gen_hash(t, url):
+        s = str(t)+url+NODE_SECRET_KEY
+        # print s
+        sha512_hash = hashlib.sha512()
+        sha512_hash.update(s)
+        return sha512_hash.hexdigest()
+
+    # uploaded image => resizing => Image
     @staticmethod
     def from_file(image_path, participant_id):
         try:
-            import PIL
+            from application import image_processing
+            img_time = Image.parse_img_date(image_path)
+            if img_time:
+                output_folder = os.path.join(IMAGES_FOLDER, str(participant_id))
+                resized_images = image_processing.generate_sizes(image_path, os.path.dirname(image_path))
+                if all([value is not None for key, value in resized_images]):
+                    return Image(
+                        participant_id,
+                        img_time,
+                        resized_images['full'],
+                        resized_images['medium'],
+                        resized_images['thumbnail'],
+                        Event.get_event_at_time(img_time, participant_id) # add to any existing events
+                        )
+                else:
+                    print "image could not be resized, does it exist already?"
+        except Exception as e:
+            print type(e)
+            print e
+        return None
 
-        except:
+    # parse filenames in format B00001764_21I7TA_20151227_140000E.jpg
+    @staticmethod
+    def parse_img_date(n):
+        n = os.path.basename(n)
+        try:
+            return datetime.datetime(
+                int(n[17:21]), # year
+                int(n[21:23]), # month
+                int(n[23:25]), # day
+                int(n[26:28]), # hour
+                int(n[28:30]), # minutes
+                int(n[30:32]), # seconds
+                int(n[6:9]) # this is the photo's sequence number, used as a tiebreaker millisecond value for photos with the same timestamp 
+               )
+        except ValueError:
             return None
-
-def gen_hash(t, url):
-    s = str(t)+url+NODE_SECRET_KEY
-    # print s
-    sha512_hash = hashlib.sha512()
-    sha512_hash.update(s)
-    return sha512_hash.hexdigest()
 
 t_studyparticipants = Table(
     'studyparticipants', metadata,
@@ -769,7 +755,7 @@ import db_data
 if __name__ == "__main__":
     # run db.py directly to do testing (and create fake data)
     drop_db()
-    global session
+    # global session
     fake = True # create fake data by default
     if "--real" in sys.argv:
         fake = False
