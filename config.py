@@ -29,10 +29,14 @@ SECRET_KEY = "secret"
 JSONIFY_PRETTYPRINT_REGULAR = False
 
 SERVER_NAME = 'localhost:5000'
+DEBUG = True
 
 APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
 IMAGES_FOLDER =os.path.join(BASE_DIR, "application", "images")
 UPLOAD_FOLDER =os.path.join(BASE_DIR, "application", "upload_folder")
+
+SUPPORTED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"]
+SUPPORTED_DATA_EXTENSIONS = ["csv"]
 
 IMAGE_SIZES = {
 	'thumbnail':{'size':(100, 100),'dir':'thumbnail'},
