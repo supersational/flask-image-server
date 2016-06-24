@@ -1,6 +1,7 @@
 from application import app
 import os
 import time, datetime
+from dateutil.parser import parse
 import re
 import threading
 # image processing stuff
@@ -76,52 +77,80 @@ def process_file_thread(hash, filename):
 			upload_file['display'] += '<p> %s is not a valid jpg filename</p>' % (filenamebase,)
 
 	if ext=='csv':
-		datafile = Datafile(filenamebase)
-		upload_file['data'].append(datafile)
+		# datafile = Datafile(filenamebase)
+		# upload_file['data'].append(datafile)
 		with open(filename, 'rb') as csvfile:
 			csvreader = csv.reader(csvfile)
-			firstrow = next(csvreader)
-			datatypes = map(Datatype.get_or_create, firstrow)
+			column_headers = next(csvreader)
 			time_cols = []
-			for column_name in firstrow:
-				acc_parser = parse_acc_header(column_name)
-				if acc_parser:
-					time_cols.append(i)
-					datatypes[i] = None
-
-			# for i, col in enumerate(firstrow):
+			datatypes = [None for n in column_headers]
+			# check for "acceleration (mg) - 2016-01-28 17:58:00 - 2016-01-28 18:48:00 - sampleRate = 5 seconds"
+			if any(map(parseAccTimeSeries, column_headers)):
+				# file is AccTimeSeries.csv
+				for i, column_name in enumerate(column_headers):
+					acc_parser = parseAccTimeSeries(column_name)
+					if acc_parser:
+						# time_cols.append(i)
+						start_time = acc_parser[0]
+						timedelta = acc_parser[1]
+						get_time = lambda rownum, row: start_time + timedelta * rownum  
+						datatypes[i] = Datatype.get_or_create('acceleration')
+					else:
+						datatypes[i] = Datatype.get_or_create(column_name)
+			else:
+				first_row = next(csvreader)
+				for i, col in enumerate(first_row):
+					try: 
+						parse(col)
+						time_cols.append(i) 
+						get_time = lambda rownum, row: parse(row[i])  
+						break
+					except ValueError:
+						pass
+				datatypes = map(Datatype.get_or_create, column_headers)
+				
+				# reset csvreader to read first row
+				csvreader = csv.reader(csvfile)
+				next(csvreader)
+			# for i, col in enumerate(column_headers):
 			# 	print i, col
 			# 	datatype = Datatype.get_or_create(col)
 			# 	datatypes[i] = datatype
-			print datatypes
 			# upload_file['data'].extend(datatypes)
 			limit = 100
 
-			for row in csvreader:
+			for rownum, row in enumerate(csvreader):
+				t =get_time(rownum, row)
+				print row, t
 				print ', '.join(row)
-				for i, col in enumerate(row):
-					if i in time_cols:
+				for colnum, col in enumerate(row):
+					if colnum in time_cols:
+						print col
 						pass
 						# parse datetime
-					print i, col
+					print colnum, col
 					try:
 						val = float(col)
 					except ValueError:
 						print "not a float"
 						val = 0
-					datapoint = Datapoint(datetime.datetime.now(), val, upload['participant_id'])
-					datatypes[i].datapoints.append(datapoint)
-					datafile.datapoints.append(datapoint)
+					datapoint = Datapoint(t, val, participant_id)
+					datatypes[colnum].datapoints.append(datapoint)
+					upload_file['data'].append(datapoint)
 				limit -= 1
 				if limit < 0: 
 					break
+			print datatypes
+			print time_cols
 
 acc_header = re.compile(r'acceleration \(mg\) - (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = (\d)+ seconds')
-def parse_acc_header(col):
+def parseAccTimeSeries(col):
 	match = re.match(acc_header, col)
 	if match:
-		g = match.groups
-		return (datetime.datetime(g(0),g(1),g(2), g(3),g(4),g(5)), datetime.timedelta(seconds=g(6)))
+		g = map(int, match.groups())
+		# print map(int,g(0))
+		print g
+		return (datetime.datetime( *tuple(g[0:5])), datetime.timedelta(seconds=g[6]))
 	else: return None
 @app.route("/participant/<int:participant_id>/upload", methods=["GET","POST"])
 @login_required
@@ -150,6 +179,9 @@ def upload_url(participant_id):
 				html += '''<h1>hash: %s not in pending_uploads</h1><p>%s</p>''' % (confirm_hash,cgi.escape(str(pending_uploads)))
 			else:
 				upload = pending_uploads[confirm_hash]
+				added_data = []
+				for f in upload['files']:
+					added_data.extend(upload['files'][f]['data'])
 				html += '''
 					<h1>Upload successful:</h1>
 					<form action="" method=post><input type=submit value="Add this data pernamently"></form>
@@ -160,7 +192,7 @@ def upload_url(participant_id):
 					%s<br>''' % (
 						datetime.datetime.fromtimestamp(upload['time']).strftime('%Y-%m-%d %H:%M:%S'),
 						upload['participant_id'],
-						"</p><p>".join(map(lambda x: str(upload['files'][x]['data']),upload['files'])), 
+						"</p><p>".join(map(str,added_data)),#map(lambda x: str(upload['files'][x]['data']),upload['files'])), 
 						"".join([upload['files'][x]['display'] for x in upload['files']]) 
 						)
 
