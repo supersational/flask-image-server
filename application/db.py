@@ -52,9 +52,19 @@ class Datatype(Base):
     __tablename__ = 'datatypes'
 
     datatype_id = Column(Integer, primary_key=True)
-    name = Column(String(256))
+    name = Column(String(256), unique=True)
 
     datapoints = relationship(u'Datapoint', back_populates='datatype')
+
+
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return 'Datatype: ' + self.name + ", " + str(len(self.datapoints)) + " datapoints"
+    @staticmethod
+    def get_or_create(name):
+        return Datatype.query.filter(Datatype.name==name).first() or Datatype(name)
 
 class Datapoint(Base):
     __tablename__ = 'datapoints'
@@ -66,6 +76,15 @@ class Datapoint(Base):
     value = Column(Float, nullable=False)
 
     datatype = relationship(u'Datatype', back_populates='datapoints')
+
+    def __init__(self, time, value, participant_id):
+        self.time = time
+        self.value = value
+        self.participant_id = participant_id
+
+    def __repr__(self):
+        return 'Datapoint: %s %s (%s)' % ( str(self.time) , str(self.value), str(self.datatype.name))
+
 
 class Event(Base):
     __tablename__ = 'events'
