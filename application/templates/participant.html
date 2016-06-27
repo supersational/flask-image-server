@@ -23,8 +23,8 @@
     <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe.min.js"></script>
     <!-- UI JS file -->
     <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe-ui-default.min.js"></script> 
+    <!-- d3.js -->
     <script src="http://127.0.0.1:5001/static/d3.min.js" charset="utf-8"></script>
-
     <style>
     .img {
     	margin: 0px;
@@ -214,6 +214,7 @@
 <div id="right-bar">
 	{% set fillcol="lightblue" -%}
 	<div class="gallery">
+		<!-- <div style="height:200px; width:100%"></div> -->
 	</div>
 	<!-- <a class="load-next" href="#">Load more</a> -->
 </div>
@@ -660,7 +661,8 @@
 		    	if (label) {
 		    		var image_idx = $(ev.target).closest("div.img").attr("id")
 		    		var imgs_in_this_event = [];
-		    		if (event_id!==undefined || event_id.length==0) {
+		    		if (event_id==undefined || event_id.length==0) {
+			    		// if the image does not have an event, must use Event.annotate_image to create an event
 			    		var image_id = $(ev.target).closest("div.img").attr("image-id")
 			    		// callback will move color from background to event handles
 			    		var callback = function(e, jqXHR) {
@@ -678,6 +680,7 @@
 			    		// add background color to show action has been performed (instant)
 			    		imgs_in_this_event.css("background-color", label.color)
 		    		} else {
+		    			// if image already has an event, need to reassign annotation (and create color if there is none)
 		    			imgs_in_this_event = $("div.img[event-id="+event_id+"]")
 			    		
     		    		// callback will move color from background to event handles
@@ -1393,7 +1396,6 @@
 		        item.w = img_sizes.medium[0],
 		        item.h = img_sizes.medium[1]
 		    }
-
 		});
 		gallery.listen('afterChange', function() {
 			console.log('index', gallery.getCurrentIndex()) 
@@ -1417,7 +1419,7 @@
 			console[verb] = (function (old_function) { 
 			    return function (text) {
 			        old_function(text);
-			        text = verb + ":" + text;
+			        text = verb + ":" + text + " failed";
 			        logError(text);
 			    };
 			} (console[verb].bind(console)));
@@ -1431,4 +1433,5 @@
 		});
 	})()
 	</script>
+
 {% endblock %}
