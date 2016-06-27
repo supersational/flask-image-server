@@ -85,6 +85,8 @@ class Datapoint(Base):
     def __repr__(self):
         return 'Datapoint: %s %s (%s)' % ( str(self.time) , str(self.value), str(self.datatype.name))
 
+    def to_array(self):
+        return [self.value, self.time.strftime("%Y-%m-%dT%H:%M:%S")]
 
 class Event(Base):
     __tablename__ = 'events'

@@ -23,8 +23,9 @@
     <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe.min.js"></script>
     <!-- UI JS file -->
     <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe-ui-default.min.js"></script> 
-    <!-- d3.js -->
-    <script src="http://127.0.0.1:5001/static/d3.min.js" charset="utf-8"></script>
+    <!-- Graphing -->
+    <script src="http://127.0.0.1:5001/static/d3.min.js"></script>
+    <script src="http://127.0.0.1:5001/static/makeGraph.js"></script>
     <style>
     .img {
     	margin: 0px;
@@ -214,7 +215,7 @@
 <div id="right-bar">
 	{% set fillcol="lightblue" -%}
 	<div class="gallery">
-		<!-- <div style="height:200px; width:100%"></div> -->
+		<div class="graph"></div>
 	</div>
 	<!-- <a class="load-next" href="#">Load more</a> -->
 </div>
@@ -725,7 +726,9 @@
 		});
 		$(document).mouseup(function(ev) {
 			if ($.contains($(".gallery")[0], ev.target)) {
-				img_drop(ev);
+				if (is_dragging) {
+					img_drop(ev);
+				}
 				label_id_drag = null;
 				is_dragging = false;
 			}
@@ -1432,6 +1435,8 @@
 		  logError(settings.url + ':' + xhr.status + '\n\n' + xhr.responseText);
 		});
 	})()
+
+
 	</script>
 
 {% endblock %}

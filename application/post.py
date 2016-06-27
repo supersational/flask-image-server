@@ -1,9 +1,8 @@
 from application import app
 
 from flask import request, redirect, make_response, jsonify
-from application.db import Event, Image, Participant, Study, Label
+from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint
 from application.login import login_required, login_check
-from json import dumps as json_dumps
 import datetime
 
 
@@ -209,3 +208,23 @@ def generate_annotation(participant_id):
 	response = make_response(output.getvalue())
 	response.headers["Content-Disposition"] = "attachment; filename=annotation.csv"
 	return response
+
+
+
+@app.route("/participant/<int:participant_id>/load_datatypes", methods=["POST"])
+def load_datatypes(participant_id):
+	# combine values into dictionary
+	return jsonify( # get all belonging to participant and create mapping dict
+				dict((x.datatype_id, x.name) for x in Datatype.query.filter(Datatype.datapoints.any(Datapoint.participant_id==participant_id)))
+			)
+	
+
+@app.route("/participant/<int:participant_id>/load_datapoints/<int:datatype_id>", methods=["POST"])
+@login_required
+@login_check()
+def load_datapoints(participant_id, datatype_id):
+	data = Datapoint.query.filter((Datapoint.participant_id==participant_id) & (Datapoint.datatype_id==datatype_id)).all()
+	return jsonify(
+			data = [x.to_array() for x in data],
+			num = len(data)
+		)

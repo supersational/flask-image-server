@@ -11,7 +11,7 @@ function create_query(url, data, callback) {
 		complete : function(jqXHR, textStatus) {
 			_request_pending = false;
 		  	console.log("db.js request completed: "+url+", status:"+textStatus);
-		  	if (jqXHR) console.log(jqXHR)
+		  	// if (jqXHR) console.log(jqXHR)
 			if (callback && textStatus!=="error") callback(textStatus, jqXHR) // if error don't reload page so we can see the response object
 			else if (textStatus=="error" && jqXHR.responseText.length > 2000) alert(jqXHR.responseText)
 		} 
@@ -64,7 +64,17 @@ var Image = {
 	load_by_id: function(participant_id, start, end, num, complete) {
 		create_query("/participant/"+participant_id+"/load_images", {start_id:start, end_id:end, number:num}, complete)
 	}
+}
 	// reload_by_id: function(participant_id, image_id_list, complete) {
 	// 	create_query("/participant/"+participant_id+"/load_images", {image_id_list:image_id_list}, complete)
 	// }
+var Datapoints = {
+	get_datatypes: function(participant_id, complete) {
+		$.post("/participant/"+participant_id+"/load_datatypes", null, complete)
+		// create_query("/participant/"+participant_id+"/load_images", {}, complete)
+	},
+	get_datapoints: function(participant_id, datatype_id, complete) {
+		$.post("/participant/"+participant_id+"/load_datapoints/"+datatype_id, null, complete)
+		// create_query("/participant/"+participant_id+"/load_images", {}, complete)
+	}
 }
