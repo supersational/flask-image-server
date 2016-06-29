@@ -79,6 +79,7 @@ def process_file_thread(hash, filename):
 	if ext=='csv':
 		# datafile = Datafile(filenamebase)
 		# upload_file['data'].append(datafile)
+		parsing_start_time = time.time()
 		with open(filename, 'rb') as csvfile:
 			csvreader = csv.reader(csvfile)
 			column_headers = next(csvreader)
@@ -117,31 +118,39 @@ def process_file_thread(hash, filename):
 			# 	datatype = Datatype.get_or_create(col)
 			# 	datatypes[i] = datatype
 			# upload_file['data'].extend(datatypes)
-			limit = 100
-
+			limit = 10000
+			datatypes_id = map(lambda x: x.datatype_id if x else None, datatypes)
 			for rownum, row in enumerate(csvreader):
 				t =get_time(rownum, row)
-				print row, t
-				print ', '.join(row)
+				# print row, t
+				# print ', '.join(row)
 				for colnum, col in enumerate(row):
 					if colnum in time_cols:
-						print col
+						# print col
 						pass
 						# parse datetime
-					print colnum, col
+					# print colnum, col
 					try:
 						val = float(col)
 					except ValueError:
-						print "not a float"
+						# print "not a float"
 						val = 0
-					datapoint = Datapoint(t, val, participant_id)
-					datatypes[colnum].datapoints.append(datapoint)
-					upload_file['data'].append(datapoint)
+
+
+					# datapoint = Datapoint(t, val, participant_id)
+					# datatypes[colnum].datapoints.append(datapoint)
+					# upload_file['data'].append(datapoint)
+					datatype_id = datatypes_id[colnum]
+					if datatype_id:
+						upload_file['datapoints'].append([t, val, datatype_id])
+
 				limit -= 1
 				if limit < 0: 
 					break
 			print datatypes
 			print time_cols
+		print("--- .csv parsing %s rows took %s seconds ---" % (len(upload_file['datapoints']), time.time() - parsing_start_time))
+
 
 acc_header = re.compile(r'acceleration \(mg\) - (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = (\d)+ seconds')
 def parseAccTimeSeries(col):
@@ -245,7 +254,8 @@ def save_file(participant_id, files):
 			pending_uploads[hash]['files'][save_path] = {
 				'ext':ext,
 				'data':[],
-				'display':'<p>upload: ' + save_path + "</p>"
+				'display':'<p>upload: ' + save_path + "</p>",
+				'datapoints':[] # format [time, value] (too expensive to create full object!)
 				}
 
 			process_file_thread(hash, save_path)
@@ -264,8 +274,9 @@ def confirm_upload(hash):
 	num_images = 0
 	num_datapoints = 0
 	added_html = ''
-	for file in pending_uploads[hash]['files'].itervalues():
-		for obj in file['data']:
+	participant_id = pending_uploads[hash]['participant_id']
+	for upload in pending_uploads[hash]['files'].itervalues():
+		for obj in upload['data']:
 			if isinstance(obj, Image):
 				print obj, " is Image"
 				session.add(obj)
@@ -284,4 +295,7 @@ def confirm_upload(hash):
 				added_html += "<p>%s</p>" % (str(obj),)
 			else:
 				print obj, "is type: ", type(obj)
-	return "sucessfully added %i images and %i dataponts: %s " % (num_images, num_datapoints, added_html)
+		if len(upload['datapoints'])>0:
+			Datapoint.create_many(upload['datapoints'], participant_id)
+	# del pending_uploads[hash]
+	return "sucessfully added %i images and %i dataponts: %s " % (num_images, len(upload['datapoints']), added_html)

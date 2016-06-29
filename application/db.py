@@ -88,6 +88,15 @@ class Datapoint(Base):
     def to_array(self):
         return [self.value, self.time.strftime("%Y-%m-%dT%H:%M:%S")]
 
+    @staticmethod
+    def create_many(array, participant_id):
+        # if Datatype.query.get(datatype_id) is None: raise NoResultFound("No Datatype with id: %s" % (str(datatype_id)))
+        if Participant.query.get(participant_id) is None: raise NoResultFound("No Participant with id: %s" % (str(participant_id)))
+        engine.execute(
+                Datapoint.__table__.insert(),
+                [{"time": i[0], "value": i[1], "datatype_id": i[2], "participant_id": participant_id} for i in array]
+            )
+
 class Event(Base):
     __tablename__ = 'events'
 
