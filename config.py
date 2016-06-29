@@ -33,6 +33,7 @@ JSONIFY_PRETTYPRINT_REGULAR = False
 PORT = 5000
 SERVER_NAME = 'localhost:' + str(PORT)
 DEBUG = True
+LOGGING = False
 
 APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
 IMAGES_FOLDER =os.path.join(BASE_DIR, "application", "images")
@@ -54,5 +55,5 @@ if 'USER' in os.environ and os.environ['USER']=='sensors':
 	print 'production server running on ', ip
 	SERVER_NAME = ip + ':' + str(PORT)
 	print SERVER_NAME
-
+	SQLALCHEMY_DATABASE_URI = 'postgres:///sensors'
 	DEBUG = False

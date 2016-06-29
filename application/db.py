@@ -1,7 +1,7 @@
 # coding: utf-8
 # https://www.python.org/dev/peps/pep-0249/
-from config import NODE_SECRET_KEY, SQLALCHEMY_DATABASE_URI, IMAGES_FOLDER
-import datetime, sys, os
+from config import NODE_SECRET_KEY, SQLALCHEMY_DATABASE_URI, IMAGES_FOLDER, LOGGING
+import datetime, sys, os, time
 from collections import OrderedDict
 # security
 import hashlib, uuid
@@ -41,9 +41,9 @@ metadata = Base.metadata
 connection = engine.connect()
 
 # logging
-import loghandler, time
-
-logger = loghandler.init("sqlalchemy.engine")
+if LOGGING:
+    import loghandler
+    logger = loghandler.init("sqlalchemy.engine")
 
 def read_log():
     return loghandler.read()
