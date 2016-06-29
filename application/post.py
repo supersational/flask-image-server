@@ -212,6 +212,8 @@ def generate_annotation(participant_id):
 
 
 @app.route("/participant/<int:participant_id>/load_datatypes", methods=["POST"])
+@login_required
+@login_check()
 def load_datatypes(participant_id):
 	# combine values into dictionary
 	return jsonify( # get all belonging to participant and create mapping dict
