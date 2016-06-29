@@ -1,4 +1,6 @@
 import os
+import uuid
+
 # Statement for enabling the development environment
 DEBUG = True
 
@@ -21,14 +23,15 @@ CSRF_ENABLED     = True
 CSRF_SESSION_KEY = "secret"
 
 # Node server secret key for hashing image URLs 
-NODE_SECRET_KEY = "secret_key_at_least_10_characters"
+NODE_SECRET_KEY = uuid.uuid4().hex
 
 # Secret key for signing cookies
-SECRET_KEY = "secret"
-
+SECRET_KEY = uuid.uuid4().hex
+print "SECRET_KEY", SECRET_KEY
 JSONIFY_PRETTYPRINT_REGULAR = False
 
-SERVER_NAME = 'localhost:5000'
+PORT = 5000
+SERVER_NAME = 'localhost:' + str(PORT)
 DEBUG = True
 
 APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
@@ -44,3 +47,12 @@ IMAGE_SIZES = {
 	'full':{'size':(0, 0),'dir':'full'}
 }
 
+if 'USER' in os.environ and os.environ['USER']=='sensors':
+	# http://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
+	import socket
+	ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
+	print 'production server running on ', ip
+	SERVER_NAME = ip + ':' + str(PORT)
+	print SERVER_NAME
+
+	DEBUG = False
