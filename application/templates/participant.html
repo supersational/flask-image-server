@@ -26,6 +26,7 @@
     <!-- Graphing -->
     <script src="http://127.0.0.1:5001/static/d3.min.js"></script>
     <script src="http://127.0.0.1:5001/static/makeGraph.js"></script>
+    
     <style>
     .img {
     	margin: 0px;
@@ -153,6 +154,21 @@
 	 	margin:3px;
 	 }
     </style>
+
+    <!-- Graphing style-->
+    <style type='text/css'>
+    	.axis path,
+    	.axis line {
+    	  fill: none;
+    	  stroke: #000;
+    	  shape-rendering: crispEdges;
+    	}
+    	.path {
+    	  fill: none;
+    	  stroke: steelblue;
+    	  stroke-width: 1.5px;
+    	}
+    </style>
 {% endblock %}
 {% block pagename %} Participant: {{name}} {% endblock %}
 {% block title %}
@@ -182,7 +198,7 @@
 		</div>
 		<div class="clearfix">
 			<button  onClick="Study.get_annotation_csv({{id}})">Download .csv</button> 
-			<button  onClick="Event.check_valid({{id}}, function(status, jqXHR) {alert(status + ' ' + jqXHR.responseText)})">Event-checker</button>
+			<button  onClick="Event.check_valid({{id}}).then((res) => {if (!res.valid) console.log('event not valid', res.text)})">Event-checker</button>
 			<a href="/participant/{{id}}/upload"><button>Upload data</button></a>
 		</div>
 	</div>
@@ -482,30 +498,30 @@
 
 	function load_more_images(num) {
 		var start_img_id  = imgs.length > 0 ? imgs[imgs.length-1][0] : 0;
-		Image.load_by_id({{id}}, start_img_id , undefined, num, function(_, jqXHR) {
-			var returned_data = $.parseJSON(jqXHR.responseText);
-			// console.log(returned_data.query)
-			var new_imgs = returned_data.images;
-			// console.log(new_imgs);
+		Image.load_by_id({{id}}, start_img_id , undefined, num)
+			.then(function(data) {
+				console.log("Image.load_more_images",data)
+				var new_imgs = data.images;
+				// console.log(new_imgs);
 
-			new_imgs.forEach(function(img) {
-				// console.log("img",img);
-				img[8] = true // set to "needs creating"
+				new_imgs.forEach(function(img) {
+					// console.log("img",img);
+					img[8] = true // set to "needs creating"
+				});
+				imgs = imgs.concat(new_imgs);
+				$(".load-more").remove();
+
+				generate_images();
+				
+				if (new_imgs.length < num) { // remove load more button if run out
+					console.log(".load-more", new_imgs.length, new_imgs)
+					var btn = $(".load-more").find("button")
+					btn.prop('disabled', "disabled");
+					btn.text("No more images");
+					btn.removeAttr('onclick');
+					$(window).unbind('mousewheel DOMMouseScroll scroll', loadMoreOnScroll);
+				}
 			});
-			imgs = imgs.concat(new_imgs);
-			$(".load-more").remove();
-
-			generate_images();
-			
-			if (new_imgs.length < num) { // remove load more button if run out
-				console.log(".load-more", new_imgs.length, new_imgs)
-				var btn = $(".load-more").find("button")
-				btn.prop('disabled', "disabled");
-				btn.text("No more images");
-				btn.removeAttr('onclick');
-				$(window).unbind('mousewheel DOMMouseScroll scroll', loadMoreOnScroll);
-			}
-		});
 	}
 	// function reload_images(selection) {
 	// 	Image.load_by_id({{id}}, imgs[imgs.length-1][0], undefined, num, function(_, jqXHR) {
@@ -666,15 +682,15 @@
 			    		// if the image does not have an event, must use Event.annotate_image to create an event
 			    		var image_id = $(ev.target).closest("div.img").attr("image-id")
 			    		// callback will move color from background to event handles
-			    		var callback = function(e, jqXHR) {
-			    			console.log("done" + e, jqXHR);
+			    		var callback = function(data) {
+			    			console.log("Image change done:", data);
 				    		imgs_in_this_event.css("background-color", "").removeClass("selected")
 				    		// makeSVG(imgs_in_this_event.find("svg"))
 				    		imgs[image_idx][6] =  label_id_drag;
 				    		imgs[image_idx][7] =  label.color;
-				    		reload_images(e, jqXHR)
+				    		reload_images(data)
 			    		}
-			    		Event.annotate_image({{id}}, image_id, label_id_drag, callback);
+			    		Event.annotate_image({{id}}, image_id, label_id_drag).then(callback);
 			    		imgs_in_this_event = $("div.img[image-id="+image_id+"]")
 			    		// set correct label-id's and change color
 			    		imgs_in_this_event.attr("label-id", label_id_drag)
@@ -694,11 +710,11 @@
     			    		imgs[image_idx][7] =  label.color;
     		    		}
 			    		if (label.color) {
-				    		Event.annotate({{id}}, event_id, label_id_drag, callback);
+				    		Event.annotate({{id}}, event_id, label_id_drag).then(callback);
 			    		} else {
 			    			// need to generate color for the first time, and persist to backend
 				    		label.color = getRandomColor();
-				    		Event.annotate_and_set_color({{id}}, event_id, label_id_drag, label.color, callback);
+				    		Event.annotate_and_set_color({{id}}, event_id, label_id_drag, label.color).then(callback);
 			    		}
 			    	}
 		    		// set correct label-id's and change color
@@ -855,8 +871,8 @@
 
 
 	// callback function for reloading images where appearances might have changed
-	function reload_images(_, jqXHR) {
-		var data = $.parseJSON(jqXHR.responseText); // recieves list of images
+	function reload_images(data) {
+		// var data = $.parseJSON(jqXHR.responseText); // recieves list of images
 		console.log(data)
 		if (data.result!=="success") return 0;
 		data.images.forEach(function(img) {
@@ -934,8 +950,8 @@
 				if (image_id!==undefined) { 
 
 					if (selection_is_expanding==true) {
-						console.log("db.add_image("+{{id}}+","+start_event_id+","+image_id+")")
-						Event.add_image({{id}}, start_event_id, image_id, reload_images)
+						console.log("db.add_image("+{{id}}+",  "+start_event_id+","+image_id+")")
+						Event.add_image({{id}}, start_event_id, image_id).then(reload_images)
 					}
 					if (selection_is_expanding==false) {
 						if (curr_id > start_id) var direction = "left"
@@ -945,7 +961,7 @@
 						var include_target = false;
 						console.log("db.remove_image("+{{id}}+","+start_event_id+","+image_id+","+direction+", "+include_target+")")
 						// need to make sure don't remove the last image in the event!
-						Event.remove_image({{id}}, start_event_id, image_id, direction, include_target,reload_images)
+						Event.remove_image({{id}}, start_event_id, image_id, direction, include_target).then(reload_images)
 					}
 					fix_appearance()
 				} 	
@@ -1225,14 +1241,9 @@
         	var event_id = me.closest("div.img").attr("event-id");
         	var dir = me.attr("split-dir");
 			fix_appearance()	        	
-        	// return 0
-        	Event.split(dir, {{id}},event_id, image_id, function(status, jqXHR) {
-        		if (status=="success") reload_images(undefined, jqXHR);
-        		else {
-        			console.log(status);
-        			me.attr("fill", "red")
-        		}
-        	});
+
+        	Event.split(dir, {{id}},event_id, image_id).then(reload_images)
+
         }).on('mouseenter', '.split', function(e){ 
         	// if (!$(e.target).hasClass("split")) return 0;
         	if (is_dragging) return 0;
@@ -1436,7 +1447,7 @@
 		});
 	})()
 
-
+	$(document).ready(function() {console.log("document ready");makeGraph(".graph", {{id}} )})
 	</script>
 
 {% endblock %}
