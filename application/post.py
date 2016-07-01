@@ -4,6 +4,8 @@ from flask import request, redirect, make_response, jsonify
 from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint
 from application.login import login_required, login_check
 import datetime
+from io import BytesIO
+import csv
 
 
 @app.route("/user/<int:user_id>/change_password", methods=["POST"])
@@ -30,7 +32,7 @@ def event_check_valid(participant_id):
 	for evt in evts:
 		if not evt.check_valid():
 			num_not_valid += 1
-	return "deleted: " + str(num_not_valid) + " invalid events"
+	return jsonify(valid=num_not_valid==0, text="deleted: " + str(num_not_valid) + " invalid events")
 
 @app.route("/participant/<int:participant_id>/<int:event_id>/<int:image_id>/<code>", methods=["POST"])
 @login_required
