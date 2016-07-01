@@ -46,7 +46,10 @@ if LOGGING:
     logger = loghandler.init("sqlalchemy.engine")
 
 def read_log():
-    return loghandler.read()
+    if 'loghandler' in sys.modules:
+        return loghandler.read()
+    else:
+        return "logging not enabled"
 
 class Datatype(Base):
     __tablename__ = 'datatypes'
