@@ -73,11 +73,11 @@ var Image = {
 	// }
 var Datapoints = {
 	get_datatypes: function(participant_id) {
-		return $.post("/participant/"+participant_id+"/load_datatypes", null)
+		return $.post("/participant/"+participant_id+"/load_datatypes", null);
 		// create_query("/participant/"+participant_id+"/load_images", {})
 	},
 	get_datapoints: function(participant_id, datatype_id) {
-		return $.post("/participant/"+participant_id+"/load_datapoints/"+datatype_id, null)
+		return $.post("/participant/"+participant_id+"/load_datapoints/"+datatype_id, null);
 		// create_query("/participant/"+participant_id+"/load_images", {})
 	}
 }

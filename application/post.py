@@ -227,7 +227,7 @@ def load_datatypes(participant_id):
 @login_required
 @login_check()
 def load_datapoints(participant_id, datatype_id):
-	data = Datapoint.query.filter((Datapoint.participant_id==participant_id) & (Datapoint.datatype_id==datatype_id)).all()
+	data = Datapoint.query.filter((Datapoint.participant_id==participant_id) & (Datapoint.datatype_id==datatype_id)).order_by(Datapoint.time).all()
 	return jsonify(
 			data = [x.to_array() for x in data],
 			num = len(data)
