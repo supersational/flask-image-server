@@ -51,6 +51,10 @@ def read_log():
     else:
         return "logging not enabled"
 
+epoch = datetime.datetime.utcfromtimestamp(0)
+def epochMillis(dt):
+    return (dt - epoch).total_seconds() * 1000.0
+
 class Datatype(Base):
     __tablename__ = 'datatypes'
 
@@ -65,6 +69,7 @@ class Datatype(Base):
 
     def __repr__(self):
         return 'Datatype: ' + self.name + ", " + str(len(self.datapoints)) + " datapoints"
+
     @staticmethod
     def get_or_create(name):
         return Datatype.query.filter(Datatype.name==name).first() or Datatype(name)
@@ -89,7 +94,7 @@ class Datapoint(Base):
         return 'Datapoint: %s %s (%s)' % ( str(self.time) , str(self.value), str(self.datatype.name))
 
     def to_array(self):
-        return [self.value, self.time.strftime("%Y-%m-%dT%H:%M:%S")]
+        return [self.value, epochMillis(self.time)]
 
     @staticmethod
     def create_many(array, participant_id):

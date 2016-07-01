@@ -40,7 +40,7 @@ var loadGraphDatatypes = function() {console.log("makeGraphParticipant not loade
 	}
 	function setup_graph(selector) {
 		return new Promise((resolve) => {
-			
+
 			console.log("setting up graph")
 			if (!width) width = $(window).width()-200;
 			if (!height) height = 200;
@@ -110,13 +110,10 @@ var loadGraphDatatypes = function() {console.log("makeGraphParticipant not loade
 		console.log("load_datapoints(",participant_id, datatype_id,")")
 		return Datapoints.get_datapoints(participant_id, datatype_id).then(function(response) {
 			console.log("Datapoints.get_datapoints", response)
+
 			// parse the data
-			var formatDate = d3.time.format("%Y-%m-%dT%H:%M:%S");
 			function type(d) {
-			  d.time = formatDate.parse(d[1]);
-			  d.value = +d[0];
-			  // console.log(d.time, d.value)
-			  return {time: d.time, value: d.value};
+			  return {value: +d[0], time: new Date(d[1])};
 			}
 
 			var data = response.data.map(type)
@@ -125,7 +122,7 @@ var loadGraphDatatypes = function() {console.log("makeGraphParticipant not loade
 			// 	t++
 			// 	return {time: new Date(t*100), value: t *100}
 			// })
-			console.log("data:",data)
+			// console.log("data:",data)
 			return data
 		});
 	}
