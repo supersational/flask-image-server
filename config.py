@@ -26,7 +26,7 @@ CSRF_SESSION_KEY = "secret"
 NODE_SECRET_KEY = uuid.uuid4().hex
 
 # Secret key for signing cookies
-SECRET_KEY = uuid.uuid4().hex
+SECRET_KEY = "constant so we don't have to login every time"
 print "SECRET_KEY", SECRET_KEY
 JSONIFY_PRETTYPRINT_REGULAR = False
 
@@ -57,3 +57,4 @@ if 'USER' in os.environ and os.environ['USER']=='sensors':
 	print SERVER_NAME
 	SQLALCHEMY_DATABASE_URI = 'postgres:///sensors'
 	DEBUG = False
+	SECRET_KEY = uuid.uuid4().hex
