@@ -1,7 +1,7 @@
 
 var _request_pending = false;
-function create_query(url, data, callback) {
-	// console.log("create_query", url, data)
+function create_query(url, data) {
+	console.log("create_query", url, data)
 	if (_request_pending==true) 
 		return Promise.reject("already waiting for a request to complete");
  	_request_pending = true;
@@ -9,7 +9,6 @@ function create_query(url, data, callback) {
 	return $.post(url, data)
 		.done((response) => {
 			console.log("POST success, data = ", response)
-			if (callback) callback(undefined, {responseText:JSON.stringify(data)})
 			return response;
 		})
 		.fail((err) => {
@@ -27,15 +26,18 @@ var Event = {
 	},
 	add_image: function(participant_id, event_id, image_id) {
 		return create_query("/participant/"+participant_id+"/"+event_id+"/"+image_id+"/add_image",undefined)
+			.then(Image.intercept_imgs)
 	},
 	remove_image: function(participant_id, event_id, image_id, direction, include_target) {
 		return create_query(
 			"/participant/"+participant_id+"/"+event_id+"/"+image_id+"/remove",
 			{direction:direction, include_target:include_target})
+			.then(Image.intercept_imgs)
 	},
 	split: function(dir, participant_id, event_id, image_id) {
 		if (dir=="left" || dir=="right") 
 			return create_query("/participant/"+participant_id+"/"+event_id+"/"+image_id+"/split_"+dir,undefined)
+			.then(Image.intercept_imgs)
 	},
 	annotate_image: function(participant_id, image_id, label_id) {
 		return create_query("/participant/"+participant_id+"/"+image_id+"/annotate_image",{label_id:label_id})
@@ -66,6 +68,16 @@ var User = {
 var Image = {
 	load_by_id: function(participant_id, start, end, num) {
 		return create_query("/participant/"+participant_id+"/load_images", {start_id:start, end_id:end, number:num})
+			.then(Image.intercept_imgs)
+	},
+	intercept_imgs: function(data) {
+		if (data.images) data.images.forEach(Image.new_img)
+		console.log("loaded_imgs", data)
+		return data
+	},
+	new_img: function (img) {
+		img.needs_update=true; // set needs_update to true
+		if ("image_time" in img) img.image_time = new Date(img.image_time);
 	}
 }
 	// reload_by_id: function(participant_id, image_id_list) {

@@ -388,7 +388,7 @@ class Event(Base):
                 map(serialize_datetime, [self.start_time, self.end_time])]
 
 def serialize_datetime(d):
-    return [d.year, d.month, d.day, d.hour, d.minute, d.second]
+    return epochMillis(d) #[d.year, d.month, d.day, d.hour, d.minute, d.second]
 
 class Image(Base):
     __tablename__ = 'images'
@@ -425,6 +425,21 @@ class Image(Base):
         return self.image_id == self.event.last_image.image_id if self.event is not None else False
 
     def to_array(self):
+        return {
+            "image_id":self.image_id,
+            "event_id":self.event_id,
+            "image_time": serialize_datetime(self.image_time), 
+            "thumbnail_url":Image.gen_url(self.thumbnail_url), 
+            "medium_url":Image.gen_url(self.medium_url), 
+            "full_url":Image.gen_url(self.full_url),
+            "is_first":1 if self.is_first else 0,
+            "is_last":1 if self.is_last else 0,
+            "label_id":self.event.label_id  if self.event else None,
+            "label_color":self.event.label.color if self.event and self.event.label else None,
+            "first_id":self.event.first_image.image_id if (self.event and self.event.first_image) else None,
+            "last_id":self.event.last_image.image_id if (self.event and self.event.last_image) else None
+        }
+
         return [self.image_id, 
             self.event_id,
             self.participant_id,

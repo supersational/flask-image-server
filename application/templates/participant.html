@@ -316,28 +316,35 @@
 	}
 	var time_load = new Date()
 	imgs = {{imgs_array | safe}}; // sorted by time
-	imgs.forEach(function(img) {img[8]=true;}) // set [8]=needs_update to true
 
-	$(function() {generate_images()})
+	
+
+	$(function() {
+		imgs.forEach(Image.new_img)
+		generate_images()
+	})
 
 	function create_image(i, idx) { 
-
-		var image_id=i[0], event_id=i[1], image_time=i[3], full_url=i[4][2], thumbnail_url=i[4][0], is_first=i[5][0], is_last=i[5][1], first_id=i[5][2][0], last_id=i[5][2][1];
-		var label_id=i[6];
-		var str = '<div class="img" id="'+idx+'" image-id="'+image_id+'" event-id="'+(event_id===null ? "" : event_id) +'" '+((label_id===null || label_id===undefined) ? '' : 'label-id="'+label_id+'" ')+' is-last="'+is_last+'" is-first="'+is_first+'" first-id="' + first_id + '"  last-id="' + last_id + '">' // ondrop="img_drop(event)" ondragover="img_hover(event)
-	 	if (!(event_id!==undefined)) {			 	
-			if (!is_last) {
+		if (!i.image_time.toLocaleTimeString) console.log(i)
+		// var image_id=i["image_id"], event_id=i["event_id"], image_time=i["image_time"], full_url=i["full_url"], thumbnail_url=i["thumbnail_url"], is_first=i.is_first, is_last=i.is_last, first_id=i[5][2][0], last_id=i[5][2][1];
+		// var label_id=i[6];
+		var str = '<div class="img" id="'+idx+'" image-id="'+i.image_id+'" event-id="'+(i.event_id===null ? "" : i.event_id) +'" '+((i.label_id===null || i.label_id===undefined) ? '' : 'label-id="'+i.label_id+'" ');
+		str +=' is-last="'+i.is_last+'" is-first="'+i.is_first+'" first-id="' + i.first_id + '"  last-id="' + i.last_id + '">' // ondrop="img_drop(event)" ondragover="img_hover(event)
+	 	if (!(i.event_id!==undefined)) {			 	
+			if (!i.is_last) {
 				 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
 			}
-			if (!is_first) {
+			if (!i.is_first) {
 				str += '<div style="left:0px;" class="split left" split-dir="left"></div>'
 			}
 		}
 		str += '<svg width="{{im_both}}" height="30">'
 
 		str += '</svg>'
-		str += '<img class="thumbnail" width="{{im_width}}" height="{{87}}" src="'+thumbnail_url+'" >'
-		str += '<p>' + pad_num(image_time[3],2)+':'+ pad_num(image_time[4],2)+':'+pad_num(image_time[5],2)+'</p></div>'
+		str += '<img class="thumbnail" width="{{im_width}}" height="{{87}}" src="'+i.thumbnail_url+'" >'
+		str += '<p>' + i.image_time.toLocaleTimeString()+'</p></div>'
+		// str += '<p>' + pad_num(image_time[3],2)+':'+ pad_num(image_time[4],2)+':'+pad_num(image_time[5],2)+'</p></div>'
+		// console.log(str)
 		return str;
 	}
 
@@ -345,35 +352,35 @@
 		var container = el.find("svg")
 		var img = imgs[i];
 		// console.log(el,i, img[0],img[5])
-		if ((!img[1] && img[1]!==0)) {// || img[5][0] || img[5][1]) { // neither or no event
+		if ((!img.event_id && img.event_id!==0)) {// || img.is_first || img.is_last) { // neither or no event
 			console.log("neither or no event")
 			// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
 			//			 		<rect class="line" nw="0" width="0" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="imageimage_id}}"/> 
 		}
-		else if (img[5][0] && img[5][1]) {
+		else if (img.is_first && img.is_last) {
 			// console.log("both")
 			makeCircle(container,true)
 			// makeLine(container, {width:0, nw:0, x:{{im_half}}, nx:{{im_half}}, id:img[0]}, true)
 			//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{imageimage_id}}" /> 
 		}
-		else if (img[5][1]) { // is-last
+		else if (img.is_last) { // is-last
 			// console.log("last")
 			makeCircle(container,true)
-			makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:0, nx:0, id:img[0] }, true)
+			makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:0, nx:0, id:img.image_id }, true)
 			el.prepend('<div class="split left" split-dir="left"></div>')
 			//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="0" x="0" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
 		}
-		else if (img[5][0]) { // is-first
+		else if (img.is_first) { // is-first
 			// console.log("first")
 			makeCircle(container,true)
-			makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:{{im_half}}, nx:{{im_half}}, id:img[0] }, true)
+			makeLine(container, {width:{{im_half}}, nw:{{im_half}}, x:{{im_half}}, nx:{{im_half}}, id:img.image_id }, true)
 			el.prepend(' <div class="split right" split-dir="right"></div>')
 			//				 		<rect class="line" nw="{{im_half}}" width="{{im_half}}" height="5" nx="{{im_half}}" x="{{im_half}}" y="12.5" fill="{{fillcol}}" id="{image.image_id}}" /> 
 		}
-		else if (!img[5][0] && !img[5][1]) { // connector
+		else if (!img.is_first && !img.is_last) { // connector
 			// console.log("connector")
 			el.prepend(' <div class="split right" split-dir="right"></div><div class="split left" split-dir="left"></div>')
-			makeLine(container, {width:{{im_both}}, nw:{{im_both}}, x:0, nx:0, id:img[0] }, true)
+			makeLine(container, {width:{{im_both}}, nw:{{im_both}}, x:0, nx:0, id:img.image_id }, true)
 
 			
 		} else console.log("something went wrong")
@@ -381,26 +388,29 @@
 	}
 	function generate_images() {
 
+		// console.log("imgs generate",imgs)
 		console.log("imgs generate", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		$("#imagenum-text").html("Showing "+imgs.length+" images out of {{num_images}}")
 
-		var prev_date =[-1,-1,-1]
+		var prev_date = new Date(-99999999999);
 		var html = "";
 		imgs.forEach(function(img, idx) {
+			// console.log(img)
+			date = img.image_time
 			// check if day has changed
-			var date = img[3].slice(0,3)
-			if (img[8]===true) {
-				if (date[2]!=prev_date[2] || date[1]!=prev_date[1] || date[0]!=prev_date[0]) {
+			if (img.needs_update===true) {
+				if (date.day != prev_date.day || date.month != prev_date.month || date.year != prev_date.year) {
 					html += create_day_seperator(date);
 				}
 				html += create_image(img, idx);
-				img[8] = false; // flag as rendered
+				img.needs_update = false; // flag as rendered
 			}
 			prev_date = date;
 		})
 		html+= "<h3 class='gallery-seperator load-more' style='text-align:right;padding-right:30px;'><button onClick='load_more_images(20)'>Load more</button></h3>"
 		// inject the newly created html
 		$(".gallery").html($(".gallery").html() +html);
+		console.log("imgs html", html)
 		// $("#right-bar").append("<h2>more</h2>")
 		console.log("gallery done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
 		// console.log("eventize done", (new Date() - time_load)/1000+"s","   from load:",(new Date() - time_start)/1000+"s")
@@ -422,27 +432,13 @@
                 self.comment,
                 map(serialize_datetime, [self.start_time, self.end_time])]*/
         // IMAGE python
-        /* [self.image_id, 
-            self.event_id,
-            self.participant_id,
-            serialize_datetime(self.image_time), 
-            map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
-            [1 if self.is_first else 0, 1 if self.is_last else 0]
+        /* [0 self.image_id, 
+            1 self.event_id,
+            2 self.participant_id,
+            3 serialize_datetime(self.image_time), 
+            4 map(self.gen_url, [self.thumbnail_url, self.medium_url, self.full_url]),
+            5 [1 if self.is_first else 0, 1 if self.is_last else 0]
         ] */
-
-
-		// date (in array format) comparison
-		function date_compare(a, b) {
-			// python function for generating these dates is:
-			// def serialize_datetime(d):
-			//     return [d.year, d.month, d.day, d.hour, d.minute, d.second]
-
-			for (var i = 0; i <= 6; i++) {
-				if (a[i]<b[i]) return -(i+1); // b<a
-				if (a[i]>b[i]) return (i+1);  // a>b
-			}
-			return 0; // equal
-		}
 
 	}
 
@@ -460,13 +456,13 @@
 			var idx = parseInt($(this).closest(".img").attr("id"))
 			if (idx==idx_prev) return;
 			var text = "<p>"
-			text += "image-id:"+imgs[idx][0] + "<br>"
-			text += (imgs[idx][5][0] ? "O " : "") + imgs[idx][5][2][0] + " : "  + imgs[idx][5][2][1] + (imgs[idx][5][1] ? "O" : "") + "<br>"
+			text += "image-id:"+imgs[idx].image_id + "<br>"
+			text += (imgs[idx].is_first ? "O " : "") + imgs[idx].first_id + " : "  + imgs[idx].last_id + (imgs[idx].is_last ? "O" : "") + "<br>"
 			text += "image-idx:" + idx + "<br>"
 			
-			if (imgs[idx][1])
-				text += "event_id:"+imgs[idx][1]// + "<br>"
-			var label_id = imgs[idx][6];
+			if (imgs[idx].event_id!=null)
+				text += "event_id:"+imgs[idx].event_id// + "<br>"
+			var label_id = imgs[idx].label_id;
 			if (label_id && 0) {
 				text += "label_id:"+label_id + "<br>"
 				if (labels[label_id]) {
@@ -497,17 +493,12 @@
 	$(window).bind('mousewheel DOMMouseScroll scroll', loadMoreOnScroll);
 
 	function load_more_images(num) {
-		var start_img_id  = imgs.length > 0 ? imgs[imgs.length-1][0] : 0;
+		var start_img_id  = imgs.length > 0 ? imgs[imgs.length-1].image_id : 0;
 		Image.load_by_id({{id}}, start_img_id , undefined, num)
 			.then(function(data) {
 				console.log("Image.load_more_images",data)
 				var new_imgs = data.images;
-				// console.log(new_imgs);
 
-				new_imgs.forEach(function(img) {
-					// console.log("img",img);
-					img[8] = true // set to "needs creating"
-				});
 				imgs = imgs.concat(new_imgs);
 				$(".load-more").remove();
 
@@ -523,14 +514,11 @@
 				}
 			});
 	}
-	// function reload_images(selection) {
-	// 	Image.load_by_id({{id}}, imgs[imgs.length-1][0], undefined, num, function(_, jqXHR) {
 
-	// }
 	function svg_colorize(i, color) {
 		if (!color) {
 			// var img = imgs[i];
-			var label_color = imgs[i][7];
+			var label_color = imgs[i].label_color;
 			if (label_color) {
 				color = label_color
 			}
@@ -541,9 +529,7 @@
 			el.find(".circle").css({stroke:color})
 		}
 	}
-	</script>
 
-	<script>
 	function reload_page() {
 		console.log("reloading page..")
 		location.reload()
@@ -686,8 +672,8 @@
 			    			console.log("Image change done:", data);
 				    		imgs_in_this_event.css("background-color", "").removeClass("selected")
 				    		// makeSVG(imgs_in_this_event.find("svg"))
-				    		imgs[image_idx][6] =  label_id_drag;
-				    		imgs[image_idx][7] =  label.color;
+				    		imgs[image_idx].label_id =  label_id_drag;
+				    		imgs[image_idx].label_color =  label.color;
 				    		reload_images(data)
 			    		}
 			    		Event.annotate_image({{id}}, image_id, label_id_drag).then(callback);
@@ -706,8 +692,8 @@
     			    		imgs_in_this_event.css("background-color", "").removeClass("selected")
     			    		imgs_in_this_event.find(".line").css("fill", label.color)
     			    		imgs_in_this_event.find(".circle").css("stroke", label.color)
-    			    		imgs[image_idx][6] =  label_id_drag;
-    			    		imgs[image_idx][7] =  label.color;
+    			    		imgs[image_idx].label_id =  label_id_drag;
+    			    		imgs[image_idx].label_color =  label.color;
     		    		}
 			    		if (label.color) {
 				    		Event.annotate({{id}}, event_id, label_id_drag).then(callback);
@@ -877,13 +863,16 @@
 		if (data.result!=="success") return 0;
 		data.images.forEach(function(img) {
 			console.log(img)
-			var image_id = img[0];
+			var image_id = img.image_id;
 			var img_to_replace = $("div.img[image-id="+image_id+"]")
 			var image_idx = img_to_replace.attr("id")
 			console.log(imgs[image_idx])
 			console.log(image_id, img_to_replace[0], image_idx)
 			if (imgs[image_idx]) {
-				img[4] = imgs[image_idx][4] // keep old image urls
+				// keep old image urls so we don't have to download them again
+				img.thumbnail_url = imgs[image_idx].thumbnail_url 
+				img.medium_url = imgs[image_idx].medium_url 
+				img.full_url = imgs[image_idx].full_url 
 				imgs[image_idx] = img
 				
 			
@@ -1402,11 +1391,11 @@
 			// console.log(index, item, imgs[index])
 		    // Set image source & size based on real viewport width
 		    if( useLargeImages ) {
-		        item.src = imgs[index][4][2];
+		        item.src = imgs[index].full_url;
 		        item.w = img_sizes.original[0],
 		        item.h = img_sizes.original[1]
 		    } else {
-		        item.src = imgs[index][4][1];
+		        item.src = imgs[index].medium_url;
 		        item.w = img_sizes.medium[0],
 		        item.h = img_sizes.medium[1]
 		    }
