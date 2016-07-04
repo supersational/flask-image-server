@@ -339,7 +339,7 @@ class Event(Base):
     @staticmethod
     def get_event_at_time(time, participant_id):
         return Event.query.filter((Event.participant_id==participant_id) & (Event.contains_time(time))).first() # note: does not check for overlapping events
-        
+
     @staticmethod
     def get_event_id_at_time(time, participant_id):
         return getattr(Event.get_event_at_time(time, participant_id), 'event_id', None) 

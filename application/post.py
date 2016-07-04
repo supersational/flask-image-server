@@ -95,7 +95,7 @@ def create_participant(study_id):
 		study.participants.append(participant)
 	except:
 		return "error adding participant, wrong name or study"
-	return redirect("/study/%i" % study_id)
+	return redirect("/study/%i" % study_id, code=303)
 
 @app.route("/study/<int:study_id>/add_studyparticipant", methods=["POST"])
 @login_required
@@ -106,7 +106,7 @@ def add_studyparticipant(study_id):
 	participant = Participant.query.get(participant_id)
 	if study and participant:
 		participant.studies.append(study)		
-		return redirect("/study/" + str(study_id))
+		return redirect("/study/" + str(study_id), code=303)
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
 @app.route("/study/<int:study_id>/remove_studyparticipant", methods=["POST"])
@@ -119,7 +119,7 @@ def remove_studyparticipant(study_id):
 	if study and participant:
 		if study in participant.studies:
 			participant.studies.remove(study)	
-			return redirect("/study/" + str(study_id))
+			return redirect("/study/" + str(study_id), code=303)
 		else:
 			return "participant not in that study"
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
