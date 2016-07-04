@@ -83,25 +83,43 @@ def event_modify(participant_id, event_id, image_id, code):
 		# return jsonify(result='split '+direction+' failed')
 
 
-@app.route("/add_studyparticipant", methods=["POST"])
-def add_studyparticipant():
-	study_id, participant_id = request.form['study_id'], request.form['participant_id']
-	study = Study.query.filter(Study.study_id==study_id).one()
-	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+@app.route("/study/<int:study_id>/create_participant", methods=["POST"])
+@login_required
+@login_check()
+def create_participant(study_id):
+	# creates a participant in the current study, if the user has access to the study
+	study = Study.query.get(study_id)
+	name = request.form['name']
+	try:
+		participant = Participant(name)
+		study.participants.append(participant)
+	except:
+		return "error adding participant, wrong name or study"
+	return redirect("/study/%i" % study_id)
+
+@app.route("/study/<int:study_id>/add_studyparticipant", methods=["POST"])
+@login_required
+@login_check()
+def add_studyparticipant(study_id):
+	participant_id = request.form['participant_id']
+	study = Study.query.get(study_id)
+	participant = Participant.query.get(participant_id)
 	if study and participant:
 		participant.studies.append(study)		
-		return redirect("/study/" + study_id)
+		return redirect("/study/" + str(study_id))
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)
 
-@app.route("/remove_studyparticipant", methods=["POST"])
-def remove_studyparticipant():
-	study_id, participant_id = request.form['study_id'], request.form['participant_id']
+@app.route("/study/<int:study_id>/remove_studyparticipant", methods=["POST"])
+@login_required
+@login_check()
+def remove_studyparticipant(study_id):
+	participant_id = request.form['participant_id']
 	study = Study.query.filter(Study.study_id==study_id).one()
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 	if study and participant:
 		if study in participant.studies:
 			participant.studies.remove(study)	
-			return redirect("/study/" + study_id)
+			return redirect("/study/" + str(study_id))
 		else:
 			return "participant not in that study"
 	return "Method = " + request.method + " study_id : " + str(study_id) + " participant_id : " + str(participant_id)

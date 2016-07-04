@@ -8,23 +8,30 @@ Study: {{study_name}}
 		{% for participant in participants %}
 			<div style="min-width:150px; padding:5px;">
 				<a href='/participant/{{participant.participant_id}} '>{{participant.name}}</a>
-				<button style="float:right;" onclick="$(this).attr('disabled',true);Study.remove_participant({{participant.participant_id}},{{study_id}}, function() {location.reload();})"> Remove from study</button>
+				<form action='/study/{{study_id}}/remove_studyparticipant' method='POST'  style="float:right;"> 
+					<input type='hidden' name='participant_id' value='{{participant.participant_id}}'>
+					<input type='submit' value='Remove from study'>
+				</form> 
 			</div>
 		{% endfor %}
 		{% if participants_to_add | length > 0 %}
-		<form action='/add_studyparticipant' method='POST'> 
+		<form action='/study/{{study_id}}/add_studyparticipant' method='POST'> 
 			<p>add a participant to this study: </p>
 			<select name='participant_id'>
 				{% for participant in participants_to_add %}
 					<option value='{{participant.participant_id}}'>{{participant.name}}</option>
 				{% endfor %}
 			</select>
-			<input type='hidden' name='study_id' value='{{study_id}}'> 
 			<input type='submit' value='Add'>
 		</form> 
 		{% else %}
 		<p>all participants are already in this study</p>
 		{% endif %}
+		<h4> New participant:</h4>
+		<form action='/study/{{study_id}}/create_participant' method='POST'> 
+			<input type='text' name='name'>
+			<input type='submit' value='Add'>
+		</form>
 		<h4>Users:</h4>
 
 		{% for user in users %}
