@@ -338,7 +338,8 @@ class Event(Base):
 
     @staticmethod
     def get_event_at_time(time, participant_id):
-        return Event.query.filter((Event.contains_time(time))).first() # note: does not check for overlapping events
+        return Event.query.filter((Event.participant_id==participant_id) & (Event.contains_time(time))).first() # note: does not check for overlapping events
+        
     @staticmethod
     def get_event_id_at_time(time, participant_id):
         return getattr(Event.get_event_at_time(time, participant_id), 'event_id', None) 
@@ -525,7 +526,11 @@ class Participant(Base):
     images = relationship(u'Image', back_populates='participant', lazy='dynamic')
     events = relationship(u'Event', back_populates='participant')
     def __init__(self, name):
-        self.name = name
+        # print "type:", type(name), "name:", name
+        if isinstance(name, basestring) and len(name)>0:
+            self.name = name
+        else:
+            raise ValueError("name is not valid")
 
 
     def __repr__(self):
