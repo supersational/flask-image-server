@@ -1,5 +1,6 @@
 images
 *.pyc
+*.db
 logfile*.txt
 node_modules
 
