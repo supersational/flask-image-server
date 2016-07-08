@@ -41,12 +41,15 @@ var Event = {
 	},
 	annotate_image: function(participant_id, image_id, label_id) {
 		return create_query("/participant/"+participant_id+"/"+image_id+"/annotate_image",{label_id:label_id})
+					.then(Image.intercept_imgs)
 	},	
 	annotate: function(participant_id, event_id, label_id) {
 		return create_query("/participant/"+participant_id+"/"+event_id+"/annotate",{label_id:label_id})
+					.then(Image.intercept_imgs)
 	},
 	annotate_and_set_color: function(participant_id, event_id, label_id, color) {
 		return create_query("/participant/"+participant_id+"/"+event_id+"/annotate",{label_id:label_id, color:color})
+					.then(Image.intercept_imgs)
 	}
 }
 var Study = {
