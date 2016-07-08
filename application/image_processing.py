@@ -4,10 +4,11 @@ import binascii
 import PIL
 import cgi
 from PIL import Image as PILImage 
-from io import BytesIO
+# from io import BytesIO
+from StringIO import StringIO
 
 # uploads
-from config import UPLOAD_FOLDER, IMAGE_SIZES
+from config import UPLOAD_FOLDER, IMAGE_SIZES, IMAGES_FOLDER, IMAGES_FOLDER_NAME
 
 
 
@@ -28,7 +29,9 @@ def to_html_img(input_file, size=None):
 	if size is not None:
 		im = im.copy()
 		im.thumbnail(size)
-	stream = BytesIO()
+	else: return "img size was None!"
+	print "im.size", im.size
+	stream = StringIO()
 	im.save(stream, "JPEG")
 	try:
 		sizeattrs = 'width="%s" height="%s" ' % im.size
@@ -37,25 +40,27 @@ def to_html_img(input_file, size=None):
 	return "<img src='data:image//png;base64,%s' %s alt='%s'\>" % (binascii.b2a_base64(stream.getvalue()), sizeattrs, input_file)
 
 
-def generate_sizes(input_file, output_path):
+def generate_sizes(input_file, participant_id):
 	im = PILImage.open(input_file)
 	name = file_noextension(input_file)
 	output_files = {}
 	for key, size in IMAGE_SIZES.iteritems():
-		outfile = os.path.join(output_path, size['dir'], name+".jpg")
-		ensure_dir_exists(outfile)
-		exists = os.path.isfile(outfile)
-		if not exists:
+		outfile_full = os.path.join(IMAGES_FOLDER, str(participant_id), size['dir'], name+".jpg")
+		outfile = '/'+os.path.join(IMAGES_FOLDER_NAME, str(participant_id), size['dir'], name+".jpg")
+
+		ensure_dir_exists(outfile_full)
+		exists = os.path.isfile(outfile_full)
+		if not exists or 1:
 			print("    generating : " + key + " " + str(size['size']) + " " + outfile +" curr size:" + str(im.size))
 
 			# if a size is specified, then resize
 			if size['size'][0]>0 and size['size'][1]>0:
 				im_thumb = im.copy()
 				im_thumb.thumbnail(size['size'])
-				im_thumb.save(outfile,"JPEG")
+				im_thumb.save(outfile_full,"JPEG")
 			else:
 				# full resolution
-				im.save(outfile,"JPEG")
+				im.save(outfile_full,"JPEG")
 			# store file location for each size
 			output_files[key] = outfile
 		else:

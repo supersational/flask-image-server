@@ -275,10 +275,13 @@ def confirm_upload(hash):
 	num_datapoints = 0
 	added_html = ''
 	participant_id = pending_uploads[hash]['participant_id']
+	added_html += "<p>%i files </p>" % (len(pending_uploads[hash]['files']), )
 	for upload in pending_uploads[hash]['files'].itervalues():
+		added_html += "<p>%i items in file </p>" % (len(upload['data']), )
 		for obj in upload['data']:
 			if isinstance(obj, Image):
 				print obj, " is Image"
+				added_html += "<p>" + obj.full_url + "</p" 
 				session.add(obj)
 				session.flush()
 				num_images += 1
@@ -298,4 +301,4 @@ def confirm_upload(hash):
 		if len(upload['datapoints'])>0:
 			Datapoint.create_many(upload['datapoints'], participant_id)
 	# del pending_uploads[hash]
-	return "sucessfully added %i images and %i dataponts: %s " % (num_images, len(upload['datapoints']), added_html)
+	return "<a href='/participant/%i'>Go back</a><p>sucessfully added %i images and %i dataponts:</p> %s " % (participant_id, num_images, len(upload['datapoints']), added_html)

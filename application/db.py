@@ -470,27 +470,22 @@ class Image(Base):
     # uploaded image => resizing => Image
     @staticmethod
     def from_file(image_path, participant_id):
-        try:
-            from application import image_processing
-            img_time = Image.parse_img_date(image_path)
-            if img_time:
-                output_folder = os.path.join(IMAGES_FOLDER, str(participant_id))
-                resized_images = image_processing.generate_sizes(image_path, os.path.dirname(image_path))
-                if all([value is not None for key, value in resized_images]):
-                    return Image(
-                        participant_id,
-                        img_time,
-                        resized_images['full'],
-                        resized_images['medium'],
-                        resized_images['thumbnail'],
-                        Event.get_event_at_time(img_time, participant_id) # add to any existing events
-                        )
-                else:
-                    print "image could not be resized, does it exist already?"
-        except Exception as e:
-            print type(e)
-            print e
-        return None
+        from application import image_processing
+        img_time = Image.parse_img_date(image_path)
+        if img_time:
+            resized_images = image_processing.generate_sizes(image_path, participant_id)
+            print resized_images
+            if all([value is not None for key, value in resized_images.iteritems()]):
+                return Image(
+                    participant_id,
+                    img_time,
+                    resized_images['full'],
+                    resized_images['medium'],
+                    resized_images['thumbnail'],
+                    Event.get_event_at_time(img_time, participant_id) # add to any existing events
+                    )
+            else:
+                print "image could not be resized, does it exist already?"
 
     # parse filenames in format B00001764_21I7TA_20151227_140000E.jpg
     @staticmethod
