@@ -40,7 +40,8 @@ DEBUG = True
 LOGGING = False
 
 APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
-IMAGES_FOLDER =os.path.join(BASE_DIR, "application", "images")
+IMAGES_FOLDER_NAME = "images"
+IMAGES_FOLDER =os.path.join(BASE_DIR, "application", IMAGES_FOLDER_NAME)
 UPLOAD_FOLDER =os.path.join(BASE_DIR, "application", "upload_folder")
 
 SUPPORTED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"]
