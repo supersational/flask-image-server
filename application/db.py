@@ -65,14 +65,28 @@ class Datatype(Base):
 
 
     def __init__(self, name):
-        self.name = name
+        self.name = name.strip()
 
     def __repr__(self):
         return 'Datatype: ' + self.name + ", " + str(len(self.datapoints)) + " datapoints"
 
     @staticmethod
     def get_or_create(name):
-        return Datatype.query.filter(Datatype.name==name).first() or Datatype(name)
+        name = name.strip() # remove whitespace
+
+        if len(name)>Datatype.name.type.length: 
+            # name too long will silently fail to find existing object otherwise!
+            raise Exception("Value too long ("+str(len(name))+")")
+
+        datatype = session.query(Datatype).filter(Datatype.name==name).first()
+        # print '"'+name+'"', ":", datatype
+        if datatype is None:
+            datatype = Datatype(name)
+            session.add(datatype)
+            session.flush() # need to flush so we can use the generated id 
+        return datatype
+
+
 
 class Datapoint(Base):
     __tablename__ = 'datapoints'
