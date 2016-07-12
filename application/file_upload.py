@@ -21,6 +21,7 @@ from flask import Response
 import csv
 
 from flask import request, redirect, make_response, jsonify
+from sqlalchemy.exc import InvalidRequestError
 from application.db import Event, Image, Participant, Study, Label
 # for parsing csv into datapoints
 from application.db import Datapoint, Datatype
@@ -81,10 +82,17 @@ def process_file_thread(hash, filename):
 		# upload_file['data'].append(datafile)
 		parsing_start_time = time.time()
 		with open(filename, 'rb') as csvfile:
-			csvreader = csv.reader(csvfile)
+			try:
+				dialect = csv.Sniffer().sniff(csvfile.read(1024))
+			except csv.Error:
+				dialect = csv.excel
+			csvfile.seek(0)
+
+			csvreader = csv.reader(csvfile, dialect)
 			column_headers = next(csvreader)
 			time_cols = []
-			datatypes = [None for n in column_headers]
+			get_time = None
+			datatypes = [None for n in column_headers] 
 			# check for "acceleration (mg) - 2016-01-28 17:58:00 - 2016-01-28 18:48:00 - sampleRate = 5 seconds"
 			if any(map(parseAccTimeSeries, column_headers)):
 				# file is AccTimeSeries.csv
@@ -102,9 +110,11 @@ def process_file_thread(hash, filename):
 				first_row = next(csvreader)
 				for i, col in enumerate(first_row):
 					try: 
-						parse(col)
+						print i, col
+						parse(col, fuzzy=True)
+						upload_file['display'] += "<p>"+filename+" time col= " + str(i) + " value= " + col +"</p>"
 						time_cols.append(i) 
-						get_time = lambda rownum, row: parse(row[i])  
+						get_time = lambda rownum, row: parse(row[i], fuzzy=True) if 0<=i<len(row) else None
 						break
 					except ValueError:
 						pass
@@ -113,43 +123,65 @@ def process_file_thread(hash, filename):
 				# reset csvreader to read first row
 				csvreader = csv.reader(csvfile)
 				next(csvreader)
-			# for i, col in enumerate(column_headers):
-			# 	print i, col
-			# 	datatype = Datatype.get_or_create(col)
-			# 	datatypes[i] = datatype
-			# upload_file['data'].extend(datatypes)
-			limit = 10000
-			datatypes_id = map(lambda x: x.datatype_id if x else None, datatypes)
-			for rownum, row in enumerate(csvreader):
-				t =get_time(rownum, row)
-				# print row, t
-				# print ', '.join(row)
-				for colnum, col in enumerate(row):
-					if colnum in time_cols:
-						# print col
-						pass
-						# parse datetime
-					# print colnum, col
-					try:
-						val = float(col)
-					except ValueError:
-						# print "not a float"
-						val = 0
+
+			upload_file['display'] += "<p>"+filename+" dialect= " + str(dialect) + "</p>"
+			for p in ['escapechar', 'lineterminator', 'quotechar', 'quoting', 'skipinitialspace']:
+				upload_file['display'] += "<p>"+p+ ":"+str(getattr(dialect, p)) +"</p>"
+
+			for i, d in enumerate(datatypes):
+				print str(i) + ":" + str(d)
+				upload_file['display'] += "<p>"+str(i) + ":" + str(d) +"</p>"
+
+			if get_time is None:
+				print "can't get time"
+				print dir(locals())
+				upload_file['display'] += "<p>"+filename+" didn't have any time columns in</p><ul>"
+				first_row = next(csvreader)
+				for i, col in enumerate(first_row):
+					upload_file['display'] += "<li>"+str(i)+": " + col +" </li>"
+				upload_file['display'] += "</ul>"
 
 
-					# datapoint = Datapoint(t, val, participant_id)
-					# datatypes[colnum].datapoints.append(datapoint)
-					# upload_file['data'].append(datapoint)
-					datatype_id = datatypes_id[colnum]
-					if datatype_id:
-						upload_file['datapoints'].append([t, val, datatype_id])
+			else:
 
-				limit -= 1
-				if limit < 0: 
-					break
-			print datatypes
-			print time_cols
-		print("--- .csv parsing %s rows took %s seconds ---" % (len(upload_file['datapoints']), time.time() - parsing_start_time))
+				limit = 10000
+
+				datatypes_id = map(lambda x: x.datatype_id if x else None, datatypes)
+				for rownum, row in enumerate(csvreader):
+					t = get_time(rownum, row)
+					if t is None:
+						print "time row did not exist at row %i: %s \n %s" % (rownum, str(row), str(0 in row))
+						break
+					
+					print row, t
+					# print ', '.join(row)
+					for colnum, col in enumerate(row):
+						if colnum in time_cols:
+							# print col, "in time_cols"
+							pass
+							# parse datetime
+						# print colnum, col
+						try:
+							val = float(col)
+						except ValueError:
+							# print col, "not a float"
+							val = 0
+
+
+						# datapoint = Datapoint(t, val, participant_id)
+						# datatypes[colnum].datapoints.append(datapoint)
+						# upload_file['data'].append(datapoint)
+						datatype_id = datatypes_id[colnum]
+						if datatype_id:
+							upload_file['datapoints'].append([t, val, datatype_id])
+						else:
+							print val, colnum,  "no datatype_id"
+					limit -= 1
+					if limit < 0: 
+						break
+				print datatypes
+				print time_cols
+				print("--- .csv parsing %s rows took %s seconds ---" % (rownum, time.time() - parsing_start_time))
 
 
 acc_header = re.compile(r'acceleration \(mg\) - (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = (\d)+ seconds')
@@ -300,5 +332,6 @@ def confirm_upload(hash):
 				print obj, "is type: ", type(obj)
 		if len(upload['datapoints'])>0:
 			Datapoint.create_many(upload['datapoints'], participant_id)
+			num_datapoints += len(upload['datapoints'])
 	# del pending_uploads[hash]
-	return "<a href='/participant/%i'>Go back</a><p>sucessfully added %i images and %i dataponts:</p> %s " % (participant_id, num_images, len(upload['datapoints']), added_html)
+	return "<a href='/participant/%i'>Go back</a><p>sucessfully added %i images and %i dataponts:</p> %s " % (participant_id, num_images, num_datapoints, added_html)
