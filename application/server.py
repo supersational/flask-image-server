@@ -179,22 +179,6 @@ def oneparticipant(participant_id):
 	return render_participant(participant_id)
 
 
-@app.route("/participant/<int:participant_id>/<int:event_id>")
-@login_required
-@login_check()
-def render_event(participant_id, event_id):
-	global t0
-	t0 = time.time()
-	event = Event.query.filter(Event.event_id==event_id, Event.participant_id==participant_id).one()
-	kwargs = {}
-	kwargs['prev_event_id']=getattr(event.prev_event, 'event_id', None) # None as default if no prev_event exists
-	kwargs['next_event_id']=getattr(event.next_event, 'event_id', None)
-	kwargs['prev_image']=event.prev_image
-	kwargs['next_image']=event.next_image
-	kwargs['event_id']=event.event_id
-	kwargs['event_seconds']=event.length.total_seconds()
-	return render_participant(participant_id, event=event, kwargs=kwargs)
-
 
 def stream_template(template_name, **context):
 	print "time_before_render_head: ".ljust(40), round(time.time()-t0, 4)
@@ -265,13 +249,12 @@ def render_participant(participant_id, event=None, kwargs={}):
 	sql_text = ""#db.read_log()[:6000]
 	print ("time_before_json_dumps ("+str(len(images))+" images) : ").ljust(40), round(time.time()-t0, 4)
 	# render with the first 100 images only
-	imgs_array = json_dumps([x.to_array() for x in images[:20]])
+	imgs_array = json_dumps([x.to_array() for x in images[:2000]])
 	evts_dict = json_dumps(dict(x.to_array() for x in participant.events))# sorted( evts, key=lambda x: x.start_time)])
 	print "time_before_render: ".ljust(40), round(time.time()-t0, 4)
 	return Response(stream_with_context(stream_template('participant.html', 
 		name=participant.name,
 		id=participant.participant_id,
-		images=images[:0], # TODO :  flask.ext.sqlalchemy.Pagination
 		days=images_by_hour,
 		daterange=daterange,
 		num_images=participant.num_images,
