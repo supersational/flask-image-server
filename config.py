@@ -24,7 +24,7 @@ CSRF_ENABLED     = True
 CSRF_SESSION_KEY = "secret"
 
 # Node server secret key for hashing image URLs 
-NODE_SECRET_KEY = uuid.uuid4().hex
+NODE_SECRET_KEY = "node secret key" if DEBUG else uuid.uuid4().hex
 # Ref to node process so we can kill it
 NODE_PROCESS = None
 
