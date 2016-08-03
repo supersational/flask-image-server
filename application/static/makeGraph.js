@@ -45,7 +45,7 @@ var loadGraphDatatypes = function() {console.log("makeGraphParticipant not loade
 		return new Promise((resolve) => {
 
 			console.log("setting up graph")
-			if (!width) width = $(window).width()-200;
+			if (!width) width = $(window).width()-201;
 			if (!height) height = 200;
 
 			// Set the dimensions of the canvas / graph
@@ -97,26 +97,24 @@ var loadGraphDatatypes = function() {console.log("makeGraphParticipant not loade
 		svg = d3.select(".graph").select("g")
 
 		var data = loaded_datatypes;
-
+		console.log("drawGraph data:", data)
 		// find the domain based on all the available data
 		x.domain([
 			d3.min(d3.values(loaded_datatypes), (d) => {return d3.min(d, (r) => r.time)}),
 			d3.max(d3.values(loaded_datatypes), (d) => {return d3.max(d, (r) => r.time)})
 		])
 		console.log("x.domain()", x.domain())
-		// hack to make sure not too big!
-		if (1) {
-			// limit to start + 1day
-			x.domain([
-				x.domain()[0],
-				Math.min(x.domain()[1], x.domain()[0].setDate(x.domain()[0].getDate()+1))
-			])
-		} else if (0) {
-			x.domain([
-				Math.max(x.domain()[0], x.domain()[1].setDate(x.domain()[1].getDate()-1)),
-				x.domain()[1]
-			])
-		}
+		// // hack to make sure not too big!
+		// 	// limit to start + 1day
+		// 	x.domain([
+		// 		x.domain()[0],
+		// 		Math.min(x.domain()[1], x.domain()[0].setDate(x.domain()[0].getDate()+1))
+		// 	])
+		// 	// x.domain([
+		// 	// 	Math.max(x.domain()[0], x.domain()[1].setDate(x.domain()[1].getDate()-1)),
+		// 	// 	x.domain()[1]
+		// 	// ])
+
 		y.domain([
 			d3.min(d3.values(loaded_datatypes), (d) => {return d3.min(d, (r) => r.value)}),
 			d3.max(d3.values(loaded_datatypes), (d) => {return d3.max(d, (r) => r.value)})
@@ -139,7 +137,7 @@ var loadGraphDatatypes = function() {console.log("makeGraphParticipant not loade
 		svg.select(".y.axis")
 		  .call(yAxis)
 		
-		console.log(d3.keys(loaded_datatypes))
+		console.log("datatype.keys:", d3.keys(loaded_datatypes))
 		svg.selectAll(".path").data(d3.keys(loaded_datatypes))
 			.enter()
 			.append("path")
