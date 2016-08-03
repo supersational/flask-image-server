@@ -80,7 +80,8 @@ var Image = {
 	},
 	new_img: function (img) {
 		img.needs_update=true; // set needs_update to true
-		if ("image_time" in img) img.image_time = new Date(img.image_time);
+		// convert time to Date (not possible to send in JSON)
+		if ("image_time" in img) img.image_time = new Date(img.image_time); 
 	}
 }
 	// reload_by_id: function(participant_id, image_id_list) {
