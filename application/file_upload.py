@@ -66,6 +66,7 @@ def process_file_thread(hash, filename):
 	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
 
 
+
 	if ext in SUPPORTED_IMAGE_EXTENSIONS:
 		
 		upload_file['display'] += image_processing.to_html_img(filename, size=IMAGE_SIZES['thumbnail']['size'])
@@ -78,111 +79,115 @@ def process_file_thread(hash, filename):
 			upload_file['display'] += '<p> %s is not a valid jpg filename</p>' % (filenamebase,)
 
 	if ext=='csv':
-		# datafile = Datafile(filenamebase)
-		# upload_file['data'].append(datafile)
-		parsing_start_time = time.time()
-		with open(filename, 'rb') as csvfile:
-			try:
-				dialect = csv.Sniffer().sniff(csvfile.read(1024))
-			except csv.Error:
-				dialect = csv.excel
-			csvfile.seek(0)
+		csv_datapoints, csv_html = processCSV(filename)
+		upload_file['display'] += csv_html
+		upload_file['datapoints'].extend(csv_datapoints)
 
-			csvreader = csv.reader(csvfile, dialect)
-			column_headers = next(csvreader)
-			time_cols = []
-			get_time = None
-			datatypes = [None for n in column_headers] 
-			# check for "acceleration (mg) - 2016-01-28 17:58:00 - 2016-01-28 18:48:00 - sampleRate = 5 seconds"
-			if any(map(parseAccTimeSeries, column_headers)):
-				# file is AccTimeSeries.csv
-				for i, column_name in enumerate(column_headers):
-					acc_parser = parseAccTimeSeries(column_name)
-					if acc_parser:
-						# time_cols.append(i)
-						start_time = acc_parser[0]
-						timedelta = acc_parser[1]
-						get_time = lambda rownum, row: start_time + timedelta * rownum  
-						datatypes[i] = Datatype.get_or_create('acceleration')
-					else:
-						datatypes[i] = Datatype.get_or_create(column_name)
-			else:
-				first_row = next(csvreader)
-				for i, col in enumerate(first_row):
-					try: 
-						print i, col
-						parse(col, fuzzy=True)
-						upload_file['display'] += "<p>"+filename+" time col= " + str(i) + " value= " + col +"</p>"
-						time_cols.append(i) 
-						get_time = lambda rownum, row: parse(row[i], fuzzy=True) if 0<=i<len(row) else None
-						break
-					except ValueError:
-						pass
-				datatypes = map(Datatype.get_or_create, column_headers)
+def processCSV(filename):
+	# datafile = Datafile(filenamebase)
+	# upload_file['data'].append(datafile)
+	parsing_start_time = time.time()
+	csv_html = ""
+	csv_datapoints = []
+	with open(filename, 'rb') as csvfile:
+		try:
+			dialect = csv.Sniffer().sniff(csvfile.read(1024))
+		except csv.Error:
+			dialect = csv.excel
+		csvfile.seek(0)
+
+		csvreader = csv.reader(csvfile, dialect)
+		column_headers = next(csvreader)
+		time_cols = []
+		get_time = None
+		datatypes = [None for n in column_headers] 
+		# check for "acceleration (mg) - 2016-01-28 17:58:00 - 2016-01-28 18:48:00 - sampleRate = 5 seconds"
+		if any(map(parseAccTimeSeries, column_headers)):
+			# file is AccTimeSeries.csv
+			for i, column_name in enumerate(column_headers):
+				acc_parser = parseAccTimeSeries(column_name)
+				if acc_parser:
+					# time_cols.append(i)
+					start_time = acc_parser[0]
+					timedelta = acc_parser[1]
+					get_time = lambda rownum, row: start_time + timedelta * rownum  
+					datatypes[i] = Datatype.get_or_create('acceleration')
+				else:
+					datatypes[i] = Datatype.get_or_create(column_name)
+		else:
+			# for a csv with a time column, we take the first one that successfully parses as a date
+			# get_time must be a valid function for extracting a date from a row
+			first_row = next(csvreader)
+			for i, col in enumerate(first_row):
+				try: 
+					print "time string found at col", i, col
+					parse(col, fuzzy=False)
+					csv_html += "<p>"+filename+" time col= " + str(i) + " value= " + col +"</p>"
+					time_cols.append(i) 
+					get_time = lambda rownum, row, colnum=i: parse(row[colnum], fuzzy=False) if 0<=colnum<len(row) else None
+					break
+				except ValueError:
+					pass
+			datatypes = map(Datatype.get_or_create, column_headers)
+			
+			# reset csvreader to read first row
+			csvreader = csv.reader(csvfile)
+			next(csvreader)
+
+		csv_html += "<p>"+filename+" dialect= " + str(dialect) + "</p>"
+		for p in ['escapechar', 'lineterminator', 'quotechar', 'quoting', 'skipinitialspace']:
+			csv_html += "<p>"+p+ ":"+str(getattr(dialect, p)) +"</p>"
+
+		for i, d in enumerate(datatypes):
+			print str(i) + ":" + str(d)
+			csv_html += "<p>"+str(i) + ":" + str(d) +"</p>"
+
+		if get_time is None:
+			print "can't get time"
+			print dir(locals())
+			csv_html += "<p>"+filename+" didn't have any time columns in</p><ul>"
+			first_row = next(csvreader)
+			for i, col in enumerate(first_row):
+				csv_html += "<li>"+str(i)+": " + col +" </li>"
+			csv_html += "</ul>"
+
+		else:
+			print csv_html.replace("</p>","</p>\n")
+			limit = 10000
+			datatypes_id = map(lambda x: x.datatype_id if x else None, datatypes)
+			for rownum, row in enumerate(csvreader):
+				# print rownum, row
+				t = get_time(rownum, row)
+				if t is None:
+					print "time row did not exist at row %i: %s \n %s" % (rownum, str(row), str(0 in row))
+					break
 				
-				# reset csvreader to read first row
-				csvreader = csv.reader(csvfile)
-				next(csvreader)
+				# print row, t
+				# print ', '.join(row)
+				for colnum, col in enumerate(row):
+					if colnum in time_cols:
+						# print col, "in time_cols"
+						pass
+						# parse datetime
+					# print colnum, col
+					try:
+						val = float(col)
+					except ValueError:
+						# print col, "not a float"
+						val = 0
 
-			upload_file['display'] += "<p>"+filename+" dialect= " + str(dialect) + "</p>"
-			for p in ['escapechar', 'lineterminator', 'quotechar', 'quoting', 'skipinitialspace']:
-				upload_file['display'] += "<p>"+p+ ":"+str(getattr(dialect, p)) +"</p>"
-
-			for i, d in enumerate(datatypes):
-				print str(i) + ":" + str(d)
-				upload_file['display'] += "<p>"+str(i) + ":" + str(d) +"</p>"
-
-			if get_time is None:
-				print "can't get time"
-				print dir(locals())
-				upload_file['display'] += "<p>"+filename+" didn't have any time columns in</p><ul>"
-				first_row = next(csvreader)
-				for i, col in enumerate(first_row):
-					upload_file['display'] += "<li>"+str(i)+": " + col +" </li>"
-				upload_file['display'] += "</ul>"
-
-
-			else:
-
-				limit = 10000
-
-				datatypes_id = map(lambda x: x.datatype_id if x else None, datatypes)
-				for rownum, row in enumerate(csvreader):
-					t = get_time(rownum, row)
-					if t is None:
-						print "time row did not exist at row %i: %s \n %s" % (rownum, str(row), str(0 in row))
-						break
-					
-					print row, t
-					# print ', '.join(row)
-					for colnum, col in enumerate(row):
-						if colnum in time_cols:
-							# print col, "in time_cols"
-							pass
-							# parse datetime
-						# print colnum, col
-						try:
-							val = float(col)
-						except ValueError:
-							# print col, "not a float"
-							val = 0
-
-
-						# datapoint = Datapoint(t, val, participant_id)
-						# datatypes[colnum].datapoints.append(datapoint)
-						# upload_file['data'].append(datapoint)
-						datatype_id = datatypes_id[colnum]
-						if datatype_id:
-							upload_file['datapoints'].append([t, val, datatype_id])
-						else:
-							print val, colnum,  "no datatype_id"
-					limit -= 1
-					if limit < 0: 
-						break
-				print datatypes
-				print time_cols
-				print("--- .csv parsing %s rows took %s seconds ---" % (rownum, time.time() - parsing_start_time))
-
+					datatype_id = datatypes_id[colnum]
+					if datatype_id:
+						csv_datapoints.append([t, val, datatype_id])
+					else:
+						print val, colnum,  "no datatype_id"
+				limit -= 1
+				if limit < 0: 
+					break
+			print datatypes
+			print time_cols
+			print("--- .csv parsing %s rows took %s seconds ---" % (rownum, time.time() - parsing_start_time))
+	return csv_datapoints, csv_html
 
 acc_header = re.compile(r'acceleration \(mg\) - (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = (\d)+ seconds')
 def parseAccTimeSeries(col):
