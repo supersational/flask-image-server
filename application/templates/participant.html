@@ -93,9 +93,10 @@
     }
     li.jstree-leaf > a .jstree-icon { display: none; }
     #right-bar {
-    	float:left; margin-left: 200px;
+    	float:left; margin-left: 201px; /* 201 so we can easily find references */
     	overflow-x:hidden;
     }
+
     #calendar-box { 
 		display:inline-block;
 		margin-bottom: 20px;
@@ -109,10 +110,11 @@
 		padding-left:10px;
 		overflow-y: auto; 
 		overflow-x: hidden; 
-		width: 180px;
+		width: 201px;
 		z-index:10;
 		background-color: {{bg_color_a}};
     	padding-right: 1px;
+	    box-sizing: border-box;
 	}
 	.left-sticky.fix-search {
 	    position: fixed;
@@ -134,6 +136,7 @@
 	 	padding-right:20px;
 	 	overflow-y: scroll;
 	 	display: block;
+	 	box-sizing: border-box;
 	 }
 	 .load-next {
 	 	float:right;
@@ -152,6 +155,18 @@
 	 }
 	 .thumbnail-hover p {
 	 	margin:3px;
+	 }
+	 /*photoSwipe*/
+	 #pswp-container {
+	   position: fixed;
+	   left: 201px;
+	   right: 0px;
+	   top: 0px;
+	   bottom: 190px;    
+	   z-index: -1;
+	 }
+	 .pswp {
+	   position: relative !important;
 	 }
     </style>
 
@@ -235,71 +250,88 @@
 	</div>
 	<!-- <a class="load-next" href="#">Load more</a> -->
 </div>
-<!-- Root element of PhotoSwipe. Must have class pswp. -->
-<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
 
-    <!-- Background of PhotoSwipe. 
-         It's a separate element as animating opacity is faster than rgba(). -->
-    <div class="pswp__bg"></div>
+<script>
+// Centers the Photoswipe container in the center of the screen (call on init + resize)
+// function centerPhotoswipe() {
+//     var ww = $(window).innerWidth(); //     var wh = $(window).innerHeight(); //     var $el = $("#pswp-container");
+//     var w = $el.outerWidth();
+//     var h = $el.outerHeight();
 
-    <!-- Slides wrapper with overflow:hidden. -->
-    <div class="pswp__scroll-wrap">
+//     $el.css({
+//         left:   Math.round( (ww-w) / 2),
+//         top:    Math.round( (wh-h) / 2)
+//     });
+// }
+</script>
+<div id="pswp-container">
 
-        <!-- Container that holds slides. 
-            PhotoSwipe keeps only 3 of them in the DOM to save memory.
-            Don't modify these 3 pswp__item elements, data is added later on. -->
-        <div class="pswp__container">
-            <div class="pswp__item"></div>
-            <div class="pswp__item"></div>
-            <div class="pswp__item"></div>
-        </div>
+	<!-- Root element of PhotoSwipe. Must have class pswp. -->
+	<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
 
-        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
-        <div class="pswp__ui pswp__ui--hidden">
+	    <!-- Background of PhotoSwipe. 
+	         It's a separate element as animating opacity is faster than rgba(). -->
+	    <div class="pswp__bg"></div>
 
-            <div class="pswp__top-bar">
+	    <!-- Slides wrapper with overflow:hidden. -->
+	    <div class="pswp__scroll-wrap">
 
-                <!--  Controls are self-explanatory. Order can be changed. -->
+	        <!-- Container that holds slides. 
+	            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+	            Don't modify these 3 pswp__item elements, data is added later on. -->
+	        <div class="pswp__container"> 
+	            <div class="pswp__item"></div>
+	            <div class="pswp__item"></div>
+	            <div class="pswp__item"></div>
+	        </div>
 
-                <div class="pswp__counter"></div>
+	        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+	        <div class="pswp__ui pswp__ui--hidden">
 
-                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+	            <div class="pswp__top-bar">
 
-                <button class="pswp__button pswp__button--share" title="Share"></button>
+	                <!--  Controls are self-explanatory. Order can be changed. -->
 
-                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+	                <div class="pswp__counter"></div>
 
-                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+	                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
 
-                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
-                <!-- element will get class pswp__preloader--active when preloader is running -->
-                <div class="pswp__preloader">
-                    <div class="pswp__preloader__icn">
-                      <div class="pswp__preloader__cut">
-                        <div class="pswp__preloader__donut"></div>
-                      </div>
-                    </div>
-                </div>
-            </div>
+	                <button class="pswp__button pswp__button--share" title="Share"></button>
 
-            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
-                <div class="pswp__share-tooltip"></div> 
-            </div>
+	                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
 
-            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
-            </button>
+	                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
 
-            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
-            </button>
+	                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+	                <!-- element will get class pswp__preloader--active when preloader is running -->
+	                <div class="pswp__preloader">
+	                    <div class="pswp__preloader__icn">
+	                      <div class="pswp__preloader__cut">
+	                        <div class="pswp__preloader__donut"></div>
+	                      </div>
+	                    </div>
+	                </div>
+	            </div>
 
-            <div class="pswp__caption">
-                <div class="pswp__caption__center"></div>
-            </div>
+	            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+	                <div class="pswp__share-tooltip"></div> 
+	            </div>
 
-        </div>
+	            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+	            </button>
 
-    </div>
+	            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+	            </button>
 
+	            <div class="pswp__caption">
+	                <div class="pswp__caption__center"></div>
+	            </div>
+
+	        </div>
+
+	    </div>
+
+	</div>
 </div>
 <div class="thumbnail-hover"></div>
 	<script>
@@ -329,7 +361,7 @@
 		// var image_id=i["image_id"], event_id=i["event_id"], image_time=i["image_time"], full_url=i["full_url"], thumbnail_url=i["thumbnail_url"], is_first=i.is_first, is_last=i.is_last, first_id=i[5][2][0], last_id=i[5][2][1];
 		// var label_id=i[6];
 		var str = '<div class="img" id="'+idx+'" image-id="'+i.image_id+'" event-id="'+(i.event_id===null ? "" : i.event_id) +'" '+((i.label_id===null || i.label_id===undefined) ? '' : 'label-id="'+i.label_id+'" ');
-		str +=' is-last="'+i.is_last+'" is-first="'+i.is_first+'" first-id="' + i.first_id + '"  last-id="' + i.last_id + '">' // ondrop="img_drop(event)" ondragover="img_hover(event)
+		str +=' is-last="'+i.is_last+'" is-first="'+i.is_first+'" first-id="' + i.first_id + '"  last-id="' + i.last_id + '">' 
 	 	if (!(i.event_id!==undefined)) {			 	
 			if (!i.is_last) {
 				 str += '<div style="left:{{im_half*5/3}}px;" class="split right" split-dir="right"></div>'
@@ -489,7 +521,8 @@
 
 
 	function loadMoreOnScroll() {
-	    if($(window).scrollTop() == $(document).height() - $(window).height()) {
+		// console.log("scrollTop:", $(window).scrollTop(), $(document).height())
+	    if(!pswpIsOpen && $(window).scrollTop() == $(document).height() - $(window).height()) {
            load_more_images(20);
 	    }
 	}
@@ -738,8 +771,6 @@
 				is_dragging = false;
 			}
 			$(".selected").removeClass("selected")
-		}).mousemove(function(ev) {
-			// console.log(label_id_drag, $.contains($("#jstree")[0],ev.target))
 		})
 	})();
 
@@ -820,7 +851,7 @@
 	var expand_left_col;
     var left_col_expanded = false;
     (function() {
-	    var left_bar_width = 180;
+	    var left_bar_width = 201;
 		expand_left_col = function() { // on
 		        // var fn = function() { console.log("done")};
 		        var max_width = Math.min(left_bar_width+left_col_expanded*500, $( window ).width()*0.9);
@@ -862,7 +893,7 @@
 	// callback function for reloading images where appearances might have changed
 	function reload_images(data) {
 		// var data = $.parseJSON(jqXHR.responseText); // recieves list of images
-		console.log(data)
+		console.log("reload_images:",data)
 		if (data.result!=="success") return 0;
 		data.images.forEach(function(img) {
 			console.log(img)
@@ -1322,10 +1353,12 @@
 
 
 
-
+    // stop loading more images when pswp is open
+    var pswpIsOpen = false;
 
     // $(function() {slides = new Array(imgs.length)})
 	function openPhotoSwipe(index) {
+		pswpIsOpen = true;
 		console.log(index)
 		var slides = Array.apply(null, Array(imgs.length)).map(Object.valueOf,0);
 
@@ -1337,7 +1370,7 @@
 			getThumbBoundsFn: function(index) {
 
 			    // find thumbnail element
-			    var thumbnail = document.querySelectorAll('img.thumbnail')[index];
+			    var thumbnail = $("div.img#"+index).find(".thumbnail")[0];
 
 			    // get window scroll Y
 			    var pageYScroll = window.pageYOffset || document.documentElement.scrollTop; 
@@ -1347,9 +1380,11 @@
 			    var rect = thumbnail.getBoundingClientRect(); 
 
 			    // w = width
-			    return {x:rect.left, y:rect.top + pageYScroll, w:rect.width};
+			    return {x:rect.left - 201, y:rect.top + pageYScroll, w:rect.width};
 
-			}
+			},
+			history: false
+			// modal: true
 		}
 		var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, slides, options);
 		// create variable that will store real size of viewport
@@ -1403,13 +1438,86 @@
 		        item.w = img_sizes.medium[0],
 		        item.h = img_sizes.medium[1]
 		    }
+	        item.msrc = imgs[index].thumbnail_url;
+		    item.title = "hi"
 		});
 		gallery.listen('afterChange', function() {
-			console.log('index', gallery.getCurrentIndex()) 
+			console.log('afterChange')
+			// console.log('index', gallery.getCurrentIndex()) 
 			// $(document).scrollTo($("div.img#"+gallery.getCurrentIndex()))
+		// });
+
+
+	    // gallery.listen('imageLoadComplete', function(index,item){
+	    	var index = gallery.getCurrentIndex()
+
+	    	// http://stackoverflow.com/questions/2905867/how-to-scroll-to-specific-item-using-jquery
+	    	var container = $('.gallery'),
+	    	    scrollTo = $("div.img#"+index);
+
+	    	container.scrollTop(
+	    	    scrollTo.offset().top - container.offset().top + container.scrollTop()
+	    	);
+
+	    	// Or you can animate the scrolling:
+	    	// container.animate({
+	    	//     scrollTop: scrollTo.offset().top - container.offset().top + container.scrollTop()
+	    	// })
+	    	var bgcol = scrollTo.css("background-color")
+	    	scrollTo.stop()
+	    	scrollTo.css("background-color", "lightblue")
+	    	scrollTo.animate({backgroundColor: ''},1000)
+	    })
+	    // store the original scroll postion
+	    var originalScroll = $(window).scrollTop();
+
+	    $(".header").hide()
+	    $(".graph").hide()
+	    $("#dropdown-box").hide()
+	    $("#pswp-container").css('z-index',10);
+	    $(".gallery").css({
+	    	marginTop: $("#pswp-container").height(),
+	    	height:$(window).innerHeight()-$("#pswp-container").height(),
+	    	overflowY: 'scroll'
+	    })
+	    $(".load-more").hide()
+	    $(pswpElement).show();
+
+
+	    gallery.listen('close', function(){
+			$(".header").show()
+			$(".graph").show()
+		    $("#dropdown-box").show()
+		    $(".gallery").css({
+		    	marginTop: '', 
+		    	height: '',
+		    	overflowY: ''
+	    	})
+		    $(".img").stop().css("background-color", "")
+		    $(".load-more").show()
+
+
+		    var index = gallery.getCurrentIndex()
+
+		    // http://stackoverflow.com/questions/2905867/how-to-scroll-to-specific-item-using-jquery
+
+		    var scrollTo = $("div.img#"+index);
+
+		    console.log("index",index, "offset:", originalScroll)
+		    $(document).scrollTop(originalScroll )
+		    // container.animate({
+	    	//     scrollTop: scrollTo.offset().top
+	    	// })
 		});
 
 
+	    gallery.listen('destroy', function(){
+		    $("#pswp-container").css('z-index',-10);
+		    $(pswpElement).hide();
+		    pswpIsOpen = false;
+		    console.log("scrolling back again!",originalScroll)
+		    // $(document).scrollTop(originalScroll )
+		});
 
 	    gallery.init();
 	}
@@ -1431,8 +1539,7 @@
 			    };
 			} (console[verb].bind(console)));
 		});
-		window.onerror = function(message, url, lineNumber) {  
-			logError(lineNumber+":"+message);
+		window.onerror = function(message, url, lineNumber) {logError(lineNumber+":"+message);
 			return false; // allows default handler to run afterwards
 		}
 		$(document).ajaxError(function(e, xhr, settings) {
