@@ -59,7 +59,7 @@ def event_modify(participant_id, event_id, image_id, code):
 	if code=="add_image":
 		# changed_images = set(evt.images).union(evt.next_event.images if evt.next_event is not None else []).union(evt.prev_event.images if evt.prev_event is not None else [])
 		# changed_images |= set(evt.add_image(img)) # merge sets
-		changed_images = set(evt.images).union([evt.next_image] if evt.next_image else []).union([evt.prev_image] if evt.prev_image else [])
+		changed_images = set(evt.images).union(evt.add_image(img)).union([evt.next_image] if evt.next_image else []).union([evt.prev_image] if evt.prev_image else [])
 		return jsonify(images=[x.to_array() for x in changed_images], result='success')
 		# return jsonify(result="add_image failed")
 	if code=="split_left":
