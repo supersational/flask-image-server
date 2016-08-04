@@ -167,7 +167,7 @@ def processCSV(filename):
 				for colnum, col in enumerate(row):
 					if colnum in time_cols:
 						# print col, "in time_cols"
-						pass
+						continue
 						# parse datetime
 					# print colnum, col
 					try:
