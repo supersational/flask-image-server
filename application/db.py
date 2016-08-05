@@ -118,7 +118,9 @@ class Datapoint(Base):
                 Datapoint.__table__.insert(),
                 [{"time": i[0], "value": i[1], "datatype_id": i[2], "participant_id": participant_id} for i in array]
             )
-
+    @staticmethod
+    def get_time_range(participant_id, start, end):
+        return Datapoint.query.filter((Datapoint.participant_id==participant_id) & (Datapoint.time.between(start,end)))
 class Event(Base):
     __tablename__ = 'events'
 

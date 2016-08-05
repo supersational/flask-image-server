@@ -16,7 +16,7 @@ from config import UPLOAD_FOLDER, APPLICATION_FOLDER, IMAGE_SIZES
 from config import SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_DATA_EXTENSIONS
 from werkzeug import secure_filename
 from flask import Response
-
+from flask import render_template
 #csv stuff
 import csv
 
@@ -28,8 +28,10 @@ from application.db import Datapoint, Datatype
 from application.db import session
 from application.login import login_required, login_check
 from application import image_processing
+from application import bokeh_plot
 from json import dumps as json_dumps
 ## FILE UPLOAD
+
 
 ALLOWED_EXTENSIONS = SUPPORTED_IMAGE_EXTENSIONS + SUPPORTED_DATA_EXTENSIONS  # == ["csv", "jpg", "jpeg", "png"]
 def file_extension(filename):
@@ -122,7 +124,7 @@ def processCSV(filename):
 				try: 
 					print "time string found at col", i, col
 					parse(col, fuzzy=False)
-					csv_html += "<p>"+filename+" time col= " + str(i) + " value= " + col +"</p>"
+					csv_html += "<p>"+filename+" </p><p>time col[" + str(i) + "] = " + col +"</p>"
 					time_cols.append(i) 
 					get_time = lambda rownum, row, colnum=i: parse(row[colnum], fuzzy=False) if 0<=colnum<len(row) else None
 					break
@@ -138,9 +140,6 @@ def processCSV(filename):
 		for p in ['escapechar', 'lineterminator', 'quotechar', 'quoting', 'skipinitialspace']:
 			csv_html += "<p>"+p+ ":"+str(getattr(dialect, p)) +"</p>"
 
-		for i, d in enumerate(datatypes):
-			print str(i) + ":" + str(d)
-			csv_html += "<p>"+str(i) + ":" + str(d) +"</p>"
 
 		if get_time is None:
 			print "can't get time"
@@ -155,10 +154,17 @@ def processCSV(filename):
 			print csv_html.replace("</p>","</p>\n")
 			limit = 10000
 			datatypes_id = map(lambda x: x.datatype_id if x else None, datatypes)
+			errorTypes = {
+				'no_time_col':0,
+				'no_float_convert':0,
+				'no_datatype_exist':0,
+				'limit_reached':False,
+			}
 			for rownum, row in enumerate(csvreader):
 				# print rownum, row
 				t = get_time(rownum, row)
 				if t is None:
+					errorTypes['no_time_col'] += 1
 					print "time row did not exist at row %i: %s \n %s" % (rownum, str(row), str(0 in row))
 					break
 				
@@ -173,20 +179,29 @@ def processCSV(filename):
 					try:
 						val = float(col)
 					except ValueError:
-						# print col, "not a float"
+						print colnum, col, "not a float"
+						errorTypes['no_float_convert'] += 1
 						val = 0
 
 					datatype_id = datatypes_id[colnum]
 					if datatype_id:
 						csv_datapoints.append([t, val, datatype_id])
 					else:
+						errorTypes['no_datatype_exist'] += 1
 						print val, colnum,  "no datatype_id"
 				limit -= 1
 				if limit < 0: 
+					errorTypes['limit_reached'] = True
 					break
 			print datatypes
 			print time_cols
 			print("--- .csv parsing %s rows took %s seconds ---" % (rownum, time.time() - parsing_start_time))
+			print("--- %s datapoints were added ---" % len(csv_datapoints))
+			csv_html += "".join(["<p>"+key+":"+str(value)+"</p>" for key, value in errorTypes.iteritems()])
+
+	for i, d in enumerate(datatypes):
+		print str(i) + ":" + str(d)
+		csv_html += "<p>"+str(i) + ":" + str(d) +"</p>"
 	return csv_datapoints, csv_html
 
 acc_header = re.compile(r'acceleration \(mg\) - (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = (\d)+ seconds')
@@ -214,6 +229,7 @@ def upload_url(participant_id):
 			return confirm_upload(confirm_hash)
 		
 	else:
+
 		message = ('<p>'+request.args.get('message')+'</p>') if request.args.get('message') is not None else ''
 		confirm_hash = (request.args.get('confirm_hash')) if request.args.get('confirm_hash') is not None else ''
 		print "message: ", message
@@ -244,6 +260,17 @@ def upload_url(participant_id):
 
 			html += '''<a href='/participant/%i/upload'><button>Upload new file<button?</a> ''' % (participant_id, )
 		else:
+			
+			# for key, group in groupby(datapoints, lambda d: d.datatype):
+			# 	print key.name
+			# 	print group
+			# 	data[key.name] = list(group)
+
+
+			# print datapoints
+			# return render_template('dataview.html',
+			# 				data=datapoints
+			# 			)
 			html += '''
 				<p>%s</p>
 				<h1>Upload new participant file</h1>
@@ -252,6 +279,9 @@ def upload_url(participant_id):
 				<input type=submit value=Upload>
 				</form>
 				''' % (message,)
+			cdn, script, div = bokeh_plot.create_graph(participant_id)
+			html += cdn + script + div
+
 		return html
 
 def csv_to_data(file):
@@ -339,4 +369,5 @@ def confirm_upload(hash):
 			Datapoint.create_many(upload['datapoints'], participant_id)
 			num_datapoints += len(upload['datapoints'])
 	# del pending_uploads[hash]
+	return render_template('dataview.html')
 	return "<a href='/participant/%i'>Go back</a><p>sucessfully added %i images and %i dataponts:</p> %s " % (participant_id, num_images, num_datapoints, added_html)

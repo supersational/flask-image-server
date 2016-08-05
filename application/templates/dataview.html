@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block title %}
+Data
+{% endblock %}
+{% block head %}
+    <script src="//cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+    <link rel="stylesheet" href="//cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css" />
+    <script src="http://127.0.0.1:5001/static/jstree.min.js"></script>
+
+{% endblock %}
+{% block content %}
+
+	<h2>Data:</h2>
+	<table id="example"></table>
+	<script>
+	var dataSet=[
+		{% for datapoint in data %}
+			 [new Date("{{datapoint.time}}"),{{datapoint.value}}],
+		{% endfor %}
+	]
+	$(document).ready(function() {
+	    $('#example').DataTable( {
+	        data: dataSet,
+	        columns: [
+	            { title: "Time" },
+	            { title: "Value" }
+	        ]
+	    } );
+	} );
+
+	</script>
+{% endblock %}
