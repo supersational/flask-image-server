@@ -970,6 +970,7 @@
 		var col_pair = null;
 		var modify_prev = [];
 		 $(document).mouseup(function() {
+		 	$(document).off('mousemove', 'div.img', hoverImg);
 
 		 	// modify event boundaries
 			if (start_img!=null && start_id != curr_id) {
@@ -1021,7 +1022,7 @@
 			start_img_is_standalone = ( $(start_img).attr('is-first')=="1" && $(start_img).attr('is-last')=="1" )
 			start_id  = curr_id  = parseInt(start_img.id)
 			start_event_id = parseInt($(start_img).attr('event-id'));
-			col_this = imgs[start_id][7]
+			col_this = imgs[start_id].label_color
 			console.log("col_this", col_this)
 			// find other 'end' of event (if none set to null)
 			event_pair_img = $("[event-id="+start_event_id+"]").filter( "[is-first='1'],[is-last='1']" ).not(start_img);
@@ -1040,9 +1041,10 @@
 			} else event_to_right = false;
 			console.log('event_to_left:',event_to_left, 'event_to_right:',event_to_right, 'left:',left, 'right:',right)
 			console.log('e.target:',e.target, 'curr_img:',curr_img, 'event_pair_img:',event_pair_img)
+			$(document).on('mousemove', 'div.img', hoverImg);
 		});
 
-		$(document).on('mousemove', 'div.img', function(e) {
+		hoverImg = function(e) {
 			if (start_img===null) {return 0;}
 			// this = e.target
 			// console.log(this, this, curr_img)
@@ -1174,7 +1176,6 @@
 						modify_img(i, modify[i], col_other);
 					else
 						modify_img(i, modify[i], col_this);
- 					// if (i == other_i) 
  				}
  				for (i in modify_prev) {
  					// console.log(i, modify[i]==undefined)
@@ -1187,7 +1188,7 @@
  				modify_prev = modify;
 				console.log((selection_is_expanding ? "expanding":"shrinking") + " into" ,same_event ? "same_event" : "", start_id, curr_id)
 			}
-		});
+		}
 		function modify_img(id, state, color) {
 			var img = $("div#"+id+".img")
 			var svg = img.find("svg")
