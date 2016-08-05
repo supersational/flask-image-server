@@ -1444,30 +1444,30 @@
 		        item.h = img_sizes.medium[1]
 		    }
 	        item.msrc = imgs[index].thumbnail_url;
-		    item.title = "hi"
+		    item.title = ""
+		    if (imgs[index].label_id!=null) item.title = labels[imgs[index].label_id].text
 		});
+
+		var scrollTargetPos = null;
 		gallery.listen('afterChange', function() {
-			console.log('afterChange')
-			// console.log('index', gallery.getCurrentIndex()) 
-			// $(document).scrollTo($("div.img#"+gallery.getCurrentIndex()))
-		// });
 
-
-	    // gallery.listen('imageLoadComplete', function(index,item){
 	    	var index = gallery.getCurrentIndex()
 
 	    	// http://stackoverflow.com/questions/2905867/how-to-scroll-to-specific-item-using-jquery
 	    	var container = $('.gallery'),
 	    	    scrollTo = $("div.img#"+index);
-
-	    	container.scrollTop(
-	    	    scrollTo.offset().top - container.offset().top + container.scrollTop()
-	    	);
+	    	
+	    	// container.scrollTop(
+	    	//     scrollTargetPos
+	    	// );
 
 	    	// Or you can animate the scrolling:
-	    	// container.animate({
-	    	//     scrollTop: scrollTo.offset().top - container.offset().top + container.scrollTop()
-	    	// })
+	    	if (scrollTo.offset().top - container.offset().top + container.scrollTop()!=scrollTargetPos) {
+		    	scrollTargetPos = scrollTo.offset().top - container.offset().top + container.scrollTop();
+		    	container.stop().animate({
+		    	    scrollTop: scrollTargetPos
+		    	})
+	    	}
 	    	var bgcol = scrollTo.css("background-color")
 	    	scrollTo.stop()
 	    	scrollTo.css("background-color", "lightblue")
@@ -1480,11 +1480,16 @@
 	    $(".graph").hide()
 	    $("#dropdown-box").hide()
 	    $("#pswp-container").css('z-index',10);
-	    $(".gallery").css({
-	    	marginTop: $("#pswp-container").height(),
-	    	height:$(window).innerHeight()-$("#pswp-container").height(),
-	    	overflowY: 'scroll'
-	    })
+	    function setCorrectHeight() {
+	    	$(".gallery").css({
+		    	marginTop: $("#pswp-container").height(),
+		    	height:$(window).innerHeight()-$("#pswp-container").height(),
+		    	overflowY: 'scroll'
+		    })
+	    }
+	    setCorrectHeight();
+	    $(window).bind("resize",setCorrectHeight)
+
 	    $(".load-more").hide()
 	    $(pswpElement).show();
 
@@ -1510,9 +1515,8 @@
 
 		    console.log("index",index, "offset:", originalScroll)
 		    $(document).scrollTop(originalScroll )
-		    // container.animate({
-	    	//     scrollTop: scrollTo.offset().top
-	    	// })
+		    $(window).unbind("resize",setCorrectHeight)
+
 		});
 
 
