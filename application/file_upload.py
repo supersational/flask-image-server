@@ -104,10 +104,10 @@ def processCSV(filename):
 		get_time = None
 		datatypes = [None for n in column_headers] 
 		# check for "acceleration (mg) - 2016-01-28 17:58:00 - 2016-01-28 18:48:00 - sampleRate = 5 seconds"
-		if any(map(parseAccTimeSeries, column_headers)):
+		if any(map(find_special_header, column_headers)):
 			# file is AccTimeSeries.csv
 			for i, column_name in enumerate(column_headers):
-				acc_parser = parseAccTimeSeries(column_name)
+				acc_parser = find_special_header(column_name)
 				if acc_parser:
 					# time_cols.append(i)
 					start_time = acc_parser[0]
@@ -152,7 +152,7 @@ def processCSV(filename):
 
 		else:
 			print csv_html.replace("</p>","</p>\n")
-			limit = 10000
+			limit = 1000000
 			datatypes_id = map(lambda x: x.datatype_id if x else None, datatypes)
 			errorTypes = {
 				'no_time_col':0,
@@ -205,7 +205,7 @@ def processCSV(filename):
 	return csv_datapoints, csv_html
 
 acc_header = re.compile(r'acceleration \(mg\) - (\d\d\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d) - \d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d - sampleRate = (\d)+ seconds')
-def parseAccTimeSeries(col):
+def find_special_header(col):
 	match = re.match(acc_header, col)
 	if match:
 		g = map(int, match.groups())
@@ -213,6 +213,7 @@ def parseAccTimeSeries(col):
 		print g
 		return (datetime.datetime( *tuple(g[0:5])), datetime.timedelta(seconds=g[6]))
 	else: return None
+	
 @app.route("/participant/<int:participant_id>/upload", methods=["GET","POST"])
 @login_required
 @login_check()
