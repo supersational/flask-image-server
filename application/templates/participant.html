@@ -163,14 +163,24 @@
 	   right: 0px;
 	   top: 0px;
 	   bottom: 190px;    
-	   z-index: -1;
+	   z-index: -2;
 	 }
 	 .pswp {
+	   display: none;
 	   position: relative !important;
 	 }
 	 .pswp__caption__center {
 	 	text-align: center;
 	 	max-width: 1000px;
+	 }
+	 #handle {
+	     position: absolute;
+	     left: 0;
+	     right: 0;
+	     bottom: -4px;
+	     height: 8px;
+	     cursor: ns-resize;
+	     z-index:2;
 	 }
     </style>
 
@@ -335,6 +345,7 @@
 
 	    </div>
 
+	<div id="handle"></div> 
 	</div>
 </div>
 <div class="thumbnail-hover"></div>
@@ -567,6 +578,7 @@
 			el = $("div.img#"+i);
 			el.find(".line").css({fill:color})
 			el.find(".circle").css({stroke:color})
+			el.find(".seperator").css({stroke:color})
 		}
 	}
 
@@ -1360,9 +1372,14 @@
 
     // stop loading more images when pswp is open
     var pswpIsOpen = false;
+    var pswp;
 
     // $(function() {slides = new Array(imgs.length)})
 	function openPhotoSwipe(index) {
+		if (pswpIsOpen) {
+			pswp.goTo(index);
+			return;
+		}
 		pswpIsOpen = true;
 		console.log(index)
 		var slides = Array.apply(null, Array(imgs.length)).map(Object.valueOf,0);
@@ -1388,10 +1405,12 @@
 			    return {x:rect.left - 201, y:rect.top + pageYScroll, w:rect.width};
 
 			},
-			history: false
+			history: false,
+			closeOnVerticalDrag: false,
+			closeOnScroll: false
 			// modal: true
 		}
-		var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, slides, options);
+		pswp = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, slides, options);
 		// create variable that will store real size of viewport
 		var realViewportWidth,
 		    useLargeImages = false,
@@ -1399,9 +1418,9 @@
 		    imageSrcWillChange;
 
 		// beforeResize event fires each time size of gallery viewport updates
-		gallery.listen('beforeResize', function() {
+		pswp.listen('beforeResize', function() {
 		    // calculate real pixels when size changes
-		    realViewportWidth = gallery.viewportSize.x * window.devicePixelRatio;
+		    realViewportWidth = pswp.viewportSize.x * window.devicePixelRatio;
 
 		    // Code below is needed if you want image to switch dynamically on window.resize
 
@@ -1418,7 +1437,7 @@
 		    if(imageSrcWillChange && !firstResize) {
 		        // invalidateCurrItems sets a flag on slides that are in DOM,
 		        // which will force update of content (image) on window.resize.
-		        gallery.invalidateCurrItems();
+		        pswp.invalidateCurrItems();
 		    }
 
 		    if(firstResize) {
@@ -1431,8 +1450,8 @@
 
 
 		// gettingData event fires each time PhotoSwipe retrieves image source & size
-		gallery.listen('gettingData', function(index, item) {
-			// console.log(index, item, imgs[index])
+		pswp.listen('gettingData', function(index, item) {
+			console.log('gettingData',index, item)
 		    // Set image source & size based on real viewport width
 		    if( useLargeImages ) {
 		        item.src = imgs[index].full_url;
@@ -1449,9 +1468,9 @@
 		});
 
 		var scrollTargetPos = null;
-		gallery.listen('afterChange', function() {
+		pswp.listen('afterChange', function() {
 
-	    	var index = gallery.getCurrentIndex()
+	    	var index = pswp.getCurrentIndex()
 
 	    	// http://stackoverflow.com/questions/2905867/how-to-scroll-to-specific-item-using-jquery
 	    	var container = $('.gallery'),
@@ -1479,22 +1498,15 @@
 	    $(".header").hide()
 	    $(".graph").hide()
 	    $("#dropdown-box").hide()
-	    $("#pswp-container").css('z-index',10);
-	    function setCorrectHeight() {
-	    	$(".gallery").css({
-		    	marginTop: $("#pswp-container").height(),
-		    	height:$(window).innerHeight()-$("#pswp-container").height(),
-		    	overflowY: 'scroll'
-		    })
-	    }
+	    $("#pswp-container").css('z-index',2);
+	    
 	    setCorrectHeight();
-	    $(window).bind("resize",setCorrectHeight)
 
 	    $(".load-more").hide()
 	    $(pswpElement).show();
 
 
-	    gallery.listen('close', function(){
+	    pswp.listen('close', function(){
 			$(".header").show()
 			$(".graph").show()
 		    $("#dropdown-box").show()
@@ -1507,7 +1519,8 @@
 		    $(".load-more").show()
 
 
-		    var index = gallery.getCurrentIndex()
+
+		    var index = pswp.getCurrentIndex()
 
 		    // http://stackoverflow.com/questions/2905867/how-to-scroll-to-specific-item-using-jquery
 
@@ -1520,7 +1533,7 @@
 		});
 
 
-	    gallery.listen('destroy', function(){
+	    pswp.listen('destroy', function(){
 		    $("#pswp-container").css('z-index',-10);
 		    $(pswpElement).hide();
 		    pswpIsOpen = false;
@@ -1528,8 +1541,59 @@
 		    // $(document).scrollTop(originalScroll )
 		});
 
-	    gallery.init();
+	    pswp.init();
 	}
+
+	$(window).bind("resize",function() {if (pswpIsOpen) setCorrectHeight()})
+
+	// sets the container underneath photoswipe to fill the remaining space
+    function setCorrectHeight() {
+    	console.log("setCorrectHeight")
+    	$(".gallery").css({
+	    	marginTop: $("#pswp-container").height(),
+	    	height:$(window).innerHeight()-$("#pswp-container").height(),
+	    	overflowY: 'scroll'
+	    })
+    }
+	// Resize photoswipe div 
+	$(function () {
+		var isResizing = false;
+
+	    var handle = $('#handle'),
+	    	container = $("#pswp-container");
+
+	    handle.on('mousedown', function (e) {
+	        isResizing = true;
+	        console.log("resizing")
+	        e.preventDefault();
+	    });
+
+	    $(document).on('mousemove', function (e) {
+	        // we don't want to do anything if we aren't resizing.
+	        if (!isResizing) 
+	            return;
+	        
+	        var offsetBottom = e.clientY + container.offset().top ;
+	        console.log("resizing move", e.clientY,  offsetBottom)
+	        container.css('height', offsetBottom)
+	        setCorrectHeight();
+	        if (pswp) pswp.updateSize(true);
+
+	    }).on('mouseup', function (e) {
+	        // stop resizing
+	        isResizing = false;
+	    });
+	});
+
+	$("#pswp-container").on('wheel', function(e) {
+		var delta = e.originalEvent.deltaY;
+		delta = Math.min(1,Math.max(-1, Math.round(delta/100)))
+		if (pswp) pswp.goTo(pswp.getCurrentIndex()+delta);
+		return false;
+	});
+
+
+
 
 	// show error messages in div!
 	(function() {
