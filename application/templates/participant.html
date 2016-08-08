@@ -656,10 +656,11 @@
 			var sizeY=ev.target.getBoundingClientRect().height;
 			var target = $(ev.target).clone().addClass("jstree-clicked").addClass("moving-annotation").css({"position":"absolute","background-color":"white","pointer-events":"none", "padding":10,"border-radius": 10, "border":"1px solid #333", "z-index":100}).appendTo(document.body)
 			// target.css({'left':ev.pageX, 'top':ev.pageY});
-
-			var move_event = $(document).mousemove(function(e) {
+			function move_event(e) {
 				target.css({'left':e.pageX-sizeX/2, 'top':e.pageY-sizeY/2});
-			})
+			}
+			$(document).mousemove(move_event)
+			move_event(ev);
 			$(document).mouseup(function() { $(".moving-annotation").remove();$(document).unbind("mousemove",move_event) })
 			
 		}
