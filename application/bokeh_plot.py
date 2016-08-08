@@ -83,11 +83,12 @@ def create_graph(participant_id, height=400):
 	p.legend.location = "top_left"
 	elements.append(p)
 	# select data
-	datasources[0].callback = CustomJS(code="""
-		console.log('selected')
-		console.log(cb_obj.get('selected'))
-		console.log(cb_obj.get('selected')['1d'].indices)
-		""")
+	for ds in datasources:
+		ds.callback = CustomJS(code="""
+			console.log('selected')
+			console.log(cb_obj.get('selected'))
+			console.log(cb_obj.get('selected')['1d'].indices)
+			""")
 	
 	callback = CustomJS(args=dict(figure=p), code="""
 			console.log(cb_obj.get('selected'))
