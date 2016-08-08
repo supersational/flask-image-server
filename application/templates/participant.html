@@ -1161,7 +1161,7 @@
 				// var other_event_id = $(".img[id="+modify_cutoff+"]").attr("label-id")
 				// console.log('other_event_id',other_event_id)
 				console.log('other_label=', other_label)
-				if (other_label && labels[other_label]) 
+				if (other_label && labels[other_label] && labels[other_label].color!=null) 
 					var col_other = labels[other_label].color
 				else var col_other = "{{fillcol}}";
 				if (selection_is_expanding) {col_default = col_this; col_end = col_other;}
@@ -1556,7 +1556,7 @@
 		});
 	})()
 
-	$(document).ready(function() {console.log("document ready");makeGraph(".graph", {{id}} )})
+	// $(document).ready(function() {console.log("document ready");makeGraph(".graph", {{id}} )})
 	</script>
 
 {% endblock %}
