@@ -12,6 +12,13 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # Define the database - we are working with
 # SQLite for this example
 SQLALCHEMY_DATABASE_URI = 'postgres://postgres:testing@localhost:5432/linker'
+if 'SQLALCHEMY_DATABASE_URI' in os.environ:
+	SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
+if all(val in os.environ for val in ['POSTGRES_ENV_POSTGRES_PASSWORD','POSTGRES_PORT']):
+	pg_host = os.environ['POSTGRES_PORT']
+	if pg_host.startswith('tcp://'):
+		pg_host=pg_host[len('tcp://'):]
+	SQLALCHEMY_DATABASE_URI = 'postgres://postres:%s@%s/linker' % (os.environ['POSTGRES_ENV_POSTGRES_PASSWORD'],pg_host)
 # SQLALCHEMY_DATABASE_URI = 'sqlite+pysqlite:///'+os.path.join(BASE_DIR,'app.db')
 DATABASE_CONNECT_OPTIONS = {}
 
@@ -35,7 +42,9 @@ print "SECRET_KEY", SECRET_KEY
 JSONIFY_PRETTYPRINT_REGULAR = False
 
 PORT = 5000
-SERVER_NAME = 'localhost:' + str(PORT)
+HOST = 'localhost'
+if 'FLASK_HOST' in os.environ:
+	HOST = os.environ['FLASK_HOST']
 DEBUG = True
 LOGGING = False
 
@@ -53,13 +62,8 @@ IMAGE_SIZES = {
 	'full':{'size':(0, 0),'dir':'full'}
 }
 
-if 'USER' in os.environ and os.environ['USER']=='sensors':
-	# http://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
-	import socket
-	ip = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
-	print 'production server running on ', ip
-	SERVER_NAME = ip + ':' + str(PORT)
-	print SERVER_NAME
-	SQLALCHEMY_DATABASE_URI = 'postgres:///sensors'
-	DEBUG = False
-	SECRET_KEY = uuid.uuid4().hex
+# if 'USER' in os.environ and os.environ['USER']=='sensors':
+# 	HOST = '0.0.0.0'
+# 	SQLALCHEMY_DATABASE_URI = 'postgres:///sensors'
+# 	DEBUG = False
+# 	SECRET_KEY = uuid.uuid4().hex
