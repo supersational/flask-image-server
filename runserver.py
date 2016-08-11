@@ -3,7 +3,8 @@ from config import DEBUG, NODE_SECRET_KEY, NODE_PROCESS, HOST, PORT
 
 
 import os 
-if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+# ensure if debug mode that we only start the node process once (after reboot into debugging mode)
+if not DEBUG or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
 	from datetime import datetime
         print '################### Restarting @ {} ###################'.format(
             datetime.utcnow())
