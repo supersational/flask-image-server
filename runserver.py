@@ -1,5 +1,5 @@
 from application import app
-from config import DEBUG, NODE_SECRET_KEY, NODE_PROCESS
+from config import DEBUG, NODE_SECRET_KEY, NODE_PROCESS, HOST, PORT
 
 
 import os 
@@ -19,6 +19,7 @@ if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
 
 app.run(
 	debug=DEBUG, 
-	host='0.0.0.0' if not DEBUG else None # do not all external access if debug is enabled
+	host=HOST,
+	port=PORT
 	)
 
