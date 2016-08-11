@@ -18,7 +18,7 @@ if all(val in os.environ for val in ['POSTGRES_ENV_POSTGRES_PASSWORD','POSTGRES_
 	pg_host = os.environ['POSTGRES_PORT']
 	if pg_host.startswith('tcp://'):
 		pg_host=pg_host[len('tcp://'):]
-	SQLALCHEMY_DATABASE_URI = 'postgres://postres:%s@%s/linker' % (os.environ['POSTGRES_ENV_POSTGRES_PASSWORD'],pg_host)
+	SQLALCHEMY_DATABASE_URI = 'postgres://postgres:%s@%s/linker' % (os.environ['POSTGRES_ENV_POSTGRES_PASSWORD'],pg_host)
 # SQLALCHEMY_DATABASE_URI = 'sqlite+pysqlite:///'+os.path.join(BASE_DIR,'app.db')
 DATABASE_CONNECT_OPTIONS = {}
 
