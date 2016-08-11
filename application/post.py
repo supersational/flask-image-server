@@ -158,7 +158,8 @@ def annotate_event(participant_id, event_id):
 	event.label = label
 	if 'color' in request.form:
 		label.color = request.form['color']
-	return str(label) + str(participant) + str(event)
+	changed_images = event.images
+	return jsonify(images=[x.to_array() for x in changed_images], result='success')
 
 @app.route("/participant/<int:participant_id>/load_images", methods=["POST"])
 @login_required
