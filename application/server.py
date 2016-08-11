@@ -259,7 +259,7 @@ def render_participant(participant_id, event=None, kwargs={}):
 		daterange=daterange,
 		num_images=participant.num_images,
 		sql_text=sql_text,
-		schema=json_dumps(Schema.query.first().to_json()),
+		schema=json_dumps(Schema.query.first().to_json()) if Schema.query.count() else Schema("default").to_json(),
 		schema_list=Schema.query.all(),
 		imgs_array=imgs_array,
 		# evts_dict=evts_dict,
