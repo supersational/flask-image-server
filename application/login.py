@@ -2,7 +2,7 @@ from application import app
 from flask import request, redirect, url_for
 from flask import render_template
 from flask.ext.login import LoginManager, login_required, login_user, logout_user, current_user
-from application.db import User, Study, Participant
+from application.db import User, Study, Participant, session
 from functools import wraps
 
 login_manager = LoginManager()
@@ -85,3 +85,9 @@ def logout():
 @login_manager.unauthorized_handler
 def unauthorized():
 	return render_template('login.html', message="This page requires login!")
+
+# ensure there is an admin user
+print "admin is", User.query.filter(User.username=='Admin').scalar() 
+if User.query.filter(User.username=='Admin').scalar() is None:
+	session.add(User('Admin','AdminPass',admin=True))
+	session.flush()
