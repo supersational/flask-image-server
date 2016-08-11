@@ -42,8 +42,9 @@ app.use(function(req, res, next) {
 });
 app.use('/images/', express.static(__dirname + '/images/', {maxAge:cache_expiry_images}));
 
-app.listen(5001, function () {
-  console.log('listening on 5001..');
+var host = process.env.FLASK_HOST || '127.0.0.1';
+app.listen(5001, host, function () {
+  console.log('listening on 5001.. host=', host);
 });
 
 function time() {
