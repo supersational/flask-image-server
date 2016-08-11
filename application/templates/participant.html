@@ -917,15 +917,18 @@
 			var image_id = img.image_id;
 			var img_to_replace = $("div.img[image-id="+image_id+"]")
 			var image_idx = img_to_replace.attr("id")
-			console.log(imgs[image_idx])
-			console.log(image_id, img_to_replace[0], image_idx)
+			// console.log(imgs[image_idx])
+			// console.log(image_id, img_to_replace[0], image_idx)
 			if (imgs[image_idx]) {
 				// keep old image urls so we don't have to download them again
 				img.thumbnail_url = imgs[image_idx].thumbnail_url 
 				img.medium_url = imgs[image_idx].medium_url 
 				img.full_url = imgs[image_idx].full_url 
-				imgs[image_idx] = img
-				
+				// imgs[image_idx] = img
+				var props_to_update = ["event_id","first_id","last_id","is_first","is_last","label_id","label_color"]
+				props_to_update.forEach(function(k) {
+					imgs[image_idx][k] = img[k];
+				})
 			
 				img_to_replace.replaceWith(create_image(img, image_idx))
 				svg_ize($("div.img[image-id="+image_id+"]"), image_idx)
