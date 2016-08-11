@@ -22,9 +22,13 @@ from sqlalchemy.orm import backref
 from sqlalchemy.orm.collections import attribute_mapped_collection
 # for generating commands for executing raw SQL
 from sqlalchemy.sql import text
+# for creating db if not exists
+from sqlalchemy_utils import database_exists, create_database
 
 
 engine = create_engine(SQLALCHEMY_DATABASE_URI, convert_unicode=True, logging_name="sqlalchemy.engine")
+if not database_exists(engine.url):
+    create_database(engine.url)
 
 def create_session(autoflush=True, autocommit=True):
     return scoped_session(sessionmaker(autocommit=autocommit,
@@ -820,6 +824,7 @@ def get_session(create_data=False, run_tests=False, fake=True):
         db_data.create_data(session, engine, fake=fake)
     return session
 
+metadata.create_all(engine)
 import db_data
 if __name__ == "__main__":
     # run db.py directly to do testing (and create fake data)
