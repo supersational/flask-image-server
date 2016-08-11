@@ -18,6 +18,11 @@ Index
 	{% for study in studies %}
 		 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ({{study.participants | length}} participants) <br> 
 	{% endfor %}
+	<form action='/study/create_study' method='POST'> 
+		<p>
+		<input type='text' name='study_name'></input>
+		<input type='submit' value='Create new study'> </p>
+	</form> 
 	<h3>Participants:</h3>
 	{% for participant in participants %}
 		 <a href='/participant/{{participant.participant_id}} '>{{participant.participant_id}}: {{participant.name}}</a> (in 

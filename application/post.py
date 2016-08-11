@@ -1,11 +1,33 @@
 from application import app
 
 from flask import request, redirect, make_response, jsonify
-from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint
-from application.login import login_required, login_check
+from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint, session
+from application.login import login_required, login_check, requires_admin
 import datetime
 from io import BytesIO
 import csv
+
+
+@app.route("/study/create_study", methods=["POST"])
+@login_required
+@requires_admin
+def create_study():
+	print dir(request.form)
+	if 'study_name' not in request.form or len(request.form['study_name'])<1:
+		return "must supply study_name at least 1 character"
+	name = request.form['study_name']
+	print "create_study", name
+	# return "name = "+name
+	if Study.query.filter(Study.name==name).scalar() is not None:
+		return "%s already exists" % name
+	# try:
+	s = Study(name)
+	session.add(s)
+	session.flush()
+	return redirect("/study/%i" % s.study_id, code=303)
+	# except:
+		# return "error adding participant, wrong name or study"
+
 
 
 @app.route("/user/<int:user_id>/change_password", methods=["POST"])
@@ -252,3 +274,4 @@ def load_datapoints(participant_id, datatype_id):
 			data = [x.to_array() for x in data],
 			num = len(data)
 		)
+
