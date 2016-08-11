@@ -740,13 +740,14 @@
 		    			imgs_in_this_event = $("div.img[event-id="+event_id+"]")
 			    		
     		    		// callback will move color from background to event handles
-    		    		var callback = function(e) {
-    		    			console.log("done" + e);
+    		    		var callback = function(data) {
+    		    			console.log("done" , data);
+    			    		reload_images(data);
     			    		imgs_in_this_event.css("background-color", "").removeClass("selected")
     			    		imgs_in_this_event.find(".line").css("fill", label.color)
     			    		imgs_in_this_event.find(".circle").css("stroke", label.color)
-    			    		imgs[image_idx].label_id =  label_id_drag;
-    			    		imgs[image_idx].label_color =  label.color;
+    			    		// imgs[image_idx].label_id =  label_id_drag;
+    			    		// imgs[image_idx].label_color =  label.color;
     		    		}
 			    		if (label.color) {
 				    		Event.annotate({{id}}, event_id, label_id_drag).then(callback);
@@ -1386,7 +1387,7 @@
 		}
 		pswpIsOpen = true;
 		console.log(index)
-		var slides = Array.apply(null, Array(imgs.length)).map(Object.valueOf,0);
+		var slides = imgs//Array.apply(null, Array(imgs.length)).map(Object.valueOf,0);
 
 		var pswpElement = document.querySelectorAll('.pswp')[0];
 		var options = {
@@ -1469,9 +1470,15 @@
 	        item.msrc = imgs[index].thumbnail_url;
 		    item.title = ""
 		    if (imgs[index].label_id!=null) item.title = labels[imgs[index].label_id].text
+		    else console.log("no img text for ", index, imgs[index])
 		});
 
 		var scrollTargetPos = null;
+		pswp.listen('beforeChange', function() {
+			var img = pswp.currItem;
+			if (img.label_id!=null) img.title = labels[img.label_id].text
+		});
+
 		pswp.listen('afterChange', function() {
 
 	    	var index = pswp.getCurrentIndex()
