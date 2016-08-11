@@ -280,8 +280,8 @@ def upload_url(participant_id):
 				<input type=submit value=Upload>
 				</form>
 				''' % (message,)
-			cdn, script, div = bokeh_plot.create_graph(participant_id)
-			html += cdn + script + div
+			# cdn, script, div = bokeh_plot.create_graph(participant_id)
+			# html += cdn + script + div
 
 		return html
 
