@@ -7,3 +7,5 @@ psycopg2==2.6.1
 SQLAlchemy==1.0.1
 Werkzeug==0.11.9
 Bokeh==0.12.1
+sqlalchemy-utils==0.32.9
+Pillow==3.1.0
