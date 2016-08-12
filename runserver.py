@@ -9,6 +9,8 @@ if not FLASK_RELOAD or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         print '################### Restarting @ {} ###################'.format(
             datetime.utcnow())
 	import subprocess
+	NODE_PROCESS = None
+	LOAD_BALANCER = None
 	@app.teardown_appcontext
 	def teardown_nodes(exception):
 		if NODE_PROCESS is not None:
@@ -18,14 +20,17 @@ if not FLASK_RELOAD or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
 	try:
 		NODE_PROCESS = subprocess.Popen(['node', 'application/server.js', NODE_SECRET_KEY], shell=True)
 	except e:
-		print "NODE process failed to start", str(e)
+		print "error: server.js process failed to start\n", str(e)
 	try:
 		LOAD_BALANCER = subprocess.Popen(['node', 'application/load-balancer.js'], shell=True)
 	except e:
-		print "NODE process failed to start", str(e)
+		print "error: load-balancer.js process failed to start\n", str(e)
+	print "node processes launched:"
+	print "server.js PID:", NODE_PROCESS.pid if hasattr(NODE_PROCESS,"pid") else "None"
+	print "load-balancer.js PID:", LOAD_BALANCER.pid if hasattr(LOAD_BALANCER,"pid") else "None"
 else:
 	print "pre-reloading, WERKZEUG_RUN_MAIN=", os.environ.get('WERKZEUG_RUN_MAIN')
-	
+
 app.run(
 	debug=DEBUG, 
 	host=HOST,
