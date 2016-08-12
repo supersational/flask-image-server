@@ -370,5 +370,7 @@ def confirm_upload(hash):
 			Datapoint.create_many(upload['datapoints'], participant_id)
 			num_datapoints += len(upload['datapoints'])
 	# del pending_uploads[hash]
+	return redirect("/participant/"+str(participant_id))
+
 	return render_template('dataview.html')
 	return "<a href='/participant/%i'>Go back</a><p>sucessfully added %i images and %i dataponts:</p> %s " % (participant_id, num_images, num_datapoints, added_html)
