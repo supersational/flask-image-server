@@ -1,5 +1,5 @@
 from application import app
-from config import DEBUG, NODE_SECRET_KEY, NODE_PROCESS, HOST, PORT
+from config import DEBUG, NODE_SECRET_KEY, HOST, PORT
 
 
 import os 
@@ -9,15 +9,20 @@ if not DEBUG or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         print '################### Restarting @ {} ###################'.format(
             datetime.utcnow())
 	import subprocess
+	@app.teardown_appcontext
+	def teardown_nodes(exception):
+		if NODE_PROCESS is not None:
+			NODE_PROCESS.kill()
+		if LOAD_BALANCER is not None:
+			LOAD_BALANCER.kill()
 	try:
 		NODE_PROCESS = subprocess.Popen(['node', 'application/server.js', NODE_SECRET_KEY], shell=True)
-		@app.teardown_appcontext
-		def teardown_node(exception):
-			if NODE_PROCESS is not None:
-				NODE_PROCESS.kill()
 	except e:
 		print "NODE process failed to start", str(e)
-
+	try:
+		LOAD_BALANCER = subprocess.Popen(['node', 'application/load-balancer.js'], shell=True)
+	except e:
+		print "NODE process failed to start", str(e)
 app.run(
 	debug=DEBUG, 
 	host=HOST,

@@ -43,8 +43,6 @@ JSONIFY_PRETTYPRINT_REGULAR = False
 
 PORT = 5000
 HOST = 'localhost'
-if 'FLASK_HOST' in os.environ:
-	HOST = os.environ['FLASK_HOST']
 DEBUG = True
 LOGGING = False
 
