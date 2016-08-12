@@ -45,7 +45,10 @@ PORT = 5000
 HOST = 'localhost'
 DEBUG = True
 LOGGING = False
-
+FLASK_RELOAD = True
+if 'FLASK_RELOAD_DISABLE' in os.environ:
+	FLASK_RELOAD=False
+	
 APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
 IMAGES_FOLDER_NAME = "images"
 IMAGES_FOLDER =os.path.join(BASE_DIR, "application", IMAGES_FOLDER_NAME)

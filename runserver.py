@@ -1,10 +1,10 @@
 from application import app
-from config import DEBUG, NODE_SECRET_KEY, HOST, PORT
+from config import DEBUG, NODE_SECRET_KEY, HOST, PORT, FLASK_RELOAD
 
 
 import os 
-# ensure if debug mode that we only start the node process once (after reboot into debugging mode)
-if not DEBUG or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+# ensure if reloading that we only start the node process once (after reboot into debugging mode)
+if not FLASK_RELOAD or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
 	from datetime import datetime
         print '################### Restarting @ {} ###################'.format(
             datetime.utcnow())
@@ -23,9 +23,13 @@ if not DEBUG or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
 		LOAD_BALANCER = subprocess.Popen(['node', 'application/load-balancer.js'], shell=True)
 	except e:
 		print "NODE process failed to start", str(e)
+else:
+	print "pre-reloading, WERKZEUG_RUN_MAIN=", os.environ.get('WERKZEUG_RUN_MAIN')
+	
 app.run(
 	debug=DEBUG, 
 	host=HOST,
-	port=PORT
+	port=PORT,
+	use_reloader=FLASK_RELOAD
 	)
 
