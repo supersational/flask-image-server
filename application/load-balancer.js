@@ -13,6 +13,8 @@ var server = http.createServer(function(req, res) {
 	  proxy.web(req, res, { target: 'http://127.0.0.1:5000' });
   }
 });
-// listen on http (80) port
-console.log("listening on port 80")
-server.listen(80);
+// listen on http (80) port, and host defined by APP_HOSTNAME
+var host = process.env.APP_HOSTNAME || '127.0.0.1';
+var port = 80;
+console.log("listening on port "+port+", host " + host);
+server.listen(port, host);
