@@ -9,6 +9,7 @@
   },
   "author": "Sven Hollowell",
   "dependencies": {
-    "express": "^4.13.4"
+    "express": "^4.13.4",
+    "http-proxy": "^1.14.0"
   }
 }

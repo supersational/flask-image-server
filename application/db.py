@@ -364,6 +364,12 @@ class Event(Base):
     def get_event_id_at_time(time, participant_id):
         return getattr(Event.get_event_at_time(time, participant_id), 'event_id', None) 
 
+    @staticmethod
+    def get_event_by_hour(participant_id):
+        Event.query.with_entities(
+                func.max(Event.event_id)
+            )
+
     def resolve_time_conflicts(self):
         with self.next_event as next:
             if next.start_time < self.end_time:
@@ -477,7 +483,7 @@ class Image(Base):
         if url is None: return ''
         url = url.replace('\\','/')
         t = int(time.time())
-        return 'http://127.0.0.1:5001'+url+"?t="+str(t)+"&k="+Image.gen_hash(t, url)
+        return url+"?t="+str(t)+"&k="+Image.gen_hash(t, url)
 
     @staticmethod
     def gen_hash(t, url):

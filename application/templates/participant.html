@@ -7,25 +7,25 @@
 {% set im_half=im_both/2 %}
 
 {% block head %}
-    <script src="http://127.0.0.1:5001/static/jquery-ui.js"></script>
-    <script src="http://127.0.0.1:5001/static/jstree.min.js"></script>
-    <link rel="stylesheet" href="http://127.0.0.1:5001/static/style.min.css" />
-    <link rel="stylesheet" href="http://127.0.0.1:5001/static/jquery-ui-1.10.0.custom.min.css" />
-    <link rel="stylesheet" href="http://127.0.0.1:5001/static/jquery.ui.timepicker.css" />
-    <script src="http://127.0.0.1:5001/static/jquery.ui.timepicker.js"></script>
+    <script src="/static/jquery-ui.js"></script>
+    <script src="/static/jstree.min.js"></script>
+    <link rel="stylesheet" href="/static/style.min.css" />
+    <link rel="stylesheet" href="/static/jquery-ui-1.10.0.custom.min.css" />
+    <link rel="stylesheet" href="/static/jquery.ui.timepicker.css" />
+    <script src="/static/jquery.ui.timepicker.js"></script>
 
     <!-- Photoswipe -->
     <!-- Core CSS file -->
-    <link rel="stylesheet" href="http://127.0.0.1:5001/static/photoswipe/photoswipe.css"> 
+    <link rel="stylesheet" href="/static/photoswipe/photoswipe.css"> 
     <!-- Skin CSS file -->
-    <link rel="stylesheet" href="http://127.0.0.1:5001/static/photoswipe/default-skin/default-skin.css"> 
+    <link rel="stylesheet" href="/static/photoswipe/default-skin/default-skin.css"> 
     <!-- Core JS file -->
-    <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe.min.js"></script>
+    <script src="/static/photoswipe/photoswipe.min.js"></script>
     <!-- UI JS file -->
-    <script src="http://127.0.0.1:5001/static/photoswipe/photoswipe-ui-default.min.js"></script> 
+    <script src="/static/photoswipe/photoswipe-ui-default.min.js"></script> 
     <!-- Graphing -->
-    <script src="http://127.0.0.1:5001/static/d3.min.js"></script>
-    <script src="http://127.0.0.1:5001/static/makeGraph.js"></script>
+    <script src="/static/d3.min.js"></script>
+    <script src="/static/makeGraph.js"></script>
     
     <style>
     .img {
@@ -201,7 +201,7 @@
 {% endblock %}
 {% block pagename %} Participant: {{name}} {% endblock %}
 {% block title %}
-	<a style="color:black; padding:10px;margin:-10px;display:inline-block;" href="/participant/{{id}}" id="title-link"> <img style='padding-top:10px;margin-right:15px' src='http://127.0.0.1:5001/static/calendar.png' />Participant: {{name}} </a>
+	<a style="color:black; padding:10px;margin:-10px;display:inline-block;" href="/participant/{{id}}" id="title-link"> <img style='padding-top:10px;margin-right:15px' src='/static/calendar.png' />Participant: {{name}} </a>
 {% endblock %}
 {% block content %}
 <div id="error-log" style="background-color:red; position:fixed; top:10px; right:10px;display:none;">an error happened! press F5 to reload the page<br></div> 
