@@ -1,9 +1,6 @@
 import os
 import uuid
 
-# Statement for enabling the development environment
-DEBUG = True
-
 #	controls if the cookie should be set with the secure flag. Defaults to False.
 SESSION_COOKIE_SECURE = True
 # Define the application directory
@@ -30,10 +27,7 @@ CSRF_ENABLED     = True
 # signing the data. 
 CSRF_SESSION_KEY = "secret"
 
-# Node server secret key for hashing image URLs 
-NODE_SECRET_KEY = "node secret key" if DEBUG else uuid.uuid4().hex
-# Ref to node process so we can kill it
-NODE_PROCESS = None
+
 
 
 # Secret key for signing cookies
@@ -44,15 +38,20 @@ JSONIFY_PRETTYPRINT_REGULAR = False
 PORT = 5000
 HOST = 'localhost'
 DEBUG = True
+if 'FLASK_DEBUG_DISABLE' in os.environ:
+	DEBUG=False
 LOGGING = False
 FLASK_RELOAD = True
 if 'FLASK_RELOAD_DISABLE' in os.environ:
 	FLASK_RELOAD=False
-	
+
 APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
 IMAGES_FOLDER_NAME = "images"
 IMAGES_FOLDER =os.path.join(BASE_DIR, "application", IMAGES_FOLDER_NAME)
 UPLOAD_FOLDER =os.path.join(BASE_DIR, "application", "upload_folder")
+
+# Node server secret key for hashing image URLs 
+NODE_SECRET_KEY = "node secret key" if DEBUG else uuid.uuid4().hex
 
 SUPPORTED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"]
 SUPPORTED_DATA_EXTENSIONS = ["csv"]
