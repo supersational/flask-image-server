@@ -52,7 +52,7 @@ UPLOAD_FOLDER =os.path.join(BASE_DIR, "application", "upload_folder")
 
 # Node server secret key for hashing image URLs 
 NODE_SECRET_KEY = "node secret key" if DEBUG else uuid.uuid4().hex
-
+os.environ["NODE_SECRET_KEY"] = NODE_SECRET_KEY
 SUPPORTED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"]
 SUPPORTED_DATA_EXTENSIONS = ["csv"]
 

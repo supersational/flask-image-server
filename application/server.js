@@ -4,11 +4,18 @@ var crypto = require('crypto');
 var querystring =  require('querystring')
 var url =  require('url')
 
+var secret;
 if (process.argv.length<2 || process.argv[2].length<10) {
-    console.log("NODE_SECRET_KEY is missing or <10 chars")
-    process.exit()
+    if (process.env.NODE_SECRET_KEY) {
+        console.log("NODE_SECRET_KEY set from env ");
+        secret = process.env.NODE_SECRET_KEY;
+    } else {
+        console.log("NODE_SECRET_KEY is missing or <10 chars")
+        process.exit()
+    }
+} else {
+    secret = process.argv[2]
 }
-var secret = process.argv[2]
 console.log(secret, "<= NODE_SECRET_KEY")
 function verify_hash(t, url, hash) {
     var s = t+url+secret
