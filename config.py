@@ -30,9 +30,6 @@ CSRF_SESSION_KEY = "secret"
 
 
 
-# Secret key for signing cookies
-SECRET_KEY = "constant so we don't have to login every time"
-print "SECRET_KEY", SECRET_KEY
 JSONIFY_PRETTYPRINT_REGULAR = False
 
 PORT = 5000
@@ -50,9 +47,12 @@ IMAGES_FOLDER_NAME = "images"
 IMAGES_FOLDER =os.path.join(BASE_DIR, "application", IMAGES_FOLDER_NAME)
 UPLOAD_FOLDER =os.path.join(BASE_DIR, "application", "upload_folder")
 
+# Secret key for signing cookies
+SECRET_KEY = "constant so we don't have to login every time" if DEBUG is True else uuid.uuid4().hex
+print "SECRET_KEY", SECRET_KEY
 # Node server secret key for hashing image URLs 
 NODE_SECRET_KEY = "node secret key" if DEBUG else uuid.uuid4().hex
-os.environ["NODE_SECRET_KEY"] = NODE_SECRET_KEY
+
 SUPPORTED_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png"]
 SUPPORTED_DATA_EXTENSIONS = ["csv"]
 

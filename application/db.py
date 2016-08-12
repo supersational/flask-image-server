@@ -488,7 +488,7 @@ class Image(Base):
     @staticmethod
     def gen_hash(t, url):
         s = str(t)+url+NODE_SECRET_KEY
-        # print s
+        print s
         sha512_hash = hashlib.sha512()
         sha512_hash.update(s)
         return sha512_hash.hexdigest()

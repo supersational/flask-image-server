@@ -1,40 +1,18 @@
+import config
+# change config node key based on command line parameters (will be supplied by load-balancer)
+import sys 
+print sys.argv
+if len(sys.argv) > 1:
+	print "key = ", sys.argv[1], "len = ", len(sys.argv[1])
+	config.NODE_SECRET_KEY = sys.argv[1]
+
+# import app after so it uses correct key
 from application import app
-from config import DEBUG, NODE_SECRET_KEY, HOST, PORT, FLASK_RELOAD
-
-
-import os 
-# ensure if reloading that we only start the node process once (after reboot into debugging mode)
-if not FLASK_RELOAD or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-	from datetime import datetime
-        print '################### Restarting @ {} ###################'.format(
-            datetime.utcnow())
-	import subprocess
-	NODE_PROCESS = None
-	LOAD_BALANCER = None
-	@app.teardown_appcontext
-	def teardown_nodes(exception):
-		if NODE_PROCESS is not None:
-			NODE_PROCESS.kill()
-		if LOAD_BALANCER is not None:
-			LOAD_BALANCER.kill()
-	try:
-		NODE_PROCESS = subprocess.Popen(['node', 'application/server.js', NODE_SECRET_KEY], shell=True)
-	except e:
-		print "error: server.js process failed to start\n", str(e)
-	try:
-		LOAD_BALANCER = subprocess.Popen(['node', 'application/load-balancer.js'], shell=True)
-	except e:
-		print "error: load-balancer.js process failed to start\n", str(e)
-	print "node processes launched:"
-	print "server.js PID:", NODE_PROCESS.pid if hasattr(NODE_PROCESS,"pid") else "None"
-	print "load-balancer.js PID:", LOAD_BALANCER.pid if hasattr(LOAD_BALANCER,"pid") else "None"
-else:
-	print "pre-reloading, WERKZEUG_RUN_MAIN=", os.environ.get('WERKZEUG_RUN_MAIN')
 
 app.run(
-	debug=DEBUG, 
-	host=HOST,
-	port=PORT,
-	use_reloader=FLASK_RELOAD
+	debug=config.DEBUG, 
+	host=config.HOST,
+	port=config.PORT,
+	use_reloader=config.FLASK_RELOAD
 	)
 

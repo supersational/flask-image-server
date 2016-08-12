@@ -1,27 +1,37 @@
 var http = require('http'),
     httpProxy = require('http-proxy');
 
+// generate secret key
+var secret = require('crypto').randomBytes(64).toString('hex');
+
+// launch our special servers
+var spawn = require('child_process').spawn;
+var flask = spawn('python', ['runserver.py', secret], {shell:true, stdio:'inherit'})
+var image = spawn('node', ['server.js', secret], {shell:true, stdio:'inherit'})
+
+
 // Create a proxy server with custom application logic
 var proxy = httpProxy.createProxyServer({});
 
 // Route requests to either node (5001) or flask (5000) ports
 var server = http.createServer(function(req, res) {
-  // console.log(req.url)
+  console.log(req.url)
+
   if (req.url.startsWith('/static/') || req.url.startsWith('/images/') || req.url.startsWith('/alive')) {
-	  proxy.web(req, res, { target: 'http://127.0.0.1:5001' }, function(e) {
+	  proxy.web(req, res, { target: 'http://localhost:5001' }, function(e) {
 	  	// on error
 	  	res.writeHead(502, {
 	  	    'Content-Type': 'text/plain'
 	  	  });
-	  	res.end('error in image-server');
+	  	res.end('error in image-server\n'+e);
 	   });
   } else {
-	  proxy.web(req, res, { target: 'http://127.0.0.1:5000' }, function(e) {
+	  proxy.web(req, res, { target: 'http://localhost:5000' }, function(e) {
 	  	// on error
 	  	res.writeHead(502, {
 	  	    'Content-Type': 'text/plain'
 	  	  });
-	  	res.end('error in flask-server');
+	  	res.end('error in flask-server\n'+e);
    });
   }
 });
