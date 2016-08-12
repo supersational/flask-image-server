@@ -10,14 +10,18 @@ var server = http.createServer(function(req, res) {
   if (req.url.startsWith('/static/') || req.url.startsWith('/images/') || req.url.startsWith('/alive')) {
 	  proxy.web(req, res, { target: 'http://127.0.0.1:5001' }, function(e) {
 	  	// on error
-	  	res.status(502)
-	  	res.send('error in image-server');
+	  	res.writeHead(502, {
+	  	    'Content-Type': 'text/plain'
+	  	  });
+	  	res.end('error in image-server');
 	   });
   } else {
 	  proxy.web(req, res, { target: 'http://127.0.0.1:5000' }, function(e) {
 	  	// on error
-	  	res.status(502)
-	  	res.send('error in flask-server');
+	  	res.writeHead(502, {
+	  	    'Content-Type': 'text/plain'
+	  	  });
+	  	res.end('error in flask-server');
    });
   }
 });
