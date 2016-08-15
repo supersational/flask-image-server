@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block title %}
+File Upload
+{% endblock %}
+{% block head %}
+
+{% endblock %}
+{% block content %}
+<p>{{message}}</p>
+<h1>Upload new participant file</h1>
+<form action="" method=post enctype=multipart/form-data>
+<p><input type=file name=file multiple>
+<input type=submit value=Upload>
+</form>
+{% endblock %}
