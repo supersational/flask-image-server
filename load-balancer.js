@@ -7,7 +7,7 @@ var secret = require('crypto').randomBytes(64).toString('hex');
 // launch our special servers
 var spawn = require('child_process').spawn;
 var flask = spawn('python', ['runserver.py', secret], {shell:true, stdio:'inherit'})
-var image = spawn('node', ['server.js', secret], {shell:true, stdio:'inherit'})
+var image = spawn('node', ['image-server.js', secret], {shell:true, stdio:'inherit'})
 
 
 // Create a proxy server with custom application logic
