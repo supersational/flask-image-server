@@ -232,6 +232,7 @@ def upload_url(participant_id):
 	else:
 
 		message = ('<p>'+request.args.get('message')+'</p>') if request.args.get('message') is not None else ''
+		form_html = ''
 		confirm_hash = (request.args.get('confirm_hash')) if request.args.get('confirm_hash') is not None else ''
 		print "message: ", message
 		print "confirm_hash: ", confirm_hash
@@ -245,8 +246,9 @@ def upload_url(participant_id):
 				added_data = []
 				for f in upload['files']:
 					added_data.extend(upload['files'][f]['data'])
-				html += '''
-					<h1>Upload successful:</h1>
+				# html += '''
+				# 	<h1>Upload successful:</h1>
+				form_html = '''
 					<form action="" method=post><input type=submit value="Add this data pernamently"></form>
 					<p>%s</p> 
 					<p>participant_id: %s</p>
@@ -259,7 +261,7 @@ def upload_url(participant_id):
 						"".join([upload['files'][x]['display'] for x in upload['files']]) 
 						)
 
-			html += '''<a href='/participant/%i/upload'><button>Upload new file<button?</a> ''' % (participant_id, )
+			form_html += '''<a href='/participant/%i/upload'><button>Upload new file<button?</a> ''' % (participant_id, )
 		else:
 			
 			# for key, group in groupby(datapoints, lambda d: d.datatype):
@@ -272,18 +274,18 @@ def upload_url(participant_id):
 			# return render_template('dataview.html',
 			# 				data=datapoints
 			# 			)
-			html += '''
-				<p>%s</p>
-				<h1>Upload new participant file</h1>
+			# html += '''
+			# 	<p>%s</p>
+			# 	<h1>Upload new participant file</h1>
+			form_html = '''
 				<form action="" method=post enctype=multipart/form-data>
 				<p><input type=file name=file multiple>
 				<input type=submit value=Upload>
 				</form>
-				''' % (message,)
+				'''
 			# cdn, script, div = bokeh_plot.create_graph(participant_id)
 			# html += cdn + script + div
-
-		return html
+		return render_template("file_upload.html",message=message, form=form_html)
 
 def csv_to_data(file):
 	columns = []
