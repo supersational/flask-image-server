@@ -34,9 +34,9 @@ def index():
 		studies=Study.query.all(),
 		participants=Participant.query.all(),
 		users=User.query.all(),
-		num_images=len(Image.query.all()),
-		sql_create=open('application/create_db.txt','r').read(),
-		sql_text=db.read_log()[:2000]
+		num_images=len(Image.query.all())
+		# sql_create=open('application/create_db.txt','r').read(),
+		# sql_text=db.read_log()[:2000]
 	)
   
 @app.route("/reboot_db", methods=["GET"])
@@ -115,8 +115,7 @@ def study(study_id):
 		study_name=study.name,
 		study_users=study.users,
 		participants=sorted(study_participants, key=lambda x: natural_keys(x.name)),
-		participants_to_add=sorted(participants_to_add, key=lambda x: natural_keys(x.name)),
-		sql_text=db.read_log()[:2000]
+		participants_to_add=sorted(participants_to_add, key=lambda x: natural_keys(x.name))
 	)
 
 @app.route("/user")
@@ -142,8 +141,7 @@ def user_page(user_id):
 		user_name=user.username,
 		studies=sorted(user_studies, key=lambda x: natural_keys(x.name)),
 		studies_to_add=studies_to_add,
-		can_remove_studies=current_user.admin,
-		sql_text=db.read_log()[:2000]
+		can_remove_studies=current_user.admin
 	)
 
 @app.route("/user/<int:user_id>/modify_studies", methods=['POST'])
@@ -258,7 +256,6 @@ def render_participant(participant_id, event=None, kwargs={}):
 		days=images_by_hour,
 		daterange=daterange,
 		num_images=participant.num_images,
-		sql_text=sql_text,
 		schema=json_dumps(Schema.query.first().to_json()) if Schema.query.count() else Schema("default").to_json(),
 		schema_list=Schema.query.all(),
 		imgs_array=imgs_array,

@@ -12,12 +12,7 @@
           {% block title %}{% endblock %} - ImageViewer</title>
         {% endif %}
       <script src="/static/jquery.min.js"></script>
-      <script src="/static/run_prettify.js"></script>
-      <script src="/static/lang-sql.js"></script>
       <script src="/static/db.js"></script>
-<!--       <link href='/static/Monserrat.css' rel='stylesheet' type='text/css'>
-      <link href='/static/SourceSansPro.css' rel='stylesheet' type='text/css'>
- -->      {% block head %}
       {% endblock %}
       <style>
         p, a, span { 
@@ -95,14 +90,6 @@
     <div id="wrap" class="clearfix">
       {% block content %}{% endblock %}
     </div>
-
-    {% if sql_text %}
-      <div id="footer">
-  		<pre class="prettyprint lang-sql">
-{{sql_text}}
-  		</pre>
-      </div>
-    {% endif %}
   </body>
 </html>
 {% endif %}
