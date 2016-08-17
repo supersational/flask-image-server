@@ -34,7 +34,7 @@ if [ "$1" == "run" ]; then
 	echo "either Ctrl-Z to exit (or if running using extra args: Ctrl-P then Ctrl-Q)"
 	# appending any extra args will launch into debug mode
 	docker rm -f ${APPNAME}
-	docker run ${2:+ -t -i } -v images_volume:/home/app/application/images --name ${APPNAME} -p 80:80  --link ${DB_NAME}:postgres ${CONTAINERNAME} "${@:2}"
+	docker run ${2:+ -t -i } ${2:- -d } -v images_volume:/home/app/application/images --name ${APPNAME} -p 80:80  --link ${DB_NAME}:postgres ${CONTAINERNAME} "${@:2}"
 elif [ "$1" == "rebuild" ]; then
 	docker build -t ${CONTAINERNAME} .
 elif [ "$1" == "reboot_db" ]; then
