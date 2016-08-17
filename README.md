@@ -21,7 +21,8 @@ Add the production git repo:
 `git remote add production ssh://sven@40.76.222.25/home/sven/MLdocker/app_auto`
 
 To use a ssh private-key file with Git use ssh-agent:
-```eval $(ssh-agent)
+```
+eval $(ssh-agent)
 ssh-add /path/to/your/private_openssh_key
 (type in password)
 ```
