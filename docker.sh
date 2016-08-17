@@ -1,6 +1,15 @@
 #!/bin/sh
 # script for building and running the Dockerfile
 
+# Common commands:
+
+# bash docker.sh run  -> runs app in background
+
+# any commands after run will launch interactive mode
+# bash docker.sh run /bin/bash -> runs app into terminal 
+
+# bash docker.sh rebuild      -> will update any changes to app or Dockerfile
+# bash docker.sh reboot_db    -> will restart the db service
 
 
 # container 'tag' to name the build
