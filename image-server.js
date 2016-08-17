@@ -1,7 +1,6 @@
 var express = require('express');
 var app = express();
 var crypto = require('crypto');
-var querystring =  require('querystring')
 var url =  require('url')
 
 if (process.argv.length<3 || (process.argv.length>=3 && process.argv[2].length<10)) {
