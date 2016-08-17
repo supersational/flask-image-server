@@ -11,6 +11,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 SQLALCHEMY_DATABASE_URI = 'postgres://postgres:testing@localhost:5432/linker'
 if 'SQLALCHEMY_DATABASE_URI' in os.environ:
 	SQLALCHEMY_DATABASE_URI = os.environ['SQLALCHEMY_DATABASE_URI']
+
+# if we are in a docker containter use the env variables set for that purpose
 if all(val in os.environ for val in ['POSTGRES_ENV_POSTGRES_PASSWORD','POSTGRES_PORT']):
 	pg_host = os.environ['POSTGRES_PORT']
 	if pg_host.startswith('tcp://'):
@@ -26,8 +28,6 @@ CSRF_ENABLED     = True
 # Use a secure, unique and absolutely secret key for
 # signing the data. 
 CSRF_SESSION_KEY = "secret"
-
-
 
 
 JSONIFY_PRETTYPRINT_REGULAR = False
@@ -62,8 +62,3 @@ IMAGE_SIZES = {
 	'full':{'size':(0, 0),'dir':'full'}
 }
 
-# if 'USER' in os.environ and os.environ['USER']=='sensors':
-# 	HOST = '0.0.0.0'
-# 	SQLALCHEMY_DATABASE_URI = 'postgres:///sensors'
-# 	DEBUG = False
-# 	SECRET_KEY = uuid.uuid4().hex
