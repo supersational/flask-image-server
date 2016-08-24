@@ -3,18 +3,40 @@
 {% block title %}
 Login
 {% endblock %}
+{% block head %}
+<style>
+.centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+span {
+	display: block;
+}
+input {
+	margin:5px;
+}
+body {
+	background-color: #F44 !important;
+}
+</style>
+{% endblock %}
 {% block content %}
-	<h1>Login</h1>
-	{% if message %}
-	  <p class="message"><strong>message:</strong> {{ message }}
-	{% endif %}
-	{% if link_href and link_message %}
-		<a href="{{link_href}}">{{link_message}}</a>
-	{% endif %}
-	<form action='/login' method='POST'> 
-		<input type="text" name="username" value="Aiden"><br>
-		<input type="text" name="password" value="Aiden"><br>
-		<input type="hidden" name="url" value="{{request.path}}"><br>
-		<input type='submit' value='Submit'>
-	</form>
+	<div class="centered" style="text-align:center;padding:20px;border:1px solid #000; border-radius: 10px; background-color: #FFF">
+		<h1>Login</h1>
+		{% if message %}
+		  <p class="message"><strong>message:</strong> {{ message }}
+		{% endif %}
+		{% if link_href and link_message %}
+			<a href="{{link_href}}">{{link_message}}</a>
+		{% endif %}
+		<form action='/login' method='POST'> 
+			<span>Username: <input type="text" name="username" value="Aiden"></span>
+			<span>Password: <input type="text" name="password" value="Aiden"></span>
+			<input type="hidden" name="url" value="{{request.path}}"><br>
+			<input type='submit' value='Submit'>
+		</div>
+		</form>
+	</div>
 {% endblock %}
