@@ -594,7 +594,7 @@ class Participant(Base):
 
     @hybrid_method
     def get_image_folder(self):
-        return os.path.join(IMAGE_FOLDER, self.participant_id)
+        return os.path.join(IMAGES_FOLDER, str(self.participant_id))
         
 t_useraccess = Table(
     'useraccess', metadata,
