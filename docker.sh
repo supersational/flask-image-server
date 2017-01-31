@@ -49,11 +49,10 @@ if [ "$1" == "run" ]; then
 	# enable standard http port
 	PORT="-p 80:80"
 
-	if [ -z ${2} ]; then
-		docker run -d    ${VOLUME} --name ${APPNAME} ${PORT} --link ${DB_NAME}:postgres ${CONTAINERNAME} 
-	else
-		docker run -t -i ${VOLUME} --name ${APPNAME} ${PORT} --link ${DB_NAME}:postgres ${CONTAINERNAME} "${@:2}"
-	fi
+	
+	echo docker run -d ${VOLUME} --name ${APPNAME} ${PORT} --link ${DB_NAME}:postgres ${CONTAINERNAME} 
+	docker run -d ${VOLUME} --name ${APPNAME} ${PORT} --link ${DB_NAME}:postgres ${CONTAINERNAME} 
+	
 elif [ "$1" == "rebuild" ]; then
 	docker build -t ${CONTAINERNAME} .
 elif [ "$1" == "reboot_db" ]; then
