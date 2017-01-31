@@ -206,38 +206,42 @@
 {% block content %}
 <div id="error-log" style="background-color:red; position:fixed; top:10px; right:10px;display:none;">an error happened! press F5 to reload the page<br></div> 
 
-	<div id="dropdown-box">
+<div id="dropdown-box">
 
-		{% if daterange is defined and daterange is not none %}
-			<h3>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </h3>
-		{% endif %}
+	{% if daterange is defined and daterange is not none %}
+		<h3>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </h3>
+	{% endif %}
 
-		<h4 id="imagenum-text">Showing (calculating) images out of {{num_images}}</h4>
-		<div class="clearfix" id="calendar-box">
-			{% if days|length >0 %}
-			{% set curr_day = None %}
-			{% for day in days %}
-				<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
-				{% if 0 and curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
-					<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
-				{% endif %}
-				{% set curr_day = day.split("-")[2]|int %}
-			{% endfor %}
+	<h4 id="imagenum-text">Showing (calculating) images out of {{num_images}}</h4>
+	<div class="clearfix" id="calendar-box">
+		{% if days|length >0 %}
+		{% set curr_day = None %}
+		{% for day in days %}
+			<div class="timepicker" hours="{% for hour in days[day] %}{{hour}} {% endfor %}" date="{{day}}"></div>
+			{% if 0 and curr_day != (day.split("-")[2]|int - 1) and day.split("-")[2] is not none %}
+				<!-- <div style="height:40px; float: left; margin-top:45px;">...</div> -->
 			{% endif %}
-		</div>
-		<div class="clearfix">
-			<button  onClick="Study.get_annotation_csv({{id}})">Download .csv</button> 
-			<button  onClick="Event.check_valid({{id}}).then((res) => {if (!res.valid) console.log('event not valid', res.text)})">Event-checker</button>
-			<a href="/participant/{{id}}/upload"><button>Upload data</button></a>
-		</div>
+			{% set curr_day = day.split("-")[2]|int %}
+		{% endfor %}
+		{% endif %}
 	</div>
-	<div class="left-sticky" id="left-bar">
-
-
-
+	<div class="clearfix">
+		<button  onClick="Study.get_annotation_csv({{id}})">Download .csv</button> 
+		<button  onClick="Event.check_valid({{id}}).then((res) => {if (!res.valid) console.log('event not valid', res.text)})">Event-checker</button>
+		<a href="/participant/{{id}}/upload"><button>Upload data</button></a>
+	</div>
+</div>
+<div class="left-sticky" id="left-bar">
 	<!-- new jsonified jstree: -->
 	<div id="jstree_box"  style="display:none;">
-		<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;">
+		<button type="button" id="jstree-selector" style="
+	background-repeat: no-repeat;background: url(/static/cog.png); 
+	width:27px; height:27px;padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;  
+	position: absolute;
+	top: 0;
+	left: 10;" >
+	    </button>
+		<input type="text" id="jstree_searchbox" style="padding:4px; border-radius:4px; border:1px solid silver; margin-top:10px;margin-left:36px;">
 		<div id="jstree">
 		</div>
 	</div>
@@ -254,9 +258,22 @@
 		}
 	}
 
+	$("#jstree-selector").mousedown(function() {
+		console.log("select?")
+		$("#schema-selector").show()
+	});
 	</script>
-
 </div>
+<div style="position:fixed; width:100%;height:100%;z-index:10; ">
+	<div id="schema-selector"  style=" margin-left: auto;
+	  margin-right: auto; width: 300px;height:500px;background-color:white;border-radius:10px;border: 1px solid;" >
+	  <h2 style="text-align:center;">Select Schema</h2>
+	  {% for schema in schema_list %}
+	  	<p class="schema-list"> {{ schema.name }} </p>
+	  {% endfor %}
+	</div>
+</div>
+
 <div id="right-bar">
 	{% set fillcol="lightblue" -%}
 	<div class="gallery">
@@ -265,19 +282,6 @@
 	<!-- <a class="load-next" href="#">Load more</a> -->
 </div>
 
-<script>
-// Centers the Photoswipe container in the center of the screen (call on init + resize)
-// function centerPhotoswipe() {
-//     var ww = $(window).innerWidth(); //     var wh = $(window).innerHeight(); //     var $el = $("#pswp-container");
-//     var w = $el.outerWidth();
-//     var h = $el.outerHeight();
-
-//     $el.css({
-//         left:   Math.round( (ww-w) / 2),
-//         top:    Math.round( (wh-h) / 2)
-//     });
-// }
-</script>
 <div id="pswp-container">
 
 	<!-- Root element of PhotoSwipe. Must have class pswp. -->
