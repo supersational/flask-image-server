@@ -28,7 +28,7 @@ for s in db.Schema.query.all():
 	print s
 	if s.name == 'main-annotation-schema':
 		main_schema = s
-if not main_schema:
+if main_schema is None:
 	sys.exit()
 
 def label_repr(l):
@@ -111,7 +111,7 @@ img_length = datetime.timedelta(seconds=60)
 sec = datetime.timedelta(seconds=1)
 # read all Angel annotations
 for P in db.Participant.query.all():
-	print P.name
+	print "working on Participant:", P.name
 	P_num = get_P(str(P.name))
 	print P_num
 	if P_num in annotation_files:
