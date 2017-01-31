@@ -8,32 +8,52 @@ Index
 		margin-left: 15px;
 		margin-right: 15px;
 	}
+	h2 {
+		text-align: center;
+	}
+	.group {
+		border-radius: 10px;
+		padding: 10px 20px 20px 20px;
+
+		margin: 20px 0px 20px 0px;
+	}
 </style>
 {% endblock %}
 {% block content %}
 
 	<h2>Control Panel:</h2>
-	<a href="/images">All images</a>
+	<div class="group" style="background-color:lightgreen; ">
 	<h3>Studies:</h3>
-	{% for study in studies %}
-		 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ({{study.participants | length}} participants) <br> 
-	{% endfor %}
-	<form action='/study/create_study' method='POST'> 
-		<p>
-		<input type='text' name='study_name'></input>
-		<input type='submit' value='Create new study'> </p>
-	</form> 
+		{% if studies|length < 1 %}
+			<p>No studies</p>
+		{% endif %}
+		{% for study in studies %}
+			 <a href='/study/{{study.study_id}} '>{{study.study_id}}: {{study.name}}</a> ({{study.participants | length}} participants) <br> 
+		{% endfor %}
+		<form action='/study/create_study' method='POST'> 
+			<p>
+			<input type='text' name='study_name'></input>
+			<input type='submit' value='Create new study'> </p>
+		</form> 
+	</div>
+	<div class="group" style="background-color:lightgoldenrodyellow; ">
 	<h3>Participants:</h3>
-	{% for participant in participants %}
-		 <a href='/participant/{{participant.participant_id}} '>{{participant.participant_id}}: {{participant.name}}</a> (in 
-		 {{participant.studies | length}} studies) <br> 
-	{% endfor %}
-	<h3>Users:</h3>
-	{% for user in users %}
-		 <a href='/user/{{user.user_id}} '>{{user.user_id}}: {{user.username}}</a> (password: '{{user.password}}') <br> 
-	{% endfor %}
+		{% if participants|length < 1 %}
+			<p>No participants</p>
+		{% endif %}
+		{% for participant in participants %}
+			 <a href='/participant/{{participant.participant_id}} '>{{participant.participant_id}}: {{participant.name}}</a> (in 
+			 {{participant.studies | length}} studies) <br> 
+		{% endfor %}
+	</div>
+	<div class="group" style="background-color:lightpink; ">
+		<h3>Users:</h3>
+		{% for user in users %}
+			 <a href='/user/{{user.user_id}} '>{{user.user_id}}: {{user.username}}</a><br> 
+		{% endfor %}
+	</div>
 	<br>
 	<br>
-	<a href='/reboot_db'><button>reboot DB</button></a>
+	<!-- <a href='/reboot_db'><button>reboot DB</button></a> -->
 	<p>there are {{num_images}} images in the db</p>
 {% endblock %}
