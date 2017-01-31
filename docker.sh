@@ -34,7 +34,19 @@ if [ "$1" == "run" ]; then
 	echo "either Ctrl-Z to exit (or if running using extra args: Ctrl-P then Ctrl-Q)"
 	# appending any extra args will launch into debug mode
 	docker rm -f ${APPNAME}
-	VOLUME="-v //c/Users/svenh/Documents/svenData/bin_error://home/app/application/images/"
+	VOLUME="-v //d/images://home/app/application/images/"
+	LIVE_RELOADING="true"
+	if [ "$LIVE_RELOADING" == "true" ]; then
+		# this line mounts the application volume for live code changes
+		VOLUME="-v /$(pwd)/application://home/app/application $VOLUME"
+		# this line additionally mounts all python scripts in the root directory
+		for f in ./*.py
+		do
+			echo $(pwd)/$f
+			VOLUME="-v /$(pwd)/$f://home/app/$f $VOLUME"
+		done
+	fi
+	# enable standard http port
 	PORT="-p 80:80"
 
 	if [ -z ${2} ]; then
