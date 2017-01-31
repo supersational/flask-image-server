@@ -40,7 +40,7 @@ def to_html_img(input_file, size=None):
 	return "<img src='data:image//png;base64,%s' %s alt='%s'\>" % (binascii.b2a_base64(stream.getvalue()), sizeattrs, input_file)
 
 
-def generate_sizes(input_file, participant_id):
+def generate_sizes(input_file, participant_id, overwrite=True):
 	im = PILImage.open(input_file)
 	name = file_noextension(input_file)
 	output_files = {}
@@ -50,7 +50,7 @@ def generate_sizes(input_file, participant_id):
 
 		ensure_dir_exists(outfile_full)
 		exists = os.path.isfile(outfile_full)
-		if not exists or 1:
+		if not exists or overwrite:
 			print("    generating : " + key + " " + str(size['size']) + " " + outfile +" curr size:" + str(im.size))
 
 			# if a size is specified, then resize
