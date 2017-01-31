@@ -47,5 +47,7 @@ elif [ "$1" == "rebuild" ]; then
 elif [ "$1" == "reboot_db" ]; then
 	docker rm -f ${DB_NAME}
 	docker run --name ${DB_NAME} -e POSTGRES_PASSWORD=testing -d postgres
+elif [ "$1" == "bash" ]; then
+	docker exec -it flaskapp bash
 fi
 
