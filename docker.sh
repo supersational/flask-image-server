@@ -34,12 +34,13 @@ if [ "$1" == "run" ]; then
 	echo "either Ctrl-Z to exit (or if running using extra args: Ctrl-P then Ctrl-Q)"
 	# appending any extra args will launch into debug mode
 	docker rm -f ${APPNAME}
+	VOLUME="-v //c/Users/svenh/Documents/svenData/bin_error://home/app/application/images/"
+	PORT="-p 80:80"
+
 	if [ -z ${2} ]; then
-		# echo 2 is unset
-		docker run -d -v images_volume:/home/app/application/images --name ${APPNAME} -p 80:80  --link ${DB_NAME}:postgres ${CONTAINERNAME}
+		docker run -d    ${VOLUME} --name ${APPNAME} ${PORT} --link ${DB_NAME}:postgres ${CONTAINERNAME} 
 	else
-		# echo 2 is set to ${2}
-		docker run -t -i -v images_volume:/home/app/application/images --name ${APPNAME} -p 80:80  --link ${DB_NAME}:postgres ${CONTAINERNAME} "${@:2}"
+		docker run -t -i ${VOLUME} --name ${APPNAME} ${PORT} --link ${DB_NAME}:postgres ${CONTAINERNAME} "${@:2}"
 	fi
 elif [ "$1" == "rebuild" ]; then
 	docker build -t ${CONTAINERNAME} .
