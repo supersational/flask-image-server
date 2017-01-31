@@ -512,7 +512,8 @@ class Image(Base):
                     )
             else:
                 print "image could not be resized, does it exist already?"
-
+        else:
+            print "image time could not be parsed from: ", image_path
     # parse filenames in format B00001764_21I7TA_20151227_140000E.jpg
     @staticmethod
     def parse_img_date(n):
