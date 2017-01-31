@@ -46,6 +46,7 @@ APPLICATION_FOLDER =os.path.join(BASE_DIR, "application")
 IMAGES_FOLDER_NAME = "images"
 IMAGES_FOLDER =os.path.join(BASE_DIR, "application", IMAGES_FOLDER_NAME)
 UPLOAD_FOLDER =os.path.join(BASE_DIR, "application", "upload_folder")
+SCHEMA_FOLDER = os.path.join(BASE_DIR, "application", "annotation")
 
 # Secret key for signing cookies
 SECRET_KEY = "constant so we don't have to login every time" if DEBUG is True else uuid.uuid4().hex
