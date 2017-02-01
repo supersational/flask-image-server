@@ -495,11 +495,11 @@ class Image(Base):
 
     # uploaded image => resizing => Image
     @staticmethod
-    def from_file(image_path, participant_id):
+    def from_file(image_path, participant_id, overwrite=True):
         from application import image_processing
         img_time = Image.parse_img_date(image_path)
         if img_time:
-            resized_images = image_processing.generate_sizes(image_path, participant_id)
+            resized_images = image_processing.generate_sizes(image_path, participant_id, overwrite=overwrite)
             print resized_images
             if all([value is not None for key, value in resized_images.iteritems()]):
                 return Image(
