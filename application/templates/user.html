@@ -28,6 +28,12 @@ User: {{user_name}}
 			<input type='hidden' name='method' value='add'> 
 			<input type='submit' value='Add'>
 		</form> 
+		{% endif %}
+		<form action='/user/{{user_id}}/change_password' method='POST'> 
+			<p>Change password: </p>
+			<input type='password' name='old_password'> 
+			<input type='password' name='new_password'> 
+			<input type='submit' value='Add'>
+		</form> 
 	</div>
-	{% endif %}
 {% endblock %}

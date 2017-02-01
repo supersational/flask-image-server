@@ -1,7 +1,7 @@
 from application import app
 
 from flask import request, redirect, make_response, jsonify
-from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint, session, Schema
+from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint, session, Schema, User
 from application.login import login_required, login_check, requires_admin
 import datetime
 from io import BytesIO
@@ -34,7 +34,7 @@ def create_study():
 @login_required
 @login_check()
 def user_change_password(user_id):
-	user = User.query(User.user_id==user_id).one() 
+	user = User.query.filter(User.user_id==user_id).one() 
 	if user and request.form['old_password']:
 		if user.check_password(request.form['old_password']):
 			if request.form['new_password']:
