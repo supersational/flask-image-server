@@ -77,6 +77,7 @@ for d in os.listdir(IMAGES_FOLDER):
 							shutil.move(os.path.join(APPLICATION_FOLDER, img_path), os.path.join(p_full_folder, img))
 						except Exception as e:
 							print e
-						new_img = db.Image.from_file(os.path.join(p_full_folder, img), p.participant_id)
+						new_img = db.Image.from_file(os.path.join(p_full_folder, img), p.participant_id, overwrite=False)
 						p.images.append(new_img)	
 						p_image_paths.append(new_img.full_url.lower())
+		db.session.flush()
