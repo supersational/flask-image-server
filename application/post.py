@@ -1,7 +1,7 @@
 from application import app
 
 from flask import request, redirect, make_response, jsonify
-from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint, session
+from application.db import Event, Image, Participant, Study, Label, Datatype, Datapoint, session, Schema
 from application.login import login_required, login_check, requires_admin
 import datetime
 from io import BytesIO
@@ -183,6 +183,17 @@ def annotate_event(participant_id, event_id):
 	changed_images = event.images
 	return jsonify(images=[x.to_array() for x in changed_images], result='success')
 
+@app.route("/participant/<int:participant_id>/select_schema/<int:schema_id>", methods=["POST"])
+@login_required
+@login_check()
+def selecte_schema(participant_id, schema_id):
+	participant = Participant.query.get(participant_id)
+	schema = Schema.query.get(schema_id)
+	if participant is not None and schema is not None:
+		participant.schema = schema
+		return "success"
+	else:
+		return "fail"
 @app.route("/participant/<int:participant_id>/load_images", methods=["POST"])
 @login_required
 @login_check()
