@@ -1404,8 +1404,7 @@
 			getThumbBoundsFn: function(index) {
 
 			    // find thumbnail element
-			    var thumbnail = $("div.img#"+index).find(".thumbnail")[0];
-
+			    var thumbnail = $("div#"+index+".img").find(".thumbnail")[0];
 			    // get window scroll Y
 			    var pageYScroll = window.pageYOffset || document.documentElement.scrollTop; 
 			    // optionally get horizontal scroll
@@ -1492,7 +1491,7 @@
 
 	    	// http://stackoverflow.com/questions/2905867/how-to-scroll-to-specific-item-using-jquery
 	    	var container = $('.gallery'),
-	    	    scrollTo = $("div.img#"+index);
+	    	    scrollTo = $("div#"+index+".img");
 	    	
 	    	// container.scrollTop(
 	    	//     scrollTargetPos
