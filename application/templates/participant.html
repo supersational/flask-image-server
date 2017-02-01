@@ -108,7 +108,7 @@
     .left-sticky {
 		position: absolute;
 		padding-left:10px;
-		overflow-y: auto; 
+		overflow-y: auto !important;
 		overflow-x: hidden; 
 		width: 201px;
 		z-index:10;
@@ -206,7 +206,7 @@
 {% block content %}
 <div id="error-log" style="background-color:red; position:fixed; top:10px; right:10px;display:none;">an error happened! press F5 to reload the page<br></div> 
 
-<div id="dropdown-box">
+<div id="dropdown-box" style="overflow-y:auto">
 
 	{% if daterange is defined and daterange is not none %}
 		<h3>Showing {{daterange.diff | verbose_seconds}} starting at {{daterange.min | verbose_date}} </h3>
@@ -596,13 +596,16 @@
 		var t;
 		var delay = 150;
 		$("#dropdown-box, #title-link").hover(function() {
-
+			$("#dropdown-box").css('overflowY', 'auto');
 			$("#dropdown-box").clearQueue().delay(delay).animate({
-				    "height": 285
+				    "height": 285,
+				    complete: function(){$("#dropdown-box").css('overflowY', 'auto');console.log("dropdown FIN");} 
 				});
 		},function() {
+			$("#dropdown-box").css('overflowY', 'auto');
 			$("#dropdown-box").clearQueue().delay(delay).animate({
 				    "height": 0,
+				    complete: function(){$("#dropdown-box").css('overflowY', 'auto');console.log("dropdown FIN");}
 				});
 		});
 	})()
