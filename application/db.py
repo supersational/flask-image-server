@@ -543,7 +543,9 @@ class Participant(Base):
 
     participant_id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
+    schema_id = Column(ForeignKey(u'schemas.schema_id'), nullable=True, default=None)
 
+    schema = relationship(u'Schema', back_populates='participants')
     studies = relationship(u'Study', secondary='studyparticipants', back_populates='participants')
     images = relationship(u'Image', back_populates='participant', lazy='dynamic')
     events = relationship(u'Event', back_populates='participant')
@@ -670,8 +672,9 @@ class Schema(Base):
     schema_id = Column(Integer, primary_key=True)
     name = Column(String(50))
 
-    labels = relationship(u'Label', back_populates='schema')
-    folders = relationship(u'Folder', back_populates='schema')
+    participants = relationship(u'Participant', back_populates='schema')
+    labels = relationship(u'Label', back_populates='schema', cascade="all, delete-orphan")
+    folders = relationship(u'Folder', back_populates='schema', cascade="all, delete-orphan")
 
     def __init__(self, name):
         self.name = name
