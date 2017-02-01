@@ -61,8 +61,8 @@ def generate_sizes(input_file, participant_id, overwrite=True):
 			else:
 				# full resolution
 				im.save(outfile_full,"JPEG")
-			# store file location for each size
-			output_files[key] = outfile
 		else:
-			output_files[key] = None
+			print("    skipping : " + key + " " + str(size['size']) + " " + key + " because it already exists:" + outfile)
+		# store file location for each size
+		output_files[key] = outfile
 	return output_files
