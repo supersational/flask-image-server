@@ -704,6 +704,8 @@ class Schema(Base):
 
 
     def from_file(self, annotation_file):
+        if type(annotation_file)==str:
+            annotation_file = open(annotation_file, 'r')
         for line in annotation_file:
             if len(line)<=1: continue
             names = line.split(";")
