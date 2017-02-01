@@ -84,6 +84,11 @@ var Image = {
 		if ("image_time" in img) img.image_time = new Date(img.image_time); 
 	}
 }
+var Participant = {
+	select_schema: function(participant_id, schema_id) {
+		return $.post("/participant/"+participant_id+"/select_schema/"+schema_id, null);
+	}
+}
 	// reload_by_id: function(participant_id, image_id_list) {
 	// 	create_query("/participant/"+participant_id+"/load_images", {image_id_list:image_id_list})
 	// }
