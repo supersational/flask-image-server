@@ -257,11 +257,17 @@
 			currentNode.children.forEach(function(childNode) {add_label(childNode)})
 		}
 	}
-
-	$("#jstree-selector").mousedown(function() {
-		console.log("select?")
-		$("#schema-selector").show()
-	});
+	$(function() {
+		$("#jstree-selector").mousedown(function() {
+			console.log("select?")
+			$("#schema-selector").show()
+		});
+		$('.schema-list').click(function() {
+			console.log(this + " schema_id = "+  $(this).attr("data-schema-id"))
+			Participant.select_schema({{id}}, $(this).attr("data-schema-id"))
+				.then(function(e) {if (e=="success") {location.reload();} else {console.log("select_schema error:", e)}});
+		})
+	})
 	</script>
 </div>
 <div  id="schema-selector" style="position:fixed; width:100%;height:100%;z-index:20; display:none;">
