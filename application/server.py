@@ -216,7 +216,9 @@ def render_participant(participant_id, event=None, kwargs={}):
 	# WHERE %(param_1)s = images.participant_id
 
 
-	participant = Participant.query.filter(Participant.participant_id==participant_id).one()
+	participant = Participant.query.get(participant_id)
+	if participant is None:
+		return "no participant with that id"
 	print "time_after_participant: ".ljust(40), round(time.time()-t0, 4)
 	if event is not None:
 		images = event.images
@@ -256,8 +258,9 @@ def render_participant(participant_id, event=None, kwargs={}):
 		days=images_by_hour,
 		daterange=daterange,
 		num_images=participant.num_images,
-		schema=json_dumps(Schema.query.first().to_json()) if Schema.query.count() else Schema("default").to_json(),
+		schema=json_dumps(participant.schema.to_json()) if participant.schema is not None else Schema("default").to_json(),
 		schema_list=Schema.query.all(),
+		selected_schema=participant.schema,
 		imgs_array=imgs_array,
 		# evts_dict=evts_dict,
 		**kwargs
