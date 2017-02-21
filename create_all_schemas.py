@@ -13,10 +13,15 @@ for d in os.listdir(SCHEMA_FOLDER):
 	name = d[:-len('.csv')]
 	if db.Schema.query.filter(db.Schema.name==name).first() is not None:
 		print "schema ",name,"already exists"
-	else:
-		print "creating schema ", name
-		s = db.Schema(name)
-		s.from_file(d_full)
-
-		db.session.add(s)
+		db.session.delete(db.Schema.query.filter(db.Schema.name==name).first())
 		db.session.flush()
+	# else:
+	print "creating schema ", name
+	s = db.Schema(name)
+	db.session.add(s)
+	db.session.flush()
+	s.from_file(d_full)
+	db.session.flush()
+	print s
+	print s
+	print s.dump()
