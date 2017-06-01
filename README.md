@@ -1,4 +1,4 @@
-#Flask-image-server
+# Flask-image-server
 
 A webserver you can use to annotate wearable camera images.
 
